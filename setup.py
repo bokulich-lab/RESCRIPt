@@ -1,0 +1,25 @@
+# ----------------------------------------------------------------------------
+# Copyright (c) 2019--, QIIME 2 development team.
+#
+# Distributed under the terms of the Modified BSD License.
+#
+# The full license is in the file LICENSE, distributed with this software.
+# ----------------------------------------------------------------------------
+
+from setuptools import setup, find_packages
+
+setup(
+    name="rescript",
+    version=0.0,
+    packages=find_packages(),
+    author="Nicholas Bokulich",
+    author_email="nbokulich@gmail.com",
+    description="Reference sequence annotation and curation",
+    license='BSD-3-Clause',
+    url="https://github.com/nbokulich/RESCRIPt",
+    entry_points={'qiime2.plugins': ['rescript=rescript.plugin_setup:plugin']},
+    package_data={
+        'rescript.tests': ['data/*'],
+    },
+    zip_safe=False,
+)
