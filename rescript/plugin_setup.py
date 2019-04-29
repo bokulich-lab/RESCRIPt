@@ -10,7 +10,7 @@
 
 
 from qiime2.plugin import (Str, Plugin, Choices, List)
-from .core import merge_taxa
+from .merge import merge_taxa
 from q2_types.feature_data import FeatureData, Taxonomy
 
 import rescript
