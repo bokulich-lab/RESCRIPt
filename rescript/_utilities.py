@@ -10,6 +10,7 @@
 
 from itertools import zip_longest, takewhile
 from re import sub
+import subprocess
 
 
 def _find_lca(t1, t2):
@@ -54,3 +55,14 @@ def _taxonomic_depth(taxonomy, rank_handle=""):
 def _taxon_to_list(taxon, rank_handle):
     '''Split taxonomy string into list of taxonomic labels'''
     return [sub(rank_handle, '', t.strip()) for t in taxon.split(';')]
+
+
+def run_command(cmd, verbose=True):
+    print("Running external command line application. This may print "
+          "messages to stdout and/or stderr.")
+    print("The command being run is below. This command cannot "
+          "be manually re-run as it will depend on temporary files that "
+          "no longer exist.")
+    print("\nCommand:", end=' ')
+    print(" ".join(cmd), end='\n\n')
+    subprocess.run(cmd, check=True)

@@ -8,13 +8,15 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-
-from qiime2.plugin import (Str, Plugin, Choices, List)
+from qiime2.plugin import (Str, Plugin, Choices, List, Citations)
 from .merge import merge_taxa
-from q2_types.feature_data import FeatureData, Taxonomy
+from .dereplicate import dereplicate
+from q2_types.feature_data import FeatureData, Taxonomy, Sequence
 
 import rescript
 
+
+citations = Citations.load('citations.bib', package='q2_vsearch')
 
 plugin = Plugin(
     name='rescript',
@@ -71,4 +73,23 @@ plugin.methods.register_function(
                 'select the longest taxonomy annotation, the highest scoring, '
                 'or the least common ancestor. Note: when a tie occurs, the '
                 'last taxonomy added takes precedent.',
+)
+
+
+plugin.methods.register_function(
+    function=dereplicate,
+    inputs={'sequences': FeatureData[Sequence],
+            'taxa': FeatureData[Taxonomy]},
+    parameters={},
+    outputs=[('dereplicated-sequences', FeatureData[Sequence]),
+             ('dereplicated-taxa', FeatureData[Taxonomy])],
+    input_descriptions={
+        'sequences': 'Sequences to be dereplicated',
+        'taxa': 'Taxonomic classifications of sequences to be dereplicated'},
+    parameter_descriptions={},
+    name='Dereplicate features with matching sequences and taxonomies.',
+    description='Dereplicate FASTA format sequences and taxonomies wherever '
+         'sequences and taxonomies match; duplicated sequences with unique '
+         'taxonomies are retained.',
+    citations=[citations['rognes2016vsearch']]
 )
