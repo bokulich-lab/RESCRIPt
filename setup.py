@@ -10,7 +10,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="rescript",
-    version=0.0,
+    version='0.0-dev',
     packages=find_packages(),
     author="Nicholas Bokulich",
     author_email="nbokulich@gmail.com",
@@ -20,6 +20,7 @@ setup(
     entry_points={'qiime2.plugins': ['rescript=rescript.plugin_setup:plugin']},
     package_data={
         'rescript.tests': ['data/*'],
+        'rescript': ['citations.bib'],
     },
     zip_safe=False,
 )
