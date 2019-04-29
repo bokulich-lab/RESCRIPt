@@ -10,7 +10,7 @@
 
 
 import pandas as pd
-from ._utilities import (_find_lca, _rank_length, _taxon_to_list,
+from ._utilities import (_find_lca_in_series, _rank_length, _taxon_to_list,
                          _find_top_score)
 
 
@@ -50,7 +50,7 @@ def merge_taxa(data: pd.DataFrame, mode: str = 'len', rank_handle: str = '',
             func = _rank_length
         # or do LCA merging
         elif mode == 'lca':
-            func = _find_lca
+            func = _find_lca_in_series
         # or choose taxonomy with highest confidence score
         elif mode == 'score':
             func = _find_top_score

@@ -14,11 +14,11 @@ import qiime2
 
 from q2_types.feature_data import DNAFASTAFormat
 
-from ._utilities import run_command
+from ._utilities import run_command, _find_lca
 
 
-def dereplicate(sequences: DNAFASTAFormat, taxa: pd.DataFrame
-                ) -> (pd.Series, pd.DataFrame):
+def dereplicate(sequences: DNAFASTAFormat, taxa: pd.DataFrame,
+                mode: str = 'uniq') -> (pd.Series, pd.DataFrame):
     with tempfile.NamedTemporaryFile() as out_fasta:
         with tempfile.NamedTemporaryFile() as out_uc:
             # dereplicate sequences with vsearch
@@ -41,31 +41,52 @@ def dereplicate(sequences: DNAFASTAFormat, taxa: pd.DataFrame
         'FeatureData[Sequence]', sequences).view(pd.Series)
 
     # dereplicate taxonomy and add back sequences with unique taxonomies
-    derep_taxa, seqs_out = _dereplicate_taxa(taxa, sequences, derep_seqs, uc)
+    derep_taxa, seqs_out = _dereplicate_taxa(
+        taxa, sequences, derep_seqs, uc, mode=mode)
 
     return seqs_out, derep_taxa
 
 
-def _dereplicate_taxa(taxa, raw_seqs, derep_seqs, uc):
+def _dereplicate_taxa(taxa, raw_seqs, derep_seqs, uc, mode):
     # grab hit and centroid IDs
-    uc = uc[uc[0] == 'H'][[8, 9]]
+    if mode == 'uniq':
+        uc_types = ['H']
+    elif mode == 'lca':
+        # we want to keep the centroids if we perform LCA
+        uc_types = ['H', 'S']
+        # centroid entries have no centroid ID; so list their own seq ID
+        uc.loc[uc[9] == '*', 9] = uc[8]
+
+    uc = uc[uc[0].isin(uc_types)][[8, 9]]
     uc.columns = ['seqID', 'centroidID']
 
     # map to taxonomy labels
-    uc['taxa'] = uc['seqID'].apply(lambda x: taxa.loc[x])
+    uc['Taxon'] = uc['seqID'].apply(lambda x: taxa.loc[x])
     uc['centroidtaxa'] = uc['centroidID'].apply(lambda x: taxa.loc[x])
 
-    # filter out hits that do not match centroid taxonomy
-    rereplicates = uc[uc['taxa'] != uc['centroidtaxa']]
+    if mode == 'uniq':
+        # filter out hits that do not match centroid taxonomy
+        rereplicates = uc[uc['Taxon'] != uc['centroidtaxa']]
+        # drop duplicates that share centroid ID and taxa assignment
+        rereplicates = rereplicates.drop_duplicates(['centroidID', 'Taxon'])
+        # grab associated seqs
+        rereplicate_seqs = raw_seqs.loc[rereplicates['seqID']]
+        # concatenate with dereplicated seqs
+        seqs_out = pd.concat([derep_seqs, rereplicate_seqs])
+        # generate list of dereplicated taxa
+        derep_taxa = taxa.reindex(seqs_out.index)
 
-    # grab associated seqs
-    rereplicate_seqs = raw_seqs.loc[rereplicates['seqID']]
+    elif mode == 'lca':
+        # group seqs that share centroids (this includes the centroid)
+        derep_taxa = uc.groupby('centroidID')['Taxon'].apply(lambda x: list(x))
+        # find LCA within each cluster
+        derep_taxa = derep_taxa.apply(lambda x: ';'.join(
+            _find_lca([y.split(';') for y in x]))).to_frame()
+        print(derep_taxa)
+        # LCA does nothing with the seqs
+        seqs_out = derep_seqs
 
-    # concatenate with dereplicated seqs
-    seqs_out = pd.concat([derep_seqs, rereplicate_seqs])
-
-    # generate taxa
-    derep_taxa = taxa.reindex(seqs_out.index)
+    # gotta please the type validator gods
     derep_taxa.index.name = 'Feature ID'
 
     return derep_taxa, seqs_out

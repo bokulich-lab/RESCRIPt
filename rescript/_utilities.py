@@ -13,7 +13,7 @@ from re import sub
 import subprocess
 
 
-def _find_lca(t1, t2):
+def _find_lca_in_series(t1, t2):
     '''
     Find least common ancestor between two semicolon-delimited strings.
     Input consists of two series containing index "Taxon".
@@ -21,17 +21,22 @@ def _find_lca(t1, t2):
     '''
     t1 = t1['Taxon']
     t2 = t2['Taxon']
+    return _find_lca([t1, t2])
+
+
+def _find_lca(taxa):
+    '''Find least common ancestor between two semicolon-delimited strings.'''
     # determine optimal zip mode. Normally, zip is best because trimming to
     # shortest is an inherent feature of LCA.
     # However if only one frame contains an assignment for feature x, we want
     # to just take that taxonomy. zip_longest will accomplish this while using
     # the same machinery...
-    if '' in [t1, t2]:
+    if '' in taxa:
         zip_it = zip_longest
     else:
         zip_it = zip
     # LCA ends where zipped taxonomy strings no longer converge to len == 1
-    taxa_comparison = [set(rank) - {None} for rank in zip_it(t1, t2)]
+    taxa_comparison = [set(rank) - {None} for rank in zip_it(*taxa)]
     return (rank.pop() for rank in takewhile(
         lambda x: len(x) == 1, taxa_comparison))
 

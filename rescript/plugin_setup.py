@@ -80,13 +80,19 @@ plugin.methods.register_function(
     function=dereplicate,
     inputs={'sequences': FeatureData[Sequence],
             'taxa': FeatureData[Taxonomy]},
-    parameters={},
+    parameters={
+        'mode': Str % Choices(['uniq', 'lca'])},
     outputs=[('dereplicated-sequences', FeatureData[Sequence]),
              ('dereplicated-taxa', FeatureData[Taxonomy])],
     input_descriptions={
         'sequences': 'Sequences to be dereplicated',
         'taxa': 'Taxonomic classifications of sequences to be dereplicated'},
-    parameter_descriptions={},
+    parameter_descriptions={
+        'mode': 'How to handle dereplication when sequences map to distinct '
+                'taxonomies. "uniq" will retain all sequences with unique '
+                'taxonomic affiliations. "lca" will find the least common '
+                'ancestor among all taxa sharing a sequence.'
+    },
     name='Dereplicate features with matching sequences and taxonomies.',
     description='Dereplicate FASTA format sequences and taxonomies wherever '
          'sequences and taxonomies match; duplicated sequences with unique '
