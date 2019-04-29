@@ -62,6 +62,11 @@ def _taxon_to_list(taxon, rank_handle):
     return [sub(rank_handle, '', t.strip()) for t in taxon.split(';')]
 
 
+def _majority(taxon):
+    '''Find most common element in a list'''
+    return max(set(taxon), key=taxon.count)
+
+
 def run_command(cmd, verbose=True):
     print("Running external command line application. This may print "
           "messages to stdout and/or stderr.")

@@ -81,7 +81,7 @@ plugin.methods.register_function(
     inputs={'sequences': FeatureData[Sequence],
             'taxa': FeatureData[Taxonomy]},
     parameters={
-        'mode': Str % Choices(['uniq', 'lca'])},
+        'mode': Str % Choices(['uniq', 'lca', 'majority'])},
     outputs=[('dereplicated-sequences', FeatureData[Sequence]),
              ('dereplicated-taxa', FeatureData[Taxonomy])],
     input_descriptions={
@@ -91,11 +91,20 @@ plugin.methods.register_function(
         'mode': 'How to handle dereplication when sequences map to distinct '
                 'taxonomies. "uniq" will retain all sequences with unique '
                 'taxonomic affiliations. "lca" will find the least common '
-                'ancestor among all taxa sharing a sequence.'
+                'ancestor among all taxa sharing a sequence. "majority" will '
+                'find the most common taxonomic label associated with that '
+                'sequence; note that in the event of a tie, "majority" will '
+                'pick the winner arbitrarily.'
     },
     name='Dereplicate features with matching sequences and taxonomies.',
-    description='Dereplicate FASTA format sequences and taxonomies wherever '
-         'sequences and taxonomies match; duplicated sequences with unique '
-         'taxonomies are retained.',
+    description=(
+        'Dereplicate FASTA format sequences and taxonomies wherever '
+        'sequences and taxonomies match; duplicated sequences and taxonomies '
+        'are dereplicated using the "mode" parameter to either: retain all '
+        'sequences that have unique taxonomic annotations even if the '
+        'sequences are duplicates (uniq); or return only dereplicated '
+        'sequences labeled by either the least common ancestor (lca) or the '
+        'most common taxonomic label associated with sequences in that '
+        'cluster (majority).'),
     citations=[citations['rognes2016vsearch']]
 )

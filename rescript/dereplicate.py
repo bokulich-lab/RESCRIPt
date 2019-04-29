@@ -14,7 +14,7 @@ import qiime2
 
 from q2_types.feature_data import DNAFASTAFormat
 
-from ._utilities import run_command, _find_lca
+from ._utilities import run_command, _find_lca, _majority
 
 
 def dereplicate(sequences: DNAFASTAFormat, taxa: pd.DataFrame,
@@ -51,8 +51,8 @@ def _dereplicate_taxa(taxa, raw_seqs, derep_seqs, uc, mode):
     # grab hit and centroid IDs
     if mode == 'uniq':
         uc_types = ['H']
-    elif mode == 'lca':
-        # we want to keep the centroids if we perform LCA
+    else:
+        # we want to keep the centroids if we perform LCA or majority
         uc_types = ['H', 'S']
         # centroid entries have no centroid ID; so list their own seq ID
         uc.loc[uc[9] == '*', 9] = uc[8]
@@ -76,14 +76,17 @@ def _dereplicate_taxa(taxa, raw_seqs, derep_seqs, uc, mode):
         # generate list of dereplicated taxa
         derep_taxa = taxa.reindex(seqs_out.index)
 
-    elif mode == 'lca':
+    else:
         # group seqs that share centroids (this includes the centroid)
         derep_taxa = uc.groupby('centroidID')['Taxon'].apply(lambda x: list(x))
         # find LCA within each cluster
-        derep_taxa = derep_taxa.apply(lambda x: ';'.join(
-            _find_lca([y.split(';') for y in x]))).to_frame()
-        print(derep_taxa)
-        # LCA does nothing with the seqs
+        if mode == 'lca':
+            derep_taxa = derep_taxa.apply(lambda x: ';'.join(
+                _find_lca([y.split(';') for y in x]))).to_frame()
+            # find majority taxon within each cluster
+        elif mode == 'majority':
+            derep_taxa = derep_taxa.apply(lambda x: _majority(x)).to_frame()
+        # LCA and majority do nothing with the seqs
         seqs_out = derep_seqs
 
     # gotta please the type validator gods
