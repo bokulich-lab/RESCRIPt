@@ -18,7 +18,8 @@ from ._utilities import run_command, _find_lca, _majority
 
 
 def dereplicate(sequences: DNAFASTAFormat, taxa: pd.DataFrame,
-                mode: str = 'uniq') -> (pd.Series, pd.DataFrame):
+                mode: str = 'uniq', threads: int = 1
+                ) -> (pd.Series, pd.DataFrame):
     with tempfile.NamedTemporaryFile() as out_fasta:
         with tempfile.NamedTemporaryFile() as out_uc:
             # dereplicate sequences with vsearch
@@ -27,7 +28,8 @@ def dereplicate(sequences: DNAFASTAFormat, taxa: pd.DataFrame,
                    '--output', out_fasta.name,
                    '--uc', out_uc.name,
                    '--qmask', 'none',
-                   '--xsize']
+                   '--xsize',
+                   '--threads', str(threads)]
             run_command(cmd)
             out_uc.seek(0)
 

@@ -8,7 +8,7 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-from qiime2.plugin import (Str, Plugin, Choices, List, Citations)
+from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int)
 from .merge import merge_taxa
 from .dereplicate import dereplicate
 from q2_types.feature_data import FeatureData, Taxonomy, Sequence
@@ -81,7 +81,8 @@ plugin.methods.register_function(
     inputs={'sequences': FeatureData[Sequence],
             'taxa': FeatureData[Taxonomy]},
     parameters={
-        'mode': Str % Choices(['uniq', 'lca', 'majority'])},
+        'mode': Str % Choices(['uniq', 'lca', 'majority']),
+        'threads': Int % Range(1, 256)},
     outputs=[('dereplicated-sequences', FeatureData[Sequence]),
              ('dereplicated-taxa', FeatureData[Taxonomy])],
     input_descriptions={
@@ -94,7 +95,10 @@ plugin.methods.register_function(
                 'ancestor among all taxa sharing a sequence. "majority" will '
                 'find the most common taxonomic label associated with that '
                 'sequence; note that in the event of a tie, "majority" will '
-                'pick the winner arbitrarily.'
+                'pick the winner arbitrarily.',
+        'threads': 'Number of computation threads to use (1 to 256). The '
+                   'number of threads should be lesser or equal to the number '
+                   'of available CPU cores.'
     },
     name='Dereplicate features with matching sequences and taxonomies.',
     description=(
