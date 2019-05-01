@@ -8,7 +8,8 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int)
+from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int,
+                           Float)
 from .merge import merge_taxa
 from .dereplicate import dereplicate
 from q2_types.feature_data import FeatureData, Taxonomy, Sequence
@@ -82,7 +83,9 @@ plugin.methods.register_function(
             'taxa': FeatureData[Taxonomy]},
     parameters={
         'mode': Str % Choices(['uniq', 'lca', 'majority']),
-        'threads': Int % Range(1, 256)},
+        'threads': Int % Range(1, 256),
+        'perc_identity': Float % Range(0, 1, inclusive_start=False,
+                                       inclusive_end=True)},
     outputs=[('dereplicated-sequences', FeatureData[Sequence]),
              ('dereplicated-taxa', FeatureData[Taxonomy])],
     input_descriptions={
@@ -98,7 +101,10 @@ plugin.methods.register_function(
                 'pick the winner arbitrarily.',
         'threads': 'Number of computation threads to use (1 to 256). The '
                    'number of threads should be lesser or equal to the number '
-                   'of available CPU cores.'
+                   'of available CPU cores.',
+        'perc_identity': 'The percent identity at which clustering should be '
+                         'performed. This parameter maps to vsearch\'s --id '
+                         'parameter.'
     },
     name='Dereplicate features with matching sequences and taxonomies.',
     description=(

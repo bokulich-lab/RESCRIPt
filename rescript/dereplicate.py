@@ -18,25 +18,44 @@ from ._utilities import run_command, _find_lca, _majority
 
 
 def dereplicate(sequences: DNAFASTAFormat, taxa: pd.DataFrame,
-                mode: str = 'uniq', threads: int = 1
-                ) -> (pd.Series, pd.DataFrame):
+                mode: str = 'uniq', perc_identity: float = 1.0,
+                threads: int = 1) -> (pd.Series, pd.DataFrame):
     with tempfile.NamedTemporaryFile() as out_fasta:
         with tempfile.NamedTemporaryFile() as out_uc:
             # dereplicate sequences with vsearch
-            cmd = ['vsearch',
-                   '--derep_fulllength', str(sequences),
-                   '--output', out_fasta.name,
-                   '--uc', out_uc.name,
-                   '--qmask', 'none',
-                   '--xsize',
-                   '--threads', str(threads)]
-            run_command(cmd)
+            _vsearch_derep_fulllength(
+                str(sequences), out_fasta.name, out_uc.name, str(threads))
             out_uc.seek(0)
 
-            # open dereplicated fasta and uc file
-            uc = pd.read_csv(out_uc.name, sep='\t', header=None)
-            derep_seqs = qiime2.Artifact.import_data(
-                'FeatureData[Sequence]', out_fasta.name).view(pd.Series)
+            uc = _parse_uc(out_uc.name)
+
+            # optionally cluster seqs into OTUs
+            if perc_identity < 1.0:
+                clustered_seqs = DNAFASTAFormat()
+                _vsearch_cluster_size(str(out_fasta.name), str(perc_identity),
+                                      str(clustered_seqs), out_uc.name,
+                                      str(threads))
+                out_uc.seek(0)
+
+                # re-map derep centroids to cluster centroids
+                uc_clust = _parse_uc(out_uc.name).set_index('seqID')
+                print(uc_clust)
+                uc['centroidID'] = uc['centroidID'].apply(
+                    lambda x: uc_clust.loc[x, 'centroidID'])
+            else:
+                clustered_seqs = out_fasta.name
+
+            seqs_out, derep_taxa = _derep_seqs_and_taxa(
+                uc, str(clustered_seqs), sequences, taxa,
+                mode)
+
+    return seqs_out, derep_taxa
+
+
+def _derep_seqs_and_taxa(uc, out_fasta_fp, sequences, taxa, mode):
+    # open dereplicated fasta and uc file
+    derep_seqs = qiime2.Artifact.import_data(
+        'FeatureData[Sequence]', out_fasta_fp).view(pd.Series)
 
     # transform raw sequences to series for easy parsing
     sequences = qiime2.Artifact.import_data(
@@ -49,19 +68,44 @@ def dereplicate(sequences: DNAFASTAFormat, taxa: pd.DataFrame,
     return seqs_out, derep_taxa
 
 
-def _dereplicate_taxa(taxa, raw_seqs, derep_seqs, uc, mode):
+def _vsearch_derep_fulllength(sequences_fp, out_fasta_fp, out_uc_fp, threads):
+    cmd = ['vsearch',
+           '--derep_fulllength', sequences_fp,
+           '--output', out_fasta_fp,
+           '--uc', out_uc_fp,
+           '--qmask', 'none',
+           '--xsize',
+           '--threads', threads]
+    run_command(cmd)
+
+
+def _vsearch_cluster_size(sequences_fp, perc_identity, out_fasta_fp, out_uc_fp,
+                          threads):
+    cmd = ['vsearch',
+           '--cluster_size', sequences_fp,
+           '--id', perc_identity,
+           '--centroids', out_fasta_fp,
+           '--uc', out_uc_fp,
+           '--qmask', 'none',
+           '--xsize',
+           '--threads', threads]
+    run_command(cmd)
+
+
+def _parse_uc(uc_fp):
+    uc = pd.read_csv(uc_fp, sep='\t', header=None)
     # grab hit and centroid IDs
-    if mode == 'uniq':
-        uc_types = ['H']
-    else:
-        # we want to keep the centroids if we perform LCA or majority
-        uc_types = ['H', 'S']
-        # centroid entries have no centroid ID; so list their own seq ID
-        uc.loc[uc[9] == '*', 9] = uc[8]
-
-    uc = uc[uc[0].isin(uc_types)][[8, 9]]
+    uc = uc[uc[0].isin(['H', 'S'])][[8, 9]]
+    # centroid entries have no centroid ID; so list their own seq ID
+    uc.loc[uc[9] == '*', 9] = uc[8]
     uc.columns = ['seqID', 'centroidID']
+    return uc
 
+
+def _dereplicate_taxa(taxa, raw_seqs, derep_seqs, uc, mode):
+    # we only want to grab hits for uniq mode
+    if mode == 'uniq':
+        uc = uc[uc['seqID'] != uc['centroidID']]
     # map to taxonomy labels
     uc['Taxon'] = uc['seqID'].apply(lambda x: taxa.loc[x])
     uc['centroidtaxa'] = uc['centroidID'].apply(lambda x: taxa.loc[x])
