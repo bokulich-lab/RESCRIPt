@@ -114,7 +114,6 @@ class TestDerep(TestPluginBase):
                   ' f__Lactobacillaceae',
             'B1b': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
                    '; f__Lactobacillaceae; g__Lactobacillus; s__pseudocasei'}})
-        print(seqs.view(pd.Series).sort_index().index)
         pdt.assert_frame_equal(taxa.view(pd.DataFrame).sort_index(),
                                exp_taxa.sort_index(), check_names=False)
         pdt.assert_index_equal(seqs.view(pd.Series).sort_index().index,
@@ -135,7 +134,6 @@ class TestDerep(TestPluginBase):
                    '; f__Lactobacillaceae; g__Lactobacillus; s__pseudocasei',
             'C1a': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
                    '; f__Lactobacillaceae; g__Pediococcus; s__acidilacti'}})
-        print(seqs.view(pd.Series).sort_index().index)
         pdt.assert_frame_equal(taxa.view(pd.DataFrame).sort_index(),
                                exp_taxa.sort_index(), check_names=False)
         pdt.assert_index_equal(seqs.view(pd.Series).sort_index().index,
@@ -153,7 +151,6 @@ class TestDerep(TestPluginBase):
                   ' f__Lactobacillaceae; g__Pediococcus; s__acidilacti',
             'B1b': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
                    '; f__Lactobacillaceae; g__Lactobacillus; s__pseudocasei'}})
-        print(seqs.view(pd.Series).sort_index().index)
         pdt.assert_frame_equal(taxa.view(pd.DataFrame).sort_index(),
                                exp_taxa.sort_index(), check_names=False)
         pdt.assert_index_equal(seqs.view(pd.Series).sort_index().index,
