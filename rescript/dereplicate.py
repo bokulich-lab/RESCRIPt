@@ -39,31 +39,21 @@ def dereplicate(sequences: DNAFASTAFormat, taxa: pd.DataFrame,
 
                 # re-map derep centroids to cluster centroids
                 uc_clust = _parse_uc(out_uc.name).set_index('seqID')
-                print(uc_clust)
                 uc['centroidID'] = uc['centroidID'].apply(
                     lambda x: uc_clust.loc[x, 'centroidID'])
             else:
                 clustered_seqs = out_fasta.name
 
-            seqs_out, derep_taxa = _derep_seqs_and_taxa(
-                uc, str(clustered_seqs), sequences, taxa,
-                mode)
+            # open dereplicated fasta and uc file
+            derep_seqs = qiime2.Artifact.import_data(
+                'FeatureData[Sequence]', str(clustered_seqs)).view(pd.Series)
 
-    return seqs_out, derep_taxa
+            # transform raw sequences to series for easy parsing
+            sequences = qiime2.Artifact.import_data(
+                'FeatureData[Sequence]', sequences).view(pd.Series)
 
-
-def _derep_seqs_and_taxa(uc, out_fasta_fp, sequences, taxa, mode):
-    # open dereplicated fasta and uc file
-    derep_seqs = qiime2.Artifact.import_data(
-        'FeatureData[Sequence]', out_fasta_fp).view(pd.Series)
-
-    # transform raw sequences to series for easy parsing
-    sequences = qiime2.Artifact.import_data(
-        'FeatureData[Sequence]', sequences).view(pd.Series)
-
-    # dereplicate taxonomy and add back sequences with unique taxonomies
-    derep_taxa, seqs_out = _dereplicate_taxa(
-        taxa, sequences, derep_seqs, uc, mode=mode)
+            derep_taxa, seqs_out = _dereplicate_taxa(
+                taxa, sequences, derep_seqs, uc, mode=mode)
 
     return seqs_out, derep_taxa
 
