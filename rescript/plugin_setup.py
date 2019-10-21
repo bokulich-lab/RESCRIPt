@@ -86,8 +86,8 @@ plugin.methods.register_function(
         'threads': Int % Range(1, 256),
         'perc_identity': Float % Range(0, 1, inclusive_start=False,
                                        inclusive_end=True)},
-    outputs=[('dereplicated-sequences', FeatureData[Sequence]),
-             ('dereplicated-taxa', FeatureData[Taxonomy])],
+    outputs=[('dereplicated_sequences', FeatureData[Sequence]),
+             ('dereplicated_taxa', FeatureData[Taxonomy])],
     input_descriptions={
         'sequences': 'Sequences to be dereplicated',
         'taxa': 'Taxonomic classifications of sequences to be dereplicated'},
