@@ -9,9 +9,10 @@
 # ----------------------------------------------------------------------------
 
 from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int,
-                           Float)
+                           Float, Visualization)
 from .merge import merge_taxa
 from .dereplicate import dereplicate
+from .evaluate import evaluate_taxonomy
 from q2_types.feature_data import FeatureData, Taxonomy, Sequence
 
 import rescript
@@ -28,6 +29,21 @@ plugin = Plugin(
     short_description=(
         'Pipeline for reference sequence annotation and curation.'),
 )
+
+
+rank_handle_description = (
+    'Regular expression indicating which taxonomic rank a label '
+    'belongs to; this handle is stripped from the label '
+    'prior to operating on the taxonomy. The net '
+    'effect is that ambiguous or empty levels can be '
+    'removed prior to comparison, enabling selection of '
+    'taxonomies with more complete taxonomic information. '
+    'For example, "^[kpcofgs]__" will recognize greengenes rank '
+    'handles. ')
+
+rank_handle_extra_note = (
+    'Note that rank_handles are removed but not replaced; use the '
+    'new_rank_handle parameter to replace the rank handles.')
 
 
 plugin.methods.register_function(
@@ -49,17 +65,7 @@ plugin.methods.register_function(
                 'consensus score). Note that "score" assumes that this score '
                 'is always contained as the second column in a feature '
                 'taxonomy dataframe.',
-        'rank_handle': 'Text handle indicating which taxonomic rank a label '
-                       'belongs to; this handle is stripped from the label '
-                       'prior to taxonomy comparisons and merging. The net '
-                       'effect is that ambiguous or empty levels can be '
-                       'removed prior to comparison, enabling selection of '
-                       'taxonomies with more complete taxonomic information. '
-                       'Regular expressions may be used for this parameter; '
-                       'e.g., "^[kpcofgs]__" will recognize greengenes rank '
-                       'handles. Note that rank_handles are removed but not '
-                       'replaced; use the new_rank_handle parameter to '
-                       'replace the rank handles.',
+        'rank_handle': rank_handle_description + rank_handle_extra_note,
         'new_rank_handle': 'A semicolon-delimited string of rank handles to '
                            'prepend to taxonomic labels at each rank. For '
                            'example, "k__;p__;c__;o__;f__;g__;s__" will '
@@ -117,4 +123,24 @@ plugin.methods.register_function(
         'most common taxonomic label associated with sequences in that '
         'cluster (majority).'),
     citations=[citations['rognes2016vsearch']]
+)
+
+
+plugin.pipelines.register_function(
+    function=evaluate_taxonomy,
+    inputs={'taxonomies': List[FeatureData[Taxonomy]]},
+    parameters={'rank_handle': Str},
+    outputs=[('taxonomy_stats', Visualization)],
+    input_descriptions={
+        'taxonomies': 'One or more taxonomies to evaluate.'},
+    parameter_descriptions={
+        'rank_handle': rank_handle_description,
+    },
+    name='Compute summary statistics on taxonomy artifact(s).',
+    description=(
+        'Compute summary statistics on taxonomy artifact(s) and visualize as '
+        'interactive lineplots. Summary statistics include the number of '
+        'unique labels, taxonomic entropy, and the number of features that '
+        'are (un)classified at each taxonomic level. This action is useful '
+        'for both reference taxonomies and classification results.'),
 )

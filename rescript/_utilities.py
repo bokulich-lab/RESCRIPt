@@ -52,11 +52,6 @@ def _find_top_score(t1, t2):
     return t1 if t1['score'] > t2['score'] else t2
 
 
-def _taxonomic_depth(taxonomy, rank_handle=""):
-    return taxonomy.apply(lambda x: len(set(_taxon_to_list(
-        x, rank_handle=rank_handle)) - {None, ''}))
-
-
 def _taxon_to_list(taxon, rank_handle):
     '''Split taxonomy string into list of taxonomic labels'''
     return [sub(rank_handle, '', t.strip()) for t in taxon.split(';')]
