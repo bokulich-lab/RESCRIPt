@@ -13,12 +13,15 @@ from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int,
 from .merge import merge_taxa
 from .dereplicate import dereplicate
 from .evaluate import evaluate_taxonomy
+from .cross_validate import cross_validate
 from q2_types.feature_data import FeatureData, Taxonomy, Sequence
+from q2_feature_classifier.classifier import (_parameter_descriptions,
+                                              _classify_parameters)
 
 import rescript
 
 
-citations = Citations.load('citations.bib', package='q2_vsearch')
+citations = Citations.load('citations.bib', package='rescript')
 
 plugin = Plugin(
     name='rescript',
@@ -44,6 +47,51 @@ rank_handle_description = (
 rank_handle_extra_note = (
     'Note that rank_handles are removed but not replaced; use the '
     'new_rank_handle parameter to replace the rank handles.')
+
+
+plugin.pipelines.register_function(
+    function=cross_validate,
+    inputs={'sequences': FeatureData[Sequence],
+            'taxonomy': FeatureData[Taxonomy]},
+    parameters={
+        'k': Int % Range(2, None) | Str % Choices(['disable']),
+        'random_state': Int % Range(0, None),
+        'reads_per_batch': _classify_parameters['reads_per_batch'],
+        'n_jobs': _classify_parameters['n_jobs'],
+        'confidence': _classify_parameters['confidence']},
+    outputs=[('expected_taxonomy', FeatureData[Taxonomy]),
+             ('observed_taxonomy', FeatureData[Taxonomy])],
+    input_descriptions={
+        'sequences': 'Reference sequences to use for classifier '
+                     'training/testing.',
+        'taxonomy': 'Reference taxonomy to use for classifier '
+                    'training/testing.'},
+    parameter_descriptions={
+        'k': 'Number of stratified folds. Set to "disable" to disable k-fold '
+             'cross-validation. This results in a "perfect" classifier that '
+             'knows the correct identity of each input sequence. Such a leaky '
+             'classifier indicates the upper limit of classification accuracy '
+             'based on sequence information alone, as misclassifications are '
+             'an indication of unresolvable kmer profiles.',
+        'random_state': 'Seed used by the random number generator.',
+        'reads_per_batch': _parameter_descriptions['reads_per_batch'],
+        'n_jobs': _parameter_descriptions['n_jobs'],
+        'confidence': _parameter_descriptions['confidence']},
+    output_descriptions={
+        'expected_taxonomy': 'Expected taxonomic label for each input '
+                             'sequence. If k-fold CV is enabled, taxonomic '
+                             'labels may be truncated due to stratification.',
+        'observed_taxonomy': 'Observed taxonomic label for each input '
+                             'sequence, predicted by cross-validation.'},
+    name=('Evaluate DNA sequence reference database via cross-validated '
+          'taxonomic classification.'),
+    description=(
+        'Evaluate DNA sequence reference database via cross-validated '
+        'taxonomic classification. Unique taxonomic labels are truncated to '
+        'enable appropriate label stratification. See the cited reference '
+        '(Bokulich et al. 2018) for more details.'),
+    citations=[citations['bokulich2018optimizing']]
+)
 
 
 plugin.methods.register_function(
@@ -143,4 +191,5 @@ plugin.pipelines.register_function(
         'unique labels, taxonomic entropy, and the number of features that '
         'are (un)classified at each taxonomic level. This action is useful '
         'for both reference taxonomies and classification results.'),
+    citations=[citations['bokulich2017q2']]
 )

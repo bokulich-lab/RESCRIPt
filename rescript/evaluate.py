@@ -27,7 +27,6 @@ def evaluate_taxonomy(ctx,
         summary['Dataset'] = str(n)
         summaries.append(summary)
     results = pd.concat(summaries).reset_index()
-    print(results)
     results.index = pd.Index(
         [str(i) for i in range(1, len(results.index) + 1)], name='id')
     results = q2.Metadata(results)
