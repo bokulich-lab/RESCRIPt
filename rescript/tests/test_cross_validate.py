@@ -68,6 +68,30 @@ class TestPipelines(TestPluginBase):
             self.taxa_series.sort_index().apply(
                 lambda x: ';'.join(x.split(';')[:6])))
 
+    def test_evaluate_classifications(self):
+        # simulate predicted classifications at genus level
+        taxa = self.taxa_series.copy().apply(
+            lambda x: ';'.join(x.split(';')[:6]))
+        taxa = qiime2.Artifact.import_data('FeatureData[Taxonomy]', taxa)
+        vol, = rescript.actions.evaluate_classifications([self.taxa], [taxa])
+        # now the same but input multiple times to test lists of inputs
+        vol, = rescript.actions.evaluate_classifications(
+            [self.taxa, taxa], [taxa, taxa])
+
+    def test_evaluate_classifications_mismatch_input_count(self):
+        with self.assertRaisesRegex(
+                ValueError, "Input must contain an equal number"):
+            rescript.actions.evaluate_classifications(
+                [self.taxa], [self.taxa, self.taxa])
+
+    def test_evaluate_classifications_mismatch_features(self):
+        taxa = qiime2.Artifact.import_data(
+            'FeatureData[Taxonomy]', self.taxa.view(pd.Series).drop('A1'))
+        with self.assertRaisesRegex(
+                ValueError, "Indices of pair 1 do not match"):
+            rescript.actions.evaluate_classifications(
+                [self.taxa], [taxa])
+
 
 class TestTaxaUtilities(TestPluginBase):
     package = 'rescript.tests'

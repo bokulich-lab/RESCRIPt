@@ -106,7 +106,7 @@ def evaluate_classifications(ctx, expected_taxonomies, observed_taxonomies):
     expected_taxonomies = [t.view(pd.Series) for t in expected_taxonomies]
     observed_taxonomies = [t.view(pd.Series) for t in observed_taxonomies]
     for n, (t1, t2) in enumerate(zip(
-            expected_taxonomies, observed_taxonomies)):
+            expected_taxonomies, observed_taxonomies), 1):
         if set(t1.index) != set(t2.index):
             raise ValueError(
                 'Expected and Observed Taxonomies do not match. Taxonomy row '
@@ -115,7 +115,7 @@ def evaluate_classifications(ctx, expected_taxonomies, observed_taxonomies):
 
     results = []
     for n, (t1, t2) in enumerate(zip(
-            expected_taxonomies, observed_taxonomies)):
+            expected_taxonomies, observed_taxonomies), 1):
         # Align Indices
         expected_taxonomy, observed_taxonomy = t1.align(t2)
 
@@ -125,7 +125,10 @@ def evaluate_classifications(ctx, expected_taxonomies, observed_taxonomies):
         precision_recall['Dataset'] = str(n)
         results.append(precision_recall)
     precision_recall = pd.concat(results)
-    plots, = volatility(metadata=precision_recall,
+    # convert index to strings
+    precision_recall.index = pd.Index(
+        [str(i) for i in range(1, len(precision_recall.index) + 1)], name='id')
+    plots, = volatility(metadata=q2.Metadata(precision_recall),
                         state_column='Level',
                         default_group_column='Dataset',
                         default_metric='F-Measure')

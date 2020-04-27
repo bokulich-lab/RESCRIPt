@@ -13,7 +13,7 @@ from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int,
 from .merge import merge_taxa
 from .dereplicate import dereplicate
 from .evaluate import evaluate_taxonomy
-from .cross_validate import cross_validate
+from .cross_validate import cross_validate, evaluate_classifications
 from q2_types.feature_data import FeatureData, Taxonomy, Sequence
 from q2_feature_classifier.classifier import (_parameter_descriptions,
                                               _classify_parameters)
@@ -91,6 +91,33 @@ plugin.pipelines.register_function(
         'enable appropriate label stratification. See the cited reference '
         '(Bokulich et al. 2018) for more details.'),
     citations=[citations['bokulich2018optimizing']]
+)
+
+
+plugin.pipelines.register_function(
+    function=evaluate_classifications,
+    inputs={'expected_taxonomies': List[FeatureData[Taxonomy]],
+            'observed_taxonomies': List[FeatureData[Taxonomy]]},
+    parameters={},
+    outputs=[('evaluation', Visualization)],
+    input_descriptions={
+        'expected_taxonomies': 'True taxonomic labels for one more more sets '
+                               'of features.',
+        'observed_taxonomies': 'Predicted classifications of same sets of '
+                               'features, input in same order as '
+                               'expected_taxonomies.'},
+    parameter_descriptions={},
+    output_descriptions={
+        'evaluation': 'Visualization of classification accuracy results.'},
+    name=('Interactively evaluate taxonomic classification accuracy.'),
+    description=(
+        'Evaluate taxonomic classification accuracy by comparing one or more '
+        'sets of true taxonomic labels to the predicted taxonomies for the '
+        'same set(s) of features. Output an interactive plot of '
+        'classification accuracy for each pair of expected/observed '
+        'taxonomies.'),
+    citations=[citations['bokulich2018optimizing'],
+               citations['bokulich2017q2']]
 )
 
 
