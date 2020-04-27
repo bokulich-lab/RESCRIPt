@@ -6,6 +6,8 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
+import os
+
 from qiime2.plugin.testing import TestPluginBase
 from qiime2.plugins import rescript
 import qiime2
@@ -73,10 +75,38 @@ class TestPipelines(TestPluginBase):
         taxa = self.taxa_series.copy().apply(
             lambda x: ';'.join(x.split(';')[:6]))
         taxa = qiime2.Artifact.import_data('FeatureData[Taxonomy]', taxa)
-        vol, = rescript.actions.evaluate_classifications([self.taxa], [taxa])
+        # first round we just make sure this runs
+        rescript.actions.evaluate_classifications([self.taxa], [taxa])
         # now the same but input multiple times to test lists of inputs
         vol, = rescript.actions.evaluate_classifications(
             [self.taxa, taxa], [taxa, taxa])
+        # now inspect and validate the contents
+        # we inspect the second eval results to compare perfect match vs.
+        # simulated genus-level classification (when species are expected)
+        vol.export_data(self.temp_dir.name)
+        html_path = os.path.join(self.temp_dir.name, 'data.tsv')
+        vol = qiime2.Metadata.load(html_path).to_dataframe()
+        exp = pd.DataFrame({
+            'Level': {
+                '1': 1.0, '2': 2.0, '3': 3.0, '4': 4.0, '5': 5.0, '6': 6.0,
+                '7': 7.0, '8': 1.0, '9': 2.0, '10': 3.0, '11': 4.0,
+                '12': 5.0, '13': 6.0},
+            'Precision': {
+                '1': 1.0, '2': 1.0, '3': 1.0, '4': 1.0, '5': 1.0, '6': 1.0,
+                '7': 0.0, '8': 1.0, '9': 1.0, '10': 1.0, '11': 1.0,
+                '12': 1.0, '13': 1.0},
+            'Recall': {
+                '1': 1.0, '2': 1.0, '3': 1.0, '4': 1.0, '5': 1.0, '6': 1.0,
+                '7': 0.0, '8': 1.0, '9': 1.0, '10': 1.0, '11': 1.0,
+                '12': 1.0, '13': 1.0},
+            'F-Measure': {
+                '1': 1.0, '2': 1.0, '3': 1.0, '4': 1.0, '5': 1.0, '6': 1.0,
+                '7': 0.0, '8': 1.0, '9': 1.0, '10': 1.0, '11': 1.0,
+                '12': 1.0, '13': 1.0},
+            'Dataset': {'1': '1', '2': '1', '3': '1', '4': '1', '5': '1',
+                        '6': '1', '7': '1', '8': '2', '9': '2', '10': '2',
+                        '11': '2', '12': '2', '13': '2'}})
+        pdt.assert_frame_equal(vol.sort_index(), exp, check_names=False)
 
     def test_evaluate_classifications_mismatch_input_count(self):
         with self.assertRaisesRegex(
