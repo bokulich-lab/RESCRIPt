@@ -107,7 +107,10 @@ def evaluate_classifications(ctx, expected_taxonomies, observed_taxonomies):
     observed_taxonomies = [t.view(pd.Series) for t in observed_taxonomies]
     for n, (t1, t2) in enumerate(zip(
             expected_taxonomies, observed_taxonomies), 1):
-        if set(t1.index) != set(t2.index):
+        # if set(t1.index) != set(t2.index):
+        try:
+            _validate_indices_match(t1, t2)
+        except ValueError:
             raise ValueError(
                 'Expected and Observed Taxonomies do not match. Taxonomy row '
                 'indices must match in each pair of taxonomies. Indices of '
