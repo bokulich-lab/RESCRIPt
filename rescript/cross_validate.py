@@ -222,7 +222,8 @@ def _get_strata(tree, k, taxon=[]):
         return [(';'.join(taxon), tree.tips)]
     sorted_children = map(list, map(reversed, tree.children.items()))
     sorted_children = iter(sorted(sorted_children))
-    misc = set()
+    # check for tips with truncated classification
+    misc = tree.tips - set.union(*(c.tips for c in tree.children.values()))
     # aggregate children with small tip sets
     for child, level in sorted_children:
         if len(child.tips) >= k:
@@ -238,7 +239,8 @@ def _get_strata(tree, k, taxon=[]):
     # if there were more than k misc, make a stratum for them
     if len(misc) > k:
         strata = [(';'.join(taxon), misc)] + strata
-    else:  # randomly add them to the other strata
+    else:  # add them to the other strata
+        strata.sort()  # so it's deterministic
         for i, tip in enumerate(misc):
             strata[i % len(strata)][1].add(tip)
     return strata
