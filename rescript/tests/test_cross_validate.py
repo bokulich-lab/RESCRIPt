@@ -136,61 +136,17 @@ class TestTaxaUtilities(TestPluginBase):
             'FeatureData[Sequence]', self.get_data_path('derep-test.fasta'))
         self.seqs = seqs.view(pd.Series)
 
-    def test_stratify_taxa_k2(self):
-        exp = [('k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; '
-                'f__Paenibacillaceae; g__Paenibacillus; s__chondroitinus',
-                {'A1', 'A2'}),
-               ('k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; '
-                'f__Paenibacillaceae; g__Paenibacillus; s__alvei',
-                {'A3', 'A4', 'A5'}),
-               ('k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales; '
-                'f__Lactobacillaceae; g__Lactobacillus',
-                {'B1', 'B1a', 'B1b'}),
-               ('k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales; '
-                'f__Lactobacillaceae; g__Lactobacillus; s__casei',
-                {'B2', 'B3'}),
-               ('k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales; '
-                'f__Lactobacillaceae; g__Pediococcus; s__damnosus',
-                {'C1', 'C2'}),
-               ('k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales; '
-                'f__Lactobacillaceae; g__Pediococcus; s__acidilacti',
-                {'C1a', 'C1c', 'C1d'})]
-        obs = cross_validate._stratify_taxa(self.taxa, self.seqs, 2)
-        self.assertEquals(exp, obs)
 
-    def test_stratify_taxa_k3(self):
-        exp = [('k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; '
-                'f__Paenibacillaceae; g__Paenibacillus; s__alvei',
-                {'A1', 'A2', 'A3', 'A4', 'A5'}),
-               ('k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales; '
-                'f__Lactobacillaceae; g__Lactobacillus',
-                {'B1', 'B1a', 'B1b', 'B2', 'B3'}),
-               ('k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales; '
-                'f__Lactobacillaceae; g__Pediococcus; s__acidilacti',
-                {'C1', 'C1a', 'C1c', 'C1d', 'C2'})]
-        obs = cross_validate._stratify_taxa(self.taxa, self.seqs, 3)
-        self.assertEquals(exp, obs)
+    def test_stratify_taxa(self):
+        for k, num_strata in zip([2, 3, 5, 10], [6, 3, 3, 1]):
+            strata = cross_validate._stratify_taxa(self.taxa, self.seqs, k)
+            self.assertEquals(len(strata), num_strata)
+            self.assertEquals(
+                set.union(*(s[1] for s in strata)), set(self.taxa.index))
+            for t, s in strata:
+                self.assertTrue(len(s) >= k)
+                self.assertTrue(sum(self.taxa[sid].startswith(t) for sid in s))
 
-    def test_stratify_taxa_k5(self):
-        exp = [('k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; '
-                'f__Paenibacillaceae; g__Paenibacillus',
-                {'A1', 'A2', 'A3', 'A4', 'A5'}),
-               ('k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales; '
-                'f__Lactobacillaceae; g__Lactobacillus',
-                {'B1', 'B1a', 'B1b', 'B2', 'B3'}),
-               ('k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales; '
-                'f__Lactobacillaceae; g__Pediococcus',
-                {'C1', 'C1a', 'C1c', 'C1d', 'C2'})]
-        obs = cross_validate._stratify_taxa(self.taxa, self.seqs, 5)
-        self.assertEquals(exp, obs)
-
-    def test_stratify_taxa_k10(self):
-        exp = [('k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales; '
-                'f__Lactobacillaceae',
-               {'A1', 'A2', 'A3', 'A4', 'A5', 'B1', 'B1a', 'B1b', 'B2', 'B3',
-                'C1', 'C1a', 'C1c', 'C1d', 'C2'})]
-        obs = cross_validate._stratify_taxa(self.taxa, self.seqs, 10)
-        self.assertEquals(exp, obs)
 
     def test_calculate_per_rank_precision_recall(self):
         # trim the reference taxa at different positions to simulate
