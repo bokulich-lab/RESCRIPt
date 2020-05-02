@@ -53,13 +53,9 @@ def cross_validate(ctx,
                                       read_orientation='same')
         return taxonomy, observed_taxonomy
 
-    # Otherwise carry on with some form of CV
-    taxonomy = taxa
-    sequences = seqs
-
+    # Otherwise carry on with CV
     # split taxonomy into training and test sets
-    train_test_data = _generate_train_test_data(
-        taxonomy, sequences, k, random_state)
+    train_test_data = _generate_train_test_data(taxa, seqs, k, random_state)
     # now we perform CV classification
     expected_taxonomies = []
     observed_taxonomies = []
@@ -81,12 +77,10 @@ def cross_validate(ctx,
         observed_taxonomies.append(observed_taxonomy.view(pd.Series))
 
     # Merge expected/observed taxonomies
-    expected_taxonomies = pd.concat(expected_taxonomies)
     expected_taxonomies = q2.Artifact.import_data(
-        'FeatureData[Taxonomy]', expected_taxonomies)
-    observed_taxonomies = pd.concat(observed_taxonomies)
+        'FeatureData[Taxonomy]', pd.concat(expected_taxonomies))
     observed_taxonomies = q2.Artifact.import_data(
-        'FeatureData[Taxonomy]', observed_taxonomies)
+        'FeatureData[Taxonomy]', pd.concat(observed_taxonomies))
     return expected_taxonomies, observed_taxonomies
 
 
