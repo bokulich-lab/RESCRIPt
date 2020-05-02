@@ -34,6 +34,13 @@ plugin = Plugin(
 )
 
 
+VOLATILITY_PLOT_XAXIS_INTERPRETATION = (
+    'The x-axis in these plots represents the taxonomic '
+    'levels present in the input taxonomies so are labeled numerically '
+    'instead of by rank, but typically for 7-level taxonomies these will '
+    'represent: 1 = domain/kingdom, 2 = phylum, 3 = class, 4 = order, '
+    '5 = family, 6 = genus, 7 = species.')
+
 rank_handle_description = (
     'Regular expression indicating which taxonomic rank a label '
     'belongs to; this handle is stripped from the label '
@@ -113,9 +120,9 @@ plugin.pipelines.register_function(
     description=(
         'Evaluate taxonomic classification accuracy by comparing one or more '
         'sets of true taxonomic labels to the predicted taxonomies for the '
-        'same set(s) of features. Output an interactive plot of '
+        'same set(s) of features. Output an interactive line plot of '
         'classification accuracy for each pair of expected/observed '
-        'taxonomies.'),
+        'taxonomies. ' + VOLATILITY_PLOT_XAXIS_INTERPRETATION),
     citations=[citations['bokulich2018optimizing'],
                citations['bokulich2017q2']]
 )
@@ -217,6 +224,7 @@ plugin.pipelines.register_function(
         'interactive lineplots. Summary statistics include the number of '
         'unique labels, taxonomic entropy, and the number of features that '
         'are (un)classified at each taxonomic level. This action is useful '
-        'for both reference taxonomies and classification results.'),
+        'for both reference taxonomies and classification results. ' +
+        VOLATILITY_PLOT_XAXIS_INTERPRETATION),
     citations=[citations['bokulich2017q2']]
 )

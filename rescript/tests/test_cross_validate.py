@@ -38,22 +38,35 @@ class TestPipelines(TestPluginBase):
 
     def test_cross_validate_k3(self):
         exp, obs = rescript.actions.cross_validate(self.seqs, self.taxa, k=3)
-        # exp_exp (expected ground truth taxonomies) we will just evaluate
-        # at genus level for now, since that is consistently correct.
-        # TODO: evaluate at species level once random_state is implemented.
-        exp_exp = self.taxa_series.copy().sort_index().apply(
-            lambda x: ';'.join(x.split(';')[:6]))
-        # exp_obs (expected observations), for now should equal exp_exp when
-        # evaluating at genus level.
-        # TODO: evaluate at species level once random_state is implemented.
-        exp_obs = exp_exp
-        # TODO: evaluate at species level once random_state is implemented.
+        # exp_exp (expected ground truth taxonomies)
+        # This will equal the original taxonomy except singleton labels will
+        # be truncated to reflect stratification.
+        exp_exp = self.taxa_series.copy().str.replace(
+            '; s__brevis', '').str.replace('; s__vaginalis', '').str.replace(
+                '; s__pseudocasei', '').sort_index()
+        # exp_obs (expected observations)
+        exp_obs = pd.Series({
+            'A1': palvei,
+            'A2': palvei,
+            'A3': palvei,
+            'A4': palvei,
+            'A5': paeni,
+            'B1': lcasei,
+            'B1a': lacto,
+            'B1b': lacto,
+            'B2': lacto,
+            'B3': lacto,
+            'C1': pdamnosus,
+            'C1a': pacidilacti,
+            'C1c': pacidilacti,
+            'C1d': pacidilacti,
+            'C2': pdamnosus}).sort_index()
+        # print(exp_exp.view(pd.Series).sort_index().to_dict())
+        print(obs.view(pd.Series).sort_index().to_dict())
         pdt.assert_series_equal(
-            exp_exp, exp.view(pd.Series).sort_index().apply(
-                lambda x: ';'.join(x.split(';')[:6])))
+            exp_exp, exp.view(pd.Series).sort_index(), check_names=False)
         pdt.assert_series_equal(
-            exp_obs, obs.view(pd.Series).sort_index().apply(
-                lambda x: ';'.join(x.split(';')[:6])))
+            exp_obs, obs.view(pd.Series).sort_index(), check_names=False)
 
     def test_cross_validate_perfect_classifier(self):
         # exp species should equal the input taxonomy when k='disable'
@@ -62,13 +75,24 @@ class TestPipelines(TestPluginBase):
         pdt.assert_series_equal(
             exp.view(pd.Series).sort_index(), self.taxa_series.sort_index())
         # obs species will equal best possible predictive accuracy.
-        # Evaluate at genus level right now, which will always be consistent.
-        # TODO: evaluate at species level once random_state is implemented.
+        exp_obs = pd.Series({
+            'A1': palvei,
+            'A2': palvei,
+            'A3': palvei,
+            'A4': palvei,
+            'A5': palvei,
+            'B1': lcasei,
+            'B1a': lcasei,
+            'B1b': lacto,
+            'B2': lcasei,
+            'B3': lcasei,
+            'C1': pdamnosus,
+            'C1a': pacidilacti,
+            'C1c': pacidilacti,
+            'C1d': pacidilacti,
+            'C2': pdamnosus})
         pdt.assert_series_equal(
-            obs.view(pd.Series).sort_index().apply(
-                lambda x: ';'.join(x.split(';')[:6])),
-            self.taxa_series.sort_index().apply(
-                lambda x: ';'.join(x.split(';')[:6])))
+            obs.view(pd.Series).sort_index(), exp_obs, check_names=False)
 
     def test_evaluate_classifications(self):
         # simulate predicted classifications at genus level
@@ -136,18 +160,6 @@ class TestTaxaUtilities(TestPluginBase):
             'FeatureData[Sequence]', self.get_data_path('derep-test.fasta'))
         self.seqs = seqs.view(pd.Series)
 
-
-    def test_stratify_taxa(self):
-        for k, num_strata in zip([2, 3, 5, 10], [6, 3, 3, 1]):
-            strata = cross_validate._stratify_taxa(self.taxa, self.seqs, k)
-            self.assertEquals(len(strata), num_strata)
-            self.assertEquals(
-                set.union(*(s[1] for s in strata)), set(self.taxa.index))
-            for t, s in strata:
-                self.assertTrue(len(s) >= k)
-                self.assertTrue(sum(self.taxa[sid].startswith(t) for sid in s))
-
-
     def test_calculate_per_rank_precision_recall(self):
         # trim the reference taxa at different positions to simulate
         # classification results with underclassification
@@ -209,7 +221,7 @@ class TestRelabelStratifiedTaxonomy(TestPluginBase):
                'f__Lactobacillaceae; g__Lactobacillus; s__casei')
         obs = cross_validate._relabel_stratified_taxonomy(
             species, self.valid_taxonomies)
-        self.assertEquals(exp, obs)
+        self.assertEqual(exp, obs)
 
     def test_relabel_stratified_taxonomy_unknown_species(self):
         species = ('k__Bacteria; p__Firmicutes; c__Bacilli; '
@@ -219,10 +231,22 @@ class TestRelabelStratifiedTaxonomy(TestPluginBase):
                'f__Lactobacillaceae; g__Lactobacillus')
         obs = cross_validate._relabel_stratified_taxonomy(
             species, self.valid_taxonomies)
-        self.assertEquals(exp, obs)
+        self.assertEqual(exp, obs)
 
     def test_relabel_stratified_taxonomy_unknown_kingdom(self):
         species = 'k__Peanut'
         with self.assertRaisesRegex(RuntimeError, "unknown kingdom"):
             cross_validate._relabel_stratified_taxonomy(
                 species, self.valid_taxonomies)
+
+
+paeni = 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; ' \
+        'f__Paenibacillaceae; g__Paenibacillus'
+palvei = paeni + '; s__alvei'
+lactobacillaceae = 'k__Bacteria; p__Firmicutes; c__Bacilli; ' \
+                   'o__Lactobacillales; f__Lactobacillaceae'
+lacto = lactobacillaceae + '; g__Lactobacillus'
+pedio = lactobacillaceae + '; g__Pediococcus'
+lcasei = lacto + '; s__casei'
+pdamnosus = pedio + '; s__damnosus'
+pacidilacti = pedio + '; s__acidilacti'

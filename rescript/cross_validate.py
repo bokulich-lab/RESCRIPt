@@ -11,7 +11,6 @@
 import pandas as pd
 import qiime2 as q2
 from sklearn.model_selection import StratifiedKFold
-from collections import defaultdict
 
 from .evaluate import _taxonomic_depth
 
@@ -32,6 +31,9 @@ def cross_validate(ctx,
     '''
     # Validate inputs
     taxa = taxonomy.view(pd.Series)
+    # taxonomies must have even ranks (this is used for confidence estimation
+    # with the current NB classifier; we could relax this if we implement other
+    # methods later on for CV classification).
     _validate_even_rank_taxonomy(taxa)
     seqs = sequences.view(pd.Series)
     _validate_indices_match(taxa, seqs)
@@ -55,14 +57,9 @@ def cross_validate(ctx,
     taxonomy = taxa
     sequences = seqs
 
-    # TODO: add option for unstratified (CV without fancy stratification)
-
-    # build training/test strata from taxonomic tree to stratify orphan taxa
-    strata = _stratify_taxa(taxonomy, sequences, k)
-    strata = zip(*[(s, t) for t, ss in strata for s in ss])
     # split taxonomy into training and test sets
     train_test_data = _generate_train_test_data(
-        *strata, taxonomy, sequences, k, random_state)
+        taxonomy, sequences, k, random_state)
     # now we perform CV classification
     expected_taxonomies = []
     observed_taxonomies = []
@@ -138,24 +135,20 @@ def evaluate_classifications(ctx, expected_taxonomies, observed_taxonomies):
     return plots
 
 
-def _generate_train_test_data(X, y, taxonomy, sequences, k, random_state):
+def _generate_train_test_data(taxonomy, sequences, k, random_state):
     '''
-    X: tuple of feature IDs
-    y: tuple of taxonomy labels
     taxonomy: pd.Series of taxonomy labels
     sequences: pd.Series of sequences
     k: number of kfold cv splits to perform.
     random_state: random state for cv.
     '''
     skf = StratifiedKFold(n_splits=k, shuffle=True, random_state=random_state)
-    for train, test in skf.split(X, y):
-        train = {X[i] for i in train}
-        test = {X[i] for i in test}
+    for train, test in skf.split(taxonomy.index, taxonomy.values):
         # subset sequences and taxonomies into training/test sets based on ids
-        train_seqs = sequences[train]
-        test_seqs = sequences[test]
-        train_taxa = taxonomy[train]
-        test_taxa = taxonomy[test]
+        train_seqs = sequences.iloc[train]
+        test_seqs = sequences.iloc[test]
+        train_taxa = taxonomy.iloc[train]
+        test_taxa = taxonomy.iloc[test]
         # Compile set of valid stratified taxonomy labels:
         train_taxonomies = set()
         for t in train_taxa.values:
@@ -182,68 +175,6 @@ def _relabel_stratified_taxonomy(taxonomy, valid_taxonomies):
             return ';'.join(t[:level]).strip()
     else:
         raise RuntimeError('unknown kingdom in query set')
-
-
-def _stratify_taxa(taxonomy, sequences, k):
-    tree = _build_tree(taxonomy, sequences)
-    strata = _get_strata(tree, k)
-    return strata
-
-
-class Node(object):
-    def __init__(self):
-        self.tips = set()
-        self.children = defaultdict(Node)
-
-    def add(self, sid, taxon):
-        self.tips.add(sid)
-        if taxon:
-            self.children[taxon[0]].add(sid, taxon[1:])
-
-    def __lt__(self, other):
-        return len(self.tips) < len(other.tips)
-
-
-def _build_tree(taxonomy, sequences):
-    '''
-    taxonomy: pd.Series of taxonomic labels.
-    '''
-    tree = Node()
-    filtered_ids = sequences.index
-    for sid, taxon in taxonomy.items():
-        if sid not in filtered_ids:
-            continue
-        tree.add(sid, taxon.split(';'))
-    return tree
-
-
-def _get_strata(tree, k, taxon=[]):
-    if not tree.children:
-        return [(';'.join(taxon), tree.tips)]
-    sorted_children = map(list, map(reversed, tree.children.items()))
-    sorted_children = iter(sorted(sorted_children))
-    # check for tips with truncated classification
-    misc = tree.tips - set.union(*(c.tips for c in tree.children.values()))
-    # aggregate children with small tip sets
-    for child, level in sorted_children:
-        if len(child.tips) >= k:
-            break
-        misc.update(child.tips)
-    else:  # all the tips are in misc
-        return [(';'.join(taxon), misc)]
-    # grab the tips from the child that's not in misc
-    strata = _get_strata(child, k, taxon+[level])
-    # get the rest
-    for child, level in sorted_children:
-        strata.extend(_get_strata(child, k, taxon+[level]))
-    # if there were more than k misc, make a stratum for them
-    if len(misc) > k:
-        strata = [(';'.join(taxon), misc)] + strata
-    else:  # add them to the other strata
-        strata.sort()  # so it's deterministic
-        for i, tip in enumerate(misc):
-            strata[i % len(strata)][1].add(tip)
-    return strata
 
 
 def _calculate_per_rank_precision_recall(expected_taxonomies,
