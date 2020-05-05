@@ -54,7 +54,10 @@ def _find_top_score(t1, t2):
 
 def _taxon_to_list(taxon, rank_handle):
     '''Split taxonomy string into list of taxonomic labels'''
-    return [sub(rank_handle, '', t.strip()) for t in taxon.split(';')]
+    if rank_handle != '':
+        return [sub(rank_handle, '', t.strip()) for t in taxon.split(';')]
+    else:
+        return [t.strip() for t in taxon.split(';')]
 
 
 def _majority(taxon):

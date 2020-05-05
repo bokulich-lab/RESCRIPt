@@ -187,12 +187,13 @@ class TestTaxaUtilities(TestPluginBase):
             cross_validate._validate_even_rank_taxonomy(self.taxa)
 
     def test_validate_indices_match_pass(self):
-        cross_validate._validate_indices_match(self.taxa, self.seqs)
+        cross_validate._validate_indices_match(
+            self.taxa.index, self.seqs.index)
 
     def test_validate_indices_match_fail(self):
         taxa = self.taxa.copy().drop(['A1', 'B1'])
         with self.assertRaisesRegex(ValueError, "one input: A1, B1"):
-            cross_validate._validate_indices_match(taxa, self.seqs)
+            cross_validate._validate_indices_match(taxa.index, self.seqs.index)
 
 
 class TestRelabelStratifiedTaxonomy(TestPluginBase):

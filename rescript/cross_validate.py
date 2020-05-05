@@ -10,9 +10,11 @@
 
 import pandas as pd
 import qiime2 as q2
+from q2_types.feature_data import DNAFASTAFormat, DNAIterator
 from sklearn.model_selection import StratifiedKFold
 
 from .evaluate import _taxonomic_depth
+import timeit
 
 
 def cross_validate(ctx,
@@ -29,14 +31,17 @@ def cross_validate(ctx,
     k: number of kfold cv splits to perform.
     random_state: random state for cv.
     '''
+    start = timeit.default_timer()
     # Validate inputs
     taxa = taxonomy.view(pd.Series)
     # taxonomies must have even ranks (this is used for confidence estimation
     # with the current NB classifier; we could relax this if we implement other
     # methods later on for CV classification).
     _validate_even_rank_taxonomy(taxa)
-    seqs = sequences.view(pd.Series)
-    _validate_indices_match(taxa, seqs)
+    seq_ids = {i.metadata['id'] for i in sequences.view(DNAIterator)}
+    _validate_indices_match(taxa.index, seq_ids)
+    tk2 = timeit.default_timer()
+    print('Validation: {0}s'.format(tk2 - start))
 
     fit = ctx.get_action('feature_classifier', 'fit_classifier_naive_bayes')
     classify = ctx.get_action('feature_classifier', 'classify_sklearn')
@@ -55,18 +60,23 @@ def cross_validate(ctx,
 
     # Otherwise carry on with CV
     # split taxonomy into training and test sets
-    train_test_data = _generate_train_test_data(taxa, seqs, k, random_state)
+    train_test_data = _generate_train_test_data(taxa, k, random_state)
     # now we perform CV classification
     expected_taxonomies = []
     observed_taxonomies = []
-    for train_seqs, test_seqs, train_taxa, test_taxa in train_test_data:
-        ref_seqs = q2.Artifact.import_data('FeatureData[Sequence]', train_seqs)
+    for n, (train_taxa, test_taxa) in enumerate(train_test_data):
+        train_ids = train_taxa.index
+        test_ids = test_taxa.index
+        train_seqs, test_seqs = _split_fasta(sequences, train_ids, test_ids)
         ref_taxa = q2.Artifact.import_data('FeatureData[Taxonomy]', train_taxa)
-        reads = q2.Artifact.import_data('FeatureData[Sequence]', test_seqs)
+        tk0 = timeit.default_timer()
+        print('Fold {0} split: {1}s'.format(n, tk0 - tk2))
         # TODO: incorporate different methods? taxonomic weights? params?
-        classifier, = fit(reference_reads=ref_seqs,
+        classifier, = fit(reference_reads=train_seqs,
                           reference_taxonomy=ref_taxa)
-        observed_taxonomy, = classify(reads=reads,
+        tk1 = timeit.default_timer()
+        print('Fold {0} fit: {1}s'.format(n, tk1 - tk0))
+        observed_taxonomy, = classify(reads=test_seqs,
                                       classifier=classifier,
                                       reads_per_batch=reads_per_batch,
                                       n_jobs=n_jobs,
@@ -75,13 +85,38 @@ def cross_validate(ctx,
         # compile observed + expected taxonomies for evaluation outside of loop
         expected_taxonomies.append(test_taxa)
         observed_taxonomies.append(observed_taxonomy.view(pd.Series))
+        tk2 = timeit.default_timer()
+        print('Fold {0} classify: {1}s'.format(n, tk2 - tk1))
 
     # Merge expected/observed taxonomies
     expected_taxonomies = q2.Artifact.import_data(
         'FeatureData[Taxonomy]', pd.concat(expected_taxonomies))
     observed_taxonomies = q2.Artifact.import_data(
         'FeatureData[Taxonomy]', pd.concat(observed_taxonomies))
+    finish = timeit.default_timer()
+    print('Total Runtime: {0}m'.format((finish - start) / 60))
     return expected_taxonomies, observed_taxonomies
+
+
+def _split_fasta(sequences, train_ids, test_ids):
+    '''
+    Split FeatureData[Sequence] artifact into two, based on two sets of IDs.
+    sequences: FeatureData[Sequence] Artifact
+    train_ids: set
+    test_ids: set
+    '''
+    train_seqs = DNAFASTAFormat()
+    test_seqs = DNAFASTAFormat()
+    with train_seqs.open() as _train, test_seqs.open() as _test:
+        for s in sequences.view(DNAIterator):
+            _id = s.metadata['id']
+            if s.metadata['id'] in train_ids:
+                _train.write('>%s\n%s\n' % (_id, str(s)))
+            elif s.metadata['id'] in test_ids:
+                _test.write('>%s\n%s\n' % (_id, str(s)))
+    train_seqs = q2.Artifact.import_data('FeatureData[Sequence]', train_seqs)
+    test_seqs = q2.Artifact.import_data('FeatureData[Sequence]', test_seqs)
+    return train_seqs, test_seqs
 
 
 def evaluate_classifications(ctx, expected_taxonomies, observed_taxonomies):
@@ -100,7 +135,7 @@ def evaluate_classifications(ctx, expected_taxonomies, observed_taxonomies):
             expected_taxonomies, observed_taxonomies), 1):
         # if set(t1.index) != set(t2.index):
         try:
-            _validate_indices_match(t1, t2)
+            _validate_indices_match(t1.index, t2.index)
         except ValueError:
             raise ValueError(
                 'Expected and Observed Taxonomies do not match. Taxonomy row '
@@ -129,32 +164,27 @@ def evaluate_classifications(ctx, expected_taxonomies, observed_taxonomies):
     return plots
 
 
-def _generate_train_test_data(taxonomy, sequences, k, random_state):
+def _generate_train_test_data(taxonomy, k, random_state):
     '''
     taxonomy: pd.Series of taxonomy labels
-    sequences: pd.Series of sequences
     k: number of kfold cv splits to perform.
     random_state: random state for cv.
     '''
     skf = StratifiedKFold(n_splits=k, shuffle=True, random_state=random_state)
     for train, test in skf.split(taxonomy.index, taxonomy.values):
         # subset sequences and taxonomies into training/test sets based on ids
-        train_seqs = sequences.iloc[train]
-        test_seqs = sequences.iloc[test]
         train_taxa = taxonomy.iloc[train]
         test_taxa = taxonomy.iloc[test]
         # Compile set of valid stratified taxonomy labels:
-        train_taxonomies = set()
-        for t in train_taxa.values:
-            t = t.split(';')
-            for level in range(1, len(t)+1):
-                train_taxonomies.add(';'.join(t[:level]))
+        train_taxonomies = {
+            ';'.join(t.split(';')[:level]) for t in train_taxa.unique()
+            for level in range(1, len(t.split(';'))+1)}
         # relabel test taxonomy expected labels using stratified set
         # If a taxonomy in the test set doesn't exist in the training set, trim
         # it until it does
         test_taxa = test_taxa.apply(
             lambda x: _relabel_stratified_taxonomy(x, train_taxonomies))
-        yield train_seqs, test_seqs, train_taxa, test_taxa
+        yield train_taxa, test_taxa
 
 
 def _relabel_stratified_taxonomy(taxonomy, valid_taxonomies):
@@ -229,7 +259,7 @@ def _validate_even_rank_taxonomy(taxa):
     Check + raise error if taxonomy does not have 100% even taxonomic levels.
     taxa: pd.Series of taxonomic labels.
     '''
-    depths = _taxonomic_depth(taxa, rank_handle="")
+    depths = taxa.str.count(';')
     uniq_values = depths.unique()
     if len(uniq_values) > 1:
         max_value = max(uniq_values)
@@ -239,11 +269,13 @@ def _validate_even_rank_taxonomy(taxa):
                          ', '.join(depths[depths < max_value].index))
 
 
-def _validate_indices_match(series1, series2):
+def _validate_indices_match(idx1, idx2):
     '''
-    match indices of two pd.Series objects.
+    match indices of two pd.Index objects.
+    idx1: pd.Index
+    idx2: pd.Index or array-like
     '''
-    diff = series1.index.symmetric_difference(series2.index)
+    diff = idx1.symmetric_difference(idx2)
     if len(diff) > 0:
         raise ValueError('Input features must match. The following features '
                          'are missing from one input: ' + ', '.join(diff))
