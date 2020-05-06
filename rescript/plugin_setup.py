@@ -9,15 +9,19 @@
 # ----------------------------------------------------------------------------
 
 from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int,
-                           Float)
+                           Float, Visualization)
 from .merge import merge_taxa
 from .dereplicate import dereplicate
+from .evaluate import evaluate_taxonomy
+from .cross_validate import cross_validate, evaluate_classifications
 from q2_types.feature_data import FeatureData, Taxonomy, Sequence
+from q2_feature_classifier.classifier import (_parameter_descriptions,
+                                              _classify_parameters)
 
 import rescript
 
 
-citations = Citations.load('citations.bib', package='q2_vsearch')
+citations = Citations.load('citations.bib', package='rescript')
 
 plugin = Plugin(
     name='rescript',
@@ -27,6 +31,100 @@ plugin = Plugin(
     description=('Reference sequence annotation and curation pipeline.'),
     short_description=(
         'Pipeline for reference sequence annotation and curation.'),
+)
+
+
+VOLATILITY_PLOT_XAXIS_INTERPRETATION = (
+    'The x-axis in these plots represents the taxonomic '
+    'levels present in the input taxonomies so are labeled numerically '
+    'instead of by rank, but typically for 7-level taxonomies these will '
+    'represent: 1 = domain/kingdom, 2 = phylum, 3 = class, 4 = order, '
+    '5 = family, 6 = genus, 7 = species.')
+
+rank_handle_description = (
+    'Regular expression indicating which taxonomic rank a label '
+    'belongs to; this handle is stripped from the label '
+    'prior to operating on the taxonomy. The net '
+    'effect is that ambiguous or empty levels can be '
+    'removed prior to comparison, enabling selection of '
+    'taxonomies with more complete taxonomic information. '
+    'For example, "^[kpcofgs]__" will recognize greengenes rank '
+    'handles. ')
+
+rank_handle_extra_note = (
+    'Note that rank_handles are removed but not replaced; use the '
+    'new_rank_handle parameter to replace the rank handles.')
+
+
+plugin.pipelines.register_function(
+    function=cross_validate,
+    inputs={'sequences': FeatureData[Sequence],
+            'taxonomy': FeatureData[Taxonomy]},
+    parameters={
+        'k': Int % Range(2, None) | Str % Choices(['disable']),
+        'random_state': Int % Range(0, None),
+        'reads_per_batch': _classify_parameters['reads_per_batch'],
+        'n_jobs': _classify_parameters['n_jobs'],
+        'confidence': _classify_parameters['confidence']},
+    outputs=[('expected_taxonomy', FeatureData[Taxonomy]),
+             ('observed_taxonomy', FeatureData[Taxonomy])],
+    input_descriptions={
+        'sequences': 'Reference sequences to use for classifier '
+                     'training/testing.',
+        'taxonomy': 'Reference taxonomy to use for classifier '
+                    'training/testing.'},
+    parameter_descriptions={
+        'k': 'Number of stratified folds. Set to "disable" to disable k-fold '
+             'cross-validation. This results in a "perfect" classifier that '
+             'knows the correct identity of each input sequence. Such a leaky '
+             'classifier indicates the upper limit of classification accuracy '
+             'based on sequence information alone, as misclassifications are '
+             'an indication of unresolvable kmer profiles.',
+        'random_state': 'Seed used by the random number generator.',
+        'reads_per_batch': _parameter_descriptions['reads_per_batch'],
+        'n_jobs': _parameter_descriptions['n_jobs'],
+        'confidence': _parameter_descriptions['confidence']},
+    output_descriptions={
+        'expected_taxonomy': 'Expected taxonomic label for each input '
+                             'sequence. If k-fold CV is enabled, taxonomic '
+                             'labels may be truncated due to stratification.',
+        'observed_taxonomy': 'Observed taxonomic label for each input '
+                             'sequence, predicted by cross-validation.'},
+    name=('Evaluate DNA sequence reference database via cross-validated '
+          'taxonomic classification.'),
+    description=(
+        'Evaluate DNA sequence reference database via cross-validated '
+        'taxonomic classification. Unique taxonomic labels are truncated to '
+        'enable appropriate label stratification. See the cited reference '
+        '(Bokulich et al. 2018) for more details.'),
+    citations=[citations['bokulich2018optimizing']]
+)
+
+
+plugin.pipelines.register_function(
+    function=evaluate_classifications,
+    inputs={'expected_taxonomies': List[FeatureData[Taxonomy]],
+            'observed_taxonomies': List[FeatureData[Taxonomy]]},
+    parameters={},
+    outputs=[('evaluation', Visualization)],
+    input_descriptions={
+        'expected_taxonomies': 'True taxonomic labels for one more more sets '
+                               'of features.',
+        'observed_taxonomies': 'Predicted classifications of same sets of '
+                               'features, input in same order as '
+                               'expected_taxonomies.'},
+    parameter_descriptions={},
+    output_descriptions={
+        'evaluation': 'Visualization of classification accuracy results.'},
+    name=('Interactively evaluate taxonomic classification accuracy.'),
+    description=(
+        'Evaluate taxonomic classification accuracy by comparing one or more '
+        'sets of true taxonomic labels to the predicted taxonomies for the '
+        'same set(s) of features. Output an interactive line plot of '
+        'classification accuracy for each pair of expected/observed '
+        'taxonomies. ' + VOLATILITY_PLOT_XAXIS_INTERPRETATION),
+    citations=[citations['bokulich2018optimizing'],
+               citations['bokulich2017q2']]
 )
 
 
@@ -49,17 +147,7 @@ plugin.methods.register_function(
                 'consensus score). Note that "score" assumes that this score '
                 'is always contained as the second column in a feature '
                 'taxonomy dataframe.',
-        'rank_handle': 'Text handle indicating which taxonomic rank a label '
-                       'belongs to; this handle is stripped from the label '
-                       'prior to taxonomy comparisons and merging. The net '
-                       'effect is that ambiguous or empty levels can be '
-                       'removed prior to comparison, enabling selection of '
-                       'taxonomies with more complete taxonomic information. '
-                       'Regular expressions may be used for this parameter; '
-                       'e.g., "^[kpcofgs]__" will recognize greengenes rank '
-                       'handles. Note that rank_handles are removed but not '
-                       'replaced; use the new_rank_handle parameter to '
-                       'replace the rank handles.',
+        'rank_handle': rank_handle_description + rank_handle_extra_note,
         'new_rank_handle': 'A semicolon-delimited string of rank handles to '
                            'prepend to taxonomic labels at each rank. For '
                            'example, "k__;p__;c__;o__;f__;g__;s__" will '
@@ -117,4 +205,26 @@ plugin.methods.register_function(
         'most common taxonomic label associated with sequences in that '
         'cluster (majority).'),
     citations=[citations['rognes2016vsearch']]
+)
+
+
+plugin.pipelines.register_function(
+    function=evaluate_taxonomy,
+    inputs={'taxonomies': List[FeatureData[Taxonomy]]},
+    parameters={'rank_handle': Str},
+    outputs=[('taxonomy_stats', Visualization)],
+    input_descriptions={
+        'taxonomies': 'One or more taxonomies to evaluate.'},
+    parameter_descriptions={
+        'rank_handle': rank_handle_description,
+    },
+    name='Compute summary statistics on taxonomy artifact(s).',
+    description=(
+        'Compute summary statistics on taxonomy artifact(s) and visualize as '
+        'interactive lineplots. Summary statistics include the number of '
+        'unique labels, taxonomic entropy, and the number of features that '
+        'are (un)classified at each taxonomic level. This action is useful '
+        'for both reference taxonomies and classification results. ' +
+        VOLATILITY_PLOT_XAXIS_INTERPRETATION),
+    citations=[citations['bokulich2017q2']]
 )
