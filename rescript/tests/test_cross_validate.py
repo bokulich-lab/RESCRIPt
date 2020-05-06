@@ -61,8 +61,6 @@ class TestPipelines(TestPluginBase):
             'C1c': pacidilacti,
             'C1d': pacidilacti,
             'C2': pdamnosus}).sort_index()
-        # print(exp_exp.view(pd.Series).sort_index().to_dict())
-        print(obs.view(pd.Series).sort_index().to_dict())
         pdt.assert_series_equal(
             exp_exp, exp.view(pd.Series).sort_index(), check_names=False)
         pdt.assert_series_equal(
