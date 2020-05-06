@@ -48,11 +48,11 @@ class TestPipelines(TestPluginBase):
         exp_obs = pd.Series({
             'A1': palvei,
             'A2': palvei,
-            'A3': palvei,
+            'A3': paeni,
             'A4': palvei,
-            'A5': paeni,
+            'A5': palvei,
             'B1': lcasei,
-            'B1a': lacto,
+            'B1a': lcasei,
             'B1b': lacto,
             'B2': lacto,
             'B3': lacto,
@@ -129,7 +129,7 @@ class TestPipelines(TestPluginBase):
                 '12': 1.0, '13': 1.0},
             'Dataset': {'1': '1', '2': '1', '3': '1', '4': '1', '5': '1',
                         '6': '1', '7': '1', '8': '2', '9': '2', '10': '2',
-                        '11': '2', '12': '2', '13': '2'}})
+                        '11': '2', '12': '2', '13': '2'}}).sort_index()
         pdt.assert_frame_equal(vol.sort_index(), exp, check_names=False)
 
     def test_evaluate_classifications_mismatch_input_count(self):

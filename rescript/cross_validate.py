@@ -41,7 +41,7 @@ def cross_validate(ctx,
     seq_ids = {i.metadata['id'] for i in sequences.view(DNAIterator)}
     _validate_indices_match(taxa.index, seq_ids)
     tk2 = timeit.default_timer()
-    print('Validation: {0}s'.format(tk2 - start))
+    print('Validation: {0:.2f}s'.format(tk2 - start))
 
     fit = ctx.get_action('feature_classifier', 'fit_classifier_naive_bayes')
     classify = ctx.get_action('feature_classifier', 'classify_sklearn')
@@ -70,12 +70,12 @@ def cross_validate(ctx,
         train_seqs, test_seqs = _split_fasta(sequences, train_ids, test_ids)
         ref_taxa = q2.Artifact.import_data('FeatureData[Taxonomy]', train_taxa)
         tk0 = timeit.default_timer()
-        print('Fold {0} split: {1}s'.format(n, tk0 - tk2))
+        print('Fold {0} split: {1:.2f}s'.format(n, tk0 - tk2))
         # TODO: incorporate different methods? taxonomic weights? params?
         classifier, = fit(reference_reads=train_seqs,
                           reference_taxonomy=ref_taxa)
         tk1 = timeit.default_timer()
-        print('Fold {0} fit: {1}s'.format(n, tk1 - tk0))
+        print('Fold {0} fit: {1:.2f}s'.format(n, tk1 - tk0))
         observed_taxonomy, = classify(reads=test_seqs,
                                       classifier=classifier,
                                       reads_per_batch=reads_per_batch,
@@ -86,7 +86,7 @@ def cross_validate(ctx,
         expected_taxonomies.append(test_taxa)
         observed_taxonomies.append(observed_taxonomy.view(pd.Series))
         tk2 = timeit.default_timer()
-        print('Fold {0} classify: {1}s'.format(n, tk2 - tk1))
+        print('Fold {0} classify: {1:.2f}s'.format(n, tk2 - tk1))
 
     # Merge expected/observed taxonomies
     expected_taxonomies = q2.Artifact.import_data(
@@ -94,7 +94,7 @@ def cross_validate(ctx,
     observed_taxonomies = q2.Artifact.import_data(
         'FeatureData[Taxonomy]', pd.concat(observed_taxonomies))
     finish = timeit.default_timer()
-    print('Total Runtime: {0}m'.format((finish - start) / 60))
+    print('Total Runtime: {0:.2f}s'.format(finish - start))
     return expected_taxonomies, observed_taxonomies
 
 
