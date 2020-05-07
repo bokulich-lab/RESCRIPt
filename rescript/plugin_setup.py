@@ -232,25 +232,24 @@ plugin.pipelines.register_function(
 
 plugin.methods.register_function(
     function=clean_sequences,
-    #inputs={'sequences': FeatureData[Sequence | AlignedSequence]},
     inputs={
         'sequences': FeatureData[Sequence]
         },
     parameters={
-        'num_ambig_bases': Int,
+        'max_degenerates': Int % Range(0, None),
         'homopolymer_length': Int % Range(2, None)
         },
-    #outputs=[('cleaned_sequences', FeatureData[Sequence | AlignedSequence])],
     outputs=[('cleaned_sequences', FeatureData[Sequence])],
     input_descriptions={
-        'sequences': 'Sequences to be cleaned of ambiguous bases and '
+        'sequences': 'Sequences to be removed that contain more than the '
+                     'allowed number of degenerate bases and/or long '
                      'homopolymers.'
         },
     parameter_descriptions={
-        'num_ambig_bases': 'Total number of ambiguous IUPAC compliant DNA '
-                           'bases, or greater, for a sequence to be removed.',
-        'homopolymer_length': 'Sequences with a homopolymer of this length, '
-                              'or greater, for a sequence to be removed.',
+        'max_degenerates': 'Maximum number of degenerate (IUPAC compliant) '
+                           'DNA bases allowed in a sequence.',
+        'homopolymer_length': 'Sequences with a homopolymer of this length '
+                              'or greater will be removed',
     },
     output_descriptions={
         'cleaned_sequences': 'The resulting cleaned sequences.'
@@ -260,7 +259,7 @@ plugin.methods.register_function(
     description=(
         'Removes DNA sequences that have the specified number, or more, '
         'of IUPAC compliant ambiguous bases. Remaining sequences are removed '
-        'if they contain homopolymers equal to or longer than the specified length.'
+        'if they contain homopolymers equal to or longer than the specified '
+        'length.'
         )
 )
-

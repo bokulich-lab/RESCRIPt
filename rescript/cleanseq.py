@@ -9,51 +9,29 @@
 # ----------------------------------------------------------------------------
 
 import re
-import skbio
-import skbio.io
-from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int,
-                           Float)
-from q2_types.feature_data import (FeatureData, Sequence, DNAFASTAFormat,
-                                   DNAIterator)
-import qiime2
-import rescript
+from q2_types.feature_data import DNAFASTAFormat, DNAIterator
 
 
-def _filt_seq_with_ambig_bases(seq, num_ambig_bases):
-    ambig_bases_in_seq = sum(seq.degenerates())
-    if ambig_bases_in_seq >= num_ambig_bases:
-        if ambig_bases_in_seq == 0: # handle case for num_ambig_bases==0
-            return False
-        else:
-            return True
-    else:
-        return False
+def _filt_seq_with_degenerates(seq, max_degenerates):
+    degenerates_in_seq = sum(seq.degenerates())
+    return degenerates_in_seq > max_degenerates
+
 
 def _filter_homopolymer(seq, homopolymer_length):
-    nhl = homopolymer_length - 1 # due to how regex is written
-    if nhl < 2:
-        raise ValueError("Homopolymer length must be >= 2!")
-    else:
-        regex_str = "([ACGTURYSWKMBDHVN])\\1{%s,}" % nhl
-        for p in re.finditer(regex_str, str(seq)):
-            if len(p.group()) >= homopolymer_length:
-                return True
-            else:
-                continue
-        return False
+    nhl = homopolymer_length - 1  # due to how regex is written
+    regex_str = "([ACGTURYSWKMBDHVN])\\1{%s,}" % nhl
+    homopolymers = [p for p in re.finditer(regex_str, str(seq))]
+    return any(homopolymers)
 
-def clean_sequences(sequences: DNAFASTAFormat, num_ambig_bases: int=5,
-                    homopolymer_length: int=8) -> DNAFASTAFormat:
 
+def clean_sequences(sequences: DNAFASTAFormat, max_degenerates: int = 4,
+                    homopolymer_length: int = 8) -> DNAFASTAFormat:
     result = DNAFASTAFormat()
-    result_fp = str(result)
-
-    with open(result_fp, 'w') as out_fasta:
+    with open(str(result), 'w') as out_fasta:
         for seq in sequences.view(DNAIterator):
-            ambig = _filt_seq_with_ambig_bases(seq, num_ambig_bases)
-            if ambig == False:
+            degen = _filt_seq_with_degenerates(seq, max_degenerates)
+            if not degen:
                 poly = _filter_homopolymer(seq, homopolymer_length)
-                if poly == False: # if we make it here, write seq to file
+                if not poly:  # if we make it here, write seq to file
                     seq.write(out_fasta)
     return result
-
