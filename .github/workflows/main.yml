@@ -34,3 +34,8 @@ jobs:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
+    - uses: qiime2/action-library-packaging@alpha1
+      with:
+        plugin-name: rescript
+        additional-tests: pytest --pyargs rescript
+
