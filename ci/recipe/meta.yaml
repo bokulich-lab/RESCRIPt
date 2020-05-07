@@ -1,0 +1,38 @@
+{% set data = load_setup_py_data() %}
+{% set version = data.get('version') or 'placehold' %}
+{% set release = '.'.join(version.split('.')[:2]) %}
+
+package:
+  name: rescript
+  version: {{ version }}
+
+source:
+  path: ../..
+
+build:
+  script: make install
+
+requirements:
+  host:
+    - python {{ python }}
+    - setuptools
+
+  run:
+    - python {{ python }}
+    - pandas >=0.25.3
+    - scikit-learn
+    - scikit-bio
+    - q2-types {{ release }}
+    - q2-longitudinal {{ release }}
+    - q2-feature-classifier {{ release }}
+    - qiime2 {{ release }}.*
+
+test:
+  imports:
+    - rescript
+    - qiime2.plugins.rescript
+
+about:
+  home: https://github.com/nbokulich/RESCRIPt
+  license: BSD-3-Clause
+  license_family: BSD
