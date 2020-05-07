@@ -19,7 +19,7 @@ requirements:
 
   run:
     - python {{ python }}
-    - pandas
+    - pandas >=0.25.3
     - scikit-learn
     - scikit-bio
     - q2-types {{ release }}
