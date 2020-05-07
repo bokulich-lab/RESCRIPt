@@ -27,7 +27,6 @@ def _filter_homopolymer(seq, homopolymer_length):
 def clean_sequences(sequences: DNAIterator, num_degenerates: int = 5,
                     homopolymer_length: int = 8) -> DNAFASTAFormat:
     result = DNAFASTAFormat()
-    #with open(str(result), 'w') as out_fasta:
     with result.open() as out_fasta:
         for seq in sequences:
             degen = _filt_seq_with_degenerates(seq, num_degenerates)
