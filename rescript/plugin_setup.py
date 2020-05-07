@@ -258,9 +258,9 @@ plugin.methods.register_function(
     name='Remove sequences with excessive ambiguous base calls and/or '
          'homopolymers.',
     description=(
-        'Removes DNA sequences that have more than the specified number '
+        'Removes DNA sequences that have the specified number, or more, '
         'of IUPAC compliant ambiguous bases. Remaining sequences are removed '
-        'if they contain homopolymers longer than the specified length.'
+        'if they contain homopolymers equal to or longer than the specified length.'
         )
 )
 
