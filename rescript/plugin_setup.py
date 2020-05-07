@@ -13,6 +13,7 @@ from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int,
 from .merge import merge_taxa
 from .dereplicate import dereplicate
 from .evaluate import evaluate_taxonomy
+from .cleanseq import clean_sequences
 from .cross_validate import cross_validate, evaluate_classifications
 from q2_types.feature_data import FeatureData, Taxonomy, Sequence
 from q2_feature_classifier.classifier import (_parameter_descriptions,
@@ -228,3 +229,38 @@ plugin.pipelines.register_function(
         VOLATILITY_PLOT_XAXIS_INTERPRETATION),
     citations=[citations['bokulich2017q2']]
 )
+
+plugin.methods.register_function(
+    function=clean_sequences,
+    #inputs={'sequences': FeatureData[Sequence | AlignedSequence]},
+    inputs={
+        'sequences': FeatureData[Sequence]
+        },
+    parameters={
+        'num_ambig_bases': Int,
+        'homopolymer_length': Int % Range(2, None)
+        },
+    #outputs=[('cleaned_sequences', FeatureData[Sequence | AlignedSequence])],
+    outputs=[('cleaned_sequences', FeatureData[Sequence])],
+    input_descriptions={
+        'sequences': 'Sequences to be cleaned of ambiguous bases and '
+                     'homopolymers.'
+        },
+    parameter_descriptions={
+        'num_ambig_bases': 'Total number of ambiguous IUPAC compliant DNA '
+                           'bases allowed.',
+        'homopolymer_length': 'Sequences with a homopolymer of this length, '
+                              'or less, will be retained.',
+    },
+    output_descriptions={
+        'cleaned_sequences': 'The resulting cleaned sequences.'
+        },
+    name='Remove sequences with excessive ambiguous base calls and/or '
+         'homopolymers.',
+    description=(
+        'Removes DNA sequences that have more than the specified number '
+        'of IUPAC compliant ambiguous bases. Remaining sequences are removed '
+        'if they contain homopolymers longer than the specified length.'
+        )
+)
+
