@@ -20,6 +20,11 @@ requirements:
   run:
     - python {{ python }}
     - pandas
+    - scikit-learn
+    - scikit-bio
+    - q2-types {{ release }}
+    - q2-longitudinal {{ release }}
+    - q2-feature-table {{ release }}
     - qiime2 {{ release }}.*
 
 test:
