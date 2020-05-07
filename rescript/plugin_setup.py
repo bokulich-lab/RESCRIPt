@@ -248,9 +248,9 @@ plugin.methods.register_function(
         },
     parameter_descriptions={
         'num_ambig_bases': 'Total number of ambiguous IUPAC compliant DNA '
-                           'bases allowed.',
+                           'bases, or greater, for a sequence to be removed.',
         'homopolymer_length': 'Sequences with a homopolymer of this length, '
-                              'or less, will be retained.',
+                              'or greater, for a sequence to be removed.',
     },
     output_descriptions={
         'cleaned_sequences': 'The resulting cleaned sequences.'
