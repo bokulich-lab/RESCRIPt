@@ -236,23 +236,23 @@ plugin.methods.register_function(
         'sequences': FeatureData[Sequence]
         },
     parameters={
-        'max_degenerates': Int % Range(0, None),
+        'num_degenerates': Int % Range(1, None),
         'homopolymer_length': Int % Range(2, None)
         },
-    outputs=[('cleaned_sequences', FeatureData[Sequence])],
+    outputs=[('clean_sequences', FeatureData[Sequence])],
     input_descriptions={
         'sequences': 'Sequences to be removed that contain more than the '
                      'allowed number of degenerate bases and/or long '
                      'homopolymers.'
         },
     parameter_descriptions={
-        'max_degenerates': 'Maximum number of degenerate (IUPAC compliant) '
-                           'DNA bases allowed in a sequence.',
+        'num_degenerates': 'Sequences with n degenerate bases, or more, will '
+                           'be removed.',
         'homopolymer_length': 'Sequences with a homopolymer of this length '
                               'or greater will be removed',
     },
     output_descriptions={
-        'cleaned_sequences': 'The resulting cleaned sequences.'
+        'clean_sequences': 'The resulting cleaned sequences.'
         },
     name='Remove sequences with excessive ambiguous base calls and/or '
          'homopolymers.',

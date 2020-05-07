@@ -12,9 +12,9 @@ import re
 from q2_types.feature_data import DNAFASTAFormat, DNAIterator
 
 
-def _filt_seq_with_degenerates(seq, max_degenerates):
+def _filt_seq_with_degenerates(seq, num_degenerates):
     degenerates_in_seq = sum(seq.degenerates())
-    return degenerates_in_seq > max_degenerates
+    return degenerates_in_seq >= num_degenerates
 
 
 def _filter_homopolymer(seq, homopolymer_length):
@@ -24,12 +24,13 @@ def _filter_homopolymer(seq, homopolymer_length):
     return any(homopolymers)
 
 
-def clean_sequences(sequences: DNAFASTAFormat, max_degenerates: int = 4,
+def clean_sequences(sequences: DNAIterator, num_degenerates: int = 5,
                     homopolymer_length: int = 8) -> DNAFASTAFormat:
     result = DNAFASTAFormat()
-    with open(str(result), 'w') as out_fasta:
-        for seq in sequences.view(DNAIterator):
-            degen = _filt_seq_with_degenerates(seq, max_degenerates)
+    #with open(str(result), 'w') as out_fasta:
+    with result.open() as out_fasta:
+        for seq in sequences:
+            degen = _filt_seq_with_degenerates(seq, num_degenerates)
             if not degen:
                 poly = _filter_homopolymer(seq, homopolymer_length)
                 if not poly:  # if we make it here, write seq to file
