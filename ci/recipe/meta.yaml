@@ -3,7 +3,7 @@
 {% set release = '.'.join(version.split('.')[:2]) %}
 
 package:
-  name: RESCRIPt
+  name: rescript
   version: {{ version }}
 
 source:
