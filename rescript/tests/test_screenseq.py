@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # ----------------------------------------------------------------------------
 # Copyright (c) 2020, QIIME 2 development team.
 #
@@ -11,7 +9,7 @@
 
 import qiime2
 from qiime2.plugin.testing import TestPluginBase
-from rescript.cleanseq import clean_sequences
+from rescript.screenseq import screen_sequences
 from q2_types.feature_data import DNAFASTAFormat, DNAIterator
 
 
@@ -26,26 +24,35 @@ class TestCleanseq(TestPluginBase):
         input_fp = self.get_data_path('cleanseq-test-1.fasta')
         self.seqs1 = DNAFASTAFormat(input_fp, mode='r').view(DNAIterator)
 
-    def test_cleanseq_default_params(self):
+    def test_extract_cleanseq_default_params(self):
         # Test default params: num_degenerates = 5, homopolymer_length = 8
-        obs = clean_sequences(self.seqs1)
+        obs = screen_sequences(self.seqs1)
         obs_ids = {seq.metadata['id'] for seq in obs.view(DNAIterator)}
         exp_ids = {'Ambig2', 'cleanseq'}
         self.assertEqual(obs_ids, exp_ids)
 
-    def test_cleanseq_degen_two_hpoly_seven(self):
-        # Test params: num_degenerates = 7, homopolymer_length = 9
+    def test_extract_cleanseq_degen_seven_hpoly_seven(self):
+        # Test params: num_degenerates = 7, homopolymer_length = 7
         # Keep seq with 2 ambigs, and 7 hpoly
-        obs = clean_sequences(self.seqs1, num_degenerates=7,
+        obs = screen_sequences(self.seqs1, num_degenerates=7,
                               homopolymer_length=7)
         obs_ids = {seq.metadata['id'] for seq in obs.view(DNAIterator)}
         exp_ids = {'Ambig2', 'Ambig6', 'cleanseq'}
         self.assertEqual(obs_ids, exp_ids)
 
-    def test_cleanseq_degen_zero(self):
-        # Test params: mnum_degenerates = 0
-        # Only seqs w/ no ambig bases returned
-        obs = clean_sequences(self.seqs1, num_degenerates=1,
+    def test_extract_cleanseq_degen_seven_hpoly_nine(self):
+        # Test params: num_degenerates = 7, homopolymer_length = 9
+        # All seqs should pass.
+        obs = screen_sequences(self.seqs1, num_degenerates=7,
+                              homopolymer_length=9)
+        obs_ids = {seq.metadata['id'] for seq in obs.view(DNAIterator)}
+        exp_ids = {'Ambig6', 'Ambig2', 'Hpoly8', 'Hpoly8Ambig1', 'cleanseq'}
+        self.assertEqual(obs_ids, exp_ids)
+
+    def test_extract_cleanseq_degen_one(self):
+        # Test params: mnum_degenerates = 2
+        # Only seqs without degen bases returned
+        obs = screen_sequences(self.seqs1, num_degenerates=1,
                               homopolymer_length=9)
         obs_ids = {seq.metadata['id'] for seq in obs.view(DNAIterator)}
         exp_ids = {'Hpoly8', 'cleanseq'}

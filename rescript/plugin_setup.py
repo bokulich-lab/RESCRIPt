@@ -13,7 +13,7 @@ from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int,
 from .merge import merge_taxa
 from .dereplicate import dereplicate
 from .evaluate import evaluate_taxonomy
-from .cleanseq import clean_sequences
+from .screenseq import screen_sequences
 from .cross_validate import cross_validate, evaluate_classifications
 from q2_types.feature_data import FeatureData, Taxonomy, Sequence
 from q2_feature_classifier.classifier import (_parameter_descriptions,
@@ -231,7 +231,7 @@ plugin.pipelines.register_function(
 )
 
 plugin.methods.register_function(
-    function=clean_sequences,
+    function=screen_sequences,
     inputs={
         'sequences': FeatureData[Sequence]
         },
@@ -241,24 +241,24 @@ plugin.methods.register_function(
         },
     outputs=[('clean_sequences', FeatureData[Sequence])],
     input_descriptions={
-        'sequences': 'Sequences to be removed that contain more than the '
-                     'allowed number of degenerate bases and/or long '
-                     'homopolymers.'
+        'sequences': 'Sequences to be screened for removal based on '
+                     'degenerate base and homopolymer screening criteria.'
         },
     parameter_descriptions={
-        'num_degenerates': 'Sequences with n degenerate bases, or more, will '
+        'num_degenerates': 'Sequences with N, or more, degenerate bases will '
                            'be removed.',
-        'homopolymer_length': 'Sequences with a homopolymer of this length '
-                              'or greater will be removed',
+        'homopolymer_length': 'Sequences containing a homopolymer sequence of '
+                              'length N, or greater, will be removed.',
     },
     output_descriptions={
-        'clean_sequences': 'The resulting cleaned sequences.'
+        'clean_sequences': 'The resulting sequences that pass degenerate base '
+                           'and homopolymer screening criteria.'
         },
-    name='Remove sequences with excessive ambiguous base calls and/or '
-         'homopolymers.',
+    name='Removes sequences that contain at least the specified number of '
+         'degenerate bases and/or homopolymers of a given length.',
     description=(
         'Removes DNA sequences that have the specified number, or more, '
-        'of IUPAC compliant ambiguous bases. Remaining sequences are removed '
+        'of IUPAC compliant degenerate bases. Remaining sequences are removed '
         'if they contain homopolymers equal to or longer than the specified '
         'length.'
         )
