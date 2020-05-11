@@ -80,9 +80,16 @@ def filter_seqs_by_taxon(sequences: DNAFASTAFormat,
             # grab taxon affiliation for seq
             taxon = taxonomy[seq.metadata['id']]
             # search taxon for filter terms
+            # NOTE: we find all matching search terms and pass them all to
+            # _seq_length_within_range below; that function determines and
+            # applies the most stringent matching length thresholds.
             taxahits = [t for t in labels if t in taxon]
-            if _seq_length_within_range(seq, taxahits, mins, maxs,
-                                        global_min, global_max):
+            # if there are no taxahits or global filters, just write out
+            if not any(taxahits) and global_min is global_max is None:
+                seq.write(out_fasta)
+            # if there are taxahits or global filters, always check length
+            elif _seq_length_within_range(seq, taxahits, mins, maxs,
+                                          global_min, global_max):
                 seq.write(out_fasta)
             else:
                 seq.write(out_failed)
@@ -115,7 +122,10 @@ def _seq_length_within_range(sequence, taxahits, mins, maxs, global_min,
     seqlen = len(sequence)
     minlen = []
     maxlen = []
-    # find all applicable min/max filter thresholds
+    # find all applicable min/max filter thresholds.
+    # If a sequence matches multiple taxonomic terms in the search, we find
+    # the most stringent threshold: the longest minimum length and/or shortest
+    # maximum length for filtering.
     if mins is not None:
         minlen.extend([mins[k] for k in taxahits])
     if maxs is not None:

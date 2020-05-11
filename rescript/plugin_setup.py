@@ -299,7 +299,11 @@ plugin.methods.register_function(
         'labels': 'One or more taxonomic labels to use for conditional '
                   'filtering. For example, use this option to set different '
                   'min/max filter settings for individual phyla. Must input '
-                  'the same number of labels as min_lens and/or max_lens.',
+                  'the same number of labels as min_lens and/or max_lens. If '
+                  'a sequence matches multiple taxonomic labels, this method '
+                  'will apply the most stringent threshold(s): the longest '
+                  'minimum length and/or the shortest maximum length that is '
+                  'associated with the matching labels.',
         'min_lens': 'Minimum length thresholds to use for filtering sequences '
                     'associated with each label. If any min_lens are '
                     'specified, must have the same number of min_lens as '
@@ -318,9 +322,12 @@ plugin.methods.register_function(
     description=(
         'Filter sequences by length. Can filter both globally by minimum '
         'and/or maximum length, and set individual threshold for individual '
-        'taxonomic groups (using the "labels" option). For global length-'
-        'based filtering without conditional taxonomic filtering, see '
-        'filter_seqs_globally.'),
+        'taxonomic groups (using the "labels" option). Note that filtering '
+        'can be performed for multiple taxonomic groups simultaneously, and '
+        'nested taxonomic filters can be applied (e.g., to apply a more '
+        'stringent filter for a particular genus, but a less stringent filter '
+        'for other members of the kingdom). For global length-based filtering '
+        'without conditional taxonomic filtering, see filter_seqs_globally.'),
 )
 
 
@@ -338,9 +345,7 @@ plugin.methods.register_function(
         **FILTER_PARAM_DESCRIPTIONS,
         'threads': 'Number of computation threads to use (1 to 256). The '
                    'number of threads should be lesser or equal to the number '
-                   'of available CPU cores. ONLY USED IF FILTERING BY '
-                   'global_min AND/OR global_max, this option is IGNORED if '
-                   'filtering based on taxonomic labels.'},
+                   'of available CPU cores.'},
     output_descriptions=FILTER_OUTPUT_DESCRIPTIONS,
     name='Filter sequences by length.',
     description=(
