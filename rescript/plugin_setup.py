@@ -13,6 +13,7 @@ from .dereplicate import dereplicate
 from .evaluate import evaluate_taxonomy
 from .screenseq import screen_sequences
 from .cross_validate import cross_validate, evaluate_classifications
+from .filter_length import filter_seqs_by_taxon, filter_seqs_globally
 from q2_types.feature_data import FeatureData, Taxonomy, Sequence
 from q2_feature_classifier.classifier import (_parameter_descriptions,
                                               _classify_parameters)
@@ -260,4 +261,95 @@ plugin.methods.register_function(
         'if they contain homopolymers equal to or longer than the specified '
         'length.'
         )
+)
+
+
+FILTER_PARAMS = {
+    'global_min': Int % Range(1, None),
+    'global_max': Int % Range(1, None)}
+
+FILTER_PARAM_DESCRIPTIONS = {
+    'global_min': 'The minimum length threshold for filtering all '
+                  'sequences. Any sequence shorter than this length will '
+                  'be removed.',
+    'global_max': 'The maximum length threshold for filtering all '
+                  'sequences. Any sequence longer than this length will '
+                  'be removed.'}
+
+FILTER_OUTPUT_DESCRIPTIONS = {
+    'filtered_seqs': 'Sequences that pass the filtering thresholds.',
+    'discarded_seqs': 'Sequences that fall outside the filtering thresholds.'}
+
+
+plugin.methods.register_function(
+    function=filter_seqs_by_taxon,
+    inputs={'sequences': FeatureData[Sequence],
+            'taxonomy': FeatureData[Taxonomy]},
+    parameters={
+        'labels': List[Str],
+        'min_lens': List[Int % Range(1, None)],
+        'max_lens': List[Int % Range(1, None)],
+        **FILTER_PARAMS},
+    outputs=[('filtered_seqs', FeatureData[Sequence]),
+             ('discarded_seqs', FeatureData[Sequence])],
+    input_descriptions={
+        'sequences': 'Sequences to be filtered by length.',
+        'taxonomy': 'Taxonomic classifications of sequences to be filtered.'},
+    parameter_descriptions={
+        'labels': 'One or more taxonomic labels to use for conditional '
+                  'filtering. For example, use this option to set different '
+                  'min/max filter settings for individual phyla. Must input '
+                  'the same number of labels as min_lens and/or max_lens. If '
+                  'a sequence matches multiple taxonomic labels, this method '
+                  'will apply the most stringent threshold(s): the longest '
+                  'minimum length and/or the shortest maximum length that is '
+                  'associated with the matching labels.',
+        'min_lens': 'Minimum length thresholds to use for filtering sequences '
+                    'associated with each label. If any min_lens are '
+                    'specified, must have the same number of min_lens as '
+                    'labels. Sequences that contain this label in their '
+                    'taxonomy will be removed if they are less than the '
+                    'specified length.',
+        'max_lens': 'Maximum length thresholds to use for filtering sequences '
+                    'associated with each label. If any max_lens are '
+                    'specified, must have the same number of max_lens as '
+                    'labels. Sequences that contain this label in their '
+                    'taxonomy will be removed if they are more than the '
+                    'specified length.',
+        **FILTER_PARAM_DESCRIPTIONS},
+    output_descriptions=FILTER_OUTPUT_DESCRIPTIONS,
+    name='Filter sequences by length and taxonomic group.',
+    description=(
+        'Filter sequences by length. Can filter both globally by minimum '
+        'and/or maximum length, and set individual threshold for individual '
+        'taxonomic groups (using the "labels" option). Note that filtering '
+        'can be performed for multiple taxonomic groups simultaneously, and '
+        'nested taxonomic filters can be applied (e.g., to apply a more '
+        'stringent filter for a particular genus, but a less stringent filter '
+        'for other members of the kingdom). For global length-based filtering '
+        'without conditional taxonomic filtering, see filter_seqs_globally.'),
+)
+
+
+plugin.methods.register_function(
+    function=filter_seqs_globally,
+    inputs={'sequences': FeatureData[Sequence]},
+    parameters={
+        **FILTER_PARAMS,
+        'threads': Int % Range(1, 256)},
+    outputs=[('filtered_seqs', FeatureData[Sequence]),
+             ('discarded_seqs', FeatureData[Sequence])],
+    input_descriptions={
+        'sequences': 'Sequences to be filtered by length.'},
+    parameter_descriptions={
+        **FILTER_PARAM_DESCRIPTIONS,
+        'threads': 'Number of computation threads to use (1 to 256). The '
+                   'number of threads should be lesser or equal to the number '
+                   'of available CPU cores.'},
+    output_descriptions=FILTER_OUTPUT_DESCRIPTIONS,
+    name='Filter sequences by length.',
+    description=(
+        'Filter sequences by length with VSEARCH. For a combination of global '
+        'and conditional taxonomic filtering, see filter_seqs_by_taxon.'),
+    citations=[citations['rognes2016vsearch']]
 )
