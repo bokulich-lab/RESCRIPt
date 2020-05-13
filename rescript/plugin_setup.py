@@ -6,6 +6,8 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
+import importlib
+
 from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int,
                            Float, Visualization)
 from .merge import merge_taxa
@@ -19,6 +21,10 @@ from q2_feature_classifier.classifier import (_parameter_descriptions,
                                               _classify_parameters)
 
 import rescript
+from rescript.types._format import (
+    SILVATaxonomyFormat, SILVATaxonomyDirectoryFormat, SILVATaxidMapFormat,
+    SILVATaxidMapDirectoryFormat)
+from rescript.types._type import SILVATaxonomy, SILVATaxidMap
 
 
 citations = Citations.load('citations.bib', package='rescript')
@@ -353,3 +359,16 @@ plugin.methods.register_function(
         'and conditional taxonomic filtering, see filter_seqs_by_taxon.'),
     citations=[citations['rognes2016vsearch']]
 )
+
+
+# Registrations
+plugin.register_semantic_types(SILVATaxonomy, SILVATaxidMap)
+plugin.register_semantic_type_to_format(
+    FeatureData[SILVATaxonomy],
+    artifact_format=SILVATaxonomyDirectoryFormat)
+plugin.register_semantic_type_to_format(
+    FeatureData[SILVATaxidMap],
+    artifact_format=SILVATaxidMapDirectoryFormat)
+plugin.register_formats(SILVATaxonomyFormat, SILVATaxonomyDirectoryFormat,
+                        SILVATaxidMapFormat, SILVATaxidMapDirectoryFormat)
+importlib.import_module('rescript.types._transformer')

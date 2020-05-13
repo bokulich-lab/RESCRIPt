@@ -6,8 +6,11 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-import importlib
+from qiime2.plugin import SemanticType
+from q2_types.feature_data import FeatureData
 
-__version__ = '0.0-dev'
 
-importlib.import_module('rescript.types')
+SILVATaxonomy = SemanticType(
+    'SILVATaxonomy', variant_of=FeatureData.field['type'])
+SILVATaxidMap = SemanticType(
+    'SILVATaxidMap', variant_of=FeatureData.field['type'])
