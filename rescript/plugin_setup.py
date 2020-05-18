@@ -9,14 +9,16 @@
 import importlib
 
 from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int,
-                           Float, Visualization)
+                           Float, Visualization, Bool)
 from .merge import merge_taxa
 from .dereplicate import dereplicate
 from .evaluate import evaluate_taxonomy
 from .screenseq import screen_sequences
+from .parse_silva_taxonomy import parse_silva_taxonomy
 from .cross_validate import cross_validate, evaluate_classifications
 from .filter_length import filter_seqs_by_taxon, filter_seqs_globally
 from q2_types.feature_data import FeatureData, Taxonomy, Sequence
+from q2_types.tree import Phylogeny, Rooted
 from q2_feature_classifier.classifier import (_parameter_descriptions,
                                               _classify_parameters)
 
@@ -358,6 +360,42 @@ plugin.methods.register_function(
         'Filter sequences by length with VSEARCH. For a combination of global '
         'and conditional taxonomic filtering, see filter_seqs_by_taxon.'),
     citations=[citations['rognes2016vsearch']]
+)
+
+
+plugin.methods.register_function(
+    function=parse_silva_taxonomy,
+    inputs={
+        'taxonomy_tree': Phylogeny[Rooted],
+        'taxonomy_map': FeatureData[SILVATaxidMap],
+        'taxonomy_ranks': FeatureData[SILVATaxonomy],
+        },
+    parameters={
+        'include_species_labels' : Bool
+        },
+    outputs=[('taxonomy', FeatureData[Taxonomy])],
+    input_descriptions={
+        'taxonomy_tree': 'SILVA hierarchical taxonomy tree.',
+        'taxonomy_map': 'SILVA taxonomy map. This file contains a mapping'
+                        'of the sequence accessions to the numeric taxonomy '
+                        'identifiers and species label information.',
+        'taxonomy_ranks': 'SILVA taxonomy file. This file contains the '
+                         'taxonomic rank information for each numeric '
+                         'taxonomy identifier and the taxonomy.'
+        },
+    parameter_descriptions={
+        'include_species_labels': 'Unclude species rank labels in taxonomy '
+                                  'output. Note: species-labels may not be '
+                                  'reliable in all cases.',
+    },
+    output_descriptions={
+        'taxonomy': 'The resulting fixed-rank formatted SILVA taxonomy.'
+        },
+    name='Generates a SILVA fixed-rank taxonomy.',
+    description=(
+        'Parses several files from the SILVA reference database to produce a '
+        'GreenGenes-like fixed rank taxonomy.'
+        )
 )
 
 
