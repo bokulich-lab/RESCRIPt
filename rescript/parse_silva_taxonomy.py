@@ -50,7 +50,7 @@ def _build_base_silva_taxonomy(tree, taxrank, allowed_ranks):
 
 
 def _prep_taxmap(taxmap):
-    taxmap = taxmap.view(pd.DataFrame)
+    #taxmap = taxmap.view(pd.DataFrame)
     taxmap.index = taxmap.index + '.' + taxmap.start + '.' + taxmap.stop
     taxmap = taxmap.loc[:,['organism_name','taxid']]
     taxmap.loc[:,'organism_name'] = taxmap.loc[:,'organism_name'].apply(lambda x: _keep_allowed_chars('_'.join(x.strip().split()[:2])))
@@ -58,7 +58,7 @@ def _prep_taxmap(taxmap):
 
 
 def _prep_taxranks(taxrank):
-    taxrank = taxrank.view(pd.DataFrame)
+    #taxrank = taxrank.view(pd.DataFrame)
     taxrank = taxrank[[1, 2]].reset_index()
     taxrank.columns = ['taxid_taxonomy', 'taxid', 'taxrank']
     taxrank = taxrank.set_index('taxid')
@@ -67,21 +67,22 @@ def _prep_taxranks(taxrank):
 
 
 def parse_silva_taxonomy(taxonomy_tree: TreeNode,
-                         taxonomy_map: SILVATaxidMap,
-                         taxonomy_ranks: SILVATaxonomy,
-                         include_species_labels: bool = False) -> Taxonomy:
-    silva_taxonomy = Taxonomy()
-    with silva_taxonomy.open() as silva_out:
-        taxrank = _prep_taxranks(taxonomy_ranks)
-        silva_tax_dict = _build_base_silva_taxonomy(taxonomy_tree, taxrank, ALLOWED_RANKS)
-        silva_tax_id_df = pd.DataFrame.from_dict(silva_tax_dict, orient = 'index', columns=['d__', 'p__', 'c__', 'o__', 'f__', 'g__'])
-        silva_tax_id_df.ffill(axis=1, inplace=True)
-        silva_tax_id_df.loc[:,'full_tax_str'] = silva_tax_id_df.astype(str).apply(lambda x: x.name + x).agg('; '.join, axis=1)
-        if include_species_labels:
-            taxmap = _prep_taxmap(taxonomy_map)
-            updated_taxmap = pd.merge(taxmap, tax_id_df, left_on='taxid', right_index=True)
-            updated_taxmap.loc[:,'full_tax_str_w_orgname'] = updated_taxmap.loc[:,'full_tax_str'] + '; s__' + updated_taxmap.loc[:,'organism_name']
-            updated_taxmap.to_csv(silva_out, columns = ["full_tax_str_w_orgname"], sep='\t', header=False)
-        else:
-            updated_taxmap.to_csv(silva_out, columns = ["full_tax_str"], sep='\t', header=False)
-        return silva_taxonomy
+                         taxonomy_map: pd.DataFrame,
+                         taxonomy_ranks: pd.DataFrame,
+                         include_species_labels: bool = False) -> pd.DataFrame:
+    taxrank = _prep_taxranks(taxonomy_ranks)
+    silva_tax_dict = _build_base_silva_taxonomy(taxonomy_tree, taxrank, ALLOWED_RANKS)
+    silva_tax_id_df = pd.DataFrame.from_dict(silva_tax_dict, orient = 'index', columns=['d__', 'p__', 'c__', 'o__', 'f__', 'g__'])
+    silva_tax_id_df.ffill(axis=1, inplace=True)
+    silva_tax_id_df.loc[:,'full_tax_str'] = silva_tax_id_df.astype(str).apply(lambda x: x.name + x).agg('; '.join, axis=1)
+    if include_species_labels:
+        taxmap = _prep_taxmap(taxonomy_map)
+        updated_taxmap = pd.merge(taxmap, silva_tax_id_df, left_on='taxid', right_index=True)
+        updated_taxmap.loc[:,'full_tax_str_w_orgname'] = updated_taxmap.loc[:,'full_tax_str'] + '; s__' + updated_taxmap.loc[:,'organism_name']
+        silva_tax_w_sp_label = updated_taxmap.loc[:,"full_tax_str_w_orgname"].to_frame()
+        silva_tax_w_sp_label = pd.DataFrame(silva_tax_w_sp_label, index=['Feature ID'], columns = ['Taxonomy'])
+        return silva_tax_w_sp_label
+    else:
+        silva_tax_wo_sp_label = silva_tax_id_df.loc[:,"full_tax_str"].to_frame()
+        silva_tax_w_sp_label = pd.DataFrame(silva_tax_wo_sp_label, index=['Feature ID'], columns = ['Taxonomy'])
+        return silva_tax_wo_sp_label
