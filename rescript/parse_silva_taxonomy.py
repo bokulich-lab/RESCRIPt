@@ -69,20 +69,22 @@ def _prep_taxranks(taxrank):
 def parse_silva_taxonomy(taxonomy_tree: TreeNode,
                          taxonomy_map: pd.DataFrame,
                          taxonomy_ranks: pd.DataFrame,
-                         include_species_labels: bool = False) -> pd.DataFrame:
+                         include_species_labels: bool = False) -> pd.Series:
     taxrank = _prep_taxranks(taxonomy_ranks)
     silva_tax_dict = _build_base_silva_taxonomy(taxonomy_tree, taxrank, ALLOWED_RANKS)
     silva_tax_id_df = pd.DataFrame.from_dict(silva_tax_dict, orient = 'index', columns=['d__', 'p__', 'c__', 'o__', 'f__', 'g__'])
     silva_tax_id_df.ffill(axis=1, inplace=True)
     silva_tax_id_df.loc[:,'full_tax_str'] = silva_tax_id_df.astype(str).apply(lambda x: x.name + x).agg('; '.join, axis=1)
+    taxmap = _prep_taxmap(taxonomy_map)
+    updated_taxmap = pd.merge(taxmap, silva_tax_id_df, left_on='taxid', right_index=True)
     if include_species_labels:
-        taxmap = _prep_taxmap(taxonomy_map)
-        updated_taxmap = pd.merge(taxmap, silva_tax_id_df, left_on='taxid', right_index=True)
         updated_taxmap.loc[:,'full_tax_str_w_orgname'] = updated_taxmap.loc[:,'full_tax_str'] + '; s__' + updated_taxmap.loc[:,'organism_name']
-        silva_tax_w_sp_label = updated_taxmap.loc[:,"full_tax_str_w_orgname"].to_frame()
-        silva_tax_w_sp_label = pd.DataFrame(silva_tax_w_sp_label, index=['Feature ID'], columns = ['Taxonomy'])
-        return silva_tax_w_sp_label
+        taxonomy_w_sp_label = updated_taxmap['full_tax_str_w_orgname']
+        taxonomy_w_sp_label.rename('Taxon', inplace=True)
+        taxonomy_w_sp_label.index.name = 'Feature ID'
+        return taxonomy_w_sp_label
     else:
-        silva_tax_wo_sp_label = silva_tax_id_df.loc[:,"full_tax_str"].to_frame()
-        silva_tax_w_sp_label = pd.DataFrame(silva_tax_wo_sp_label, index=['Feature ID'], columns = ['Taxonomy'])
-        return silva_tax_wo_sp_label
+        taxonomy_wo_sp_label = updated_taxmap["full_tax_str"]
+        taxonomy_wo_sp_label.rename('Taxon', inplace=True)
+        taxonomy_wo_sp_label.index.name = 'Feature ID'
+        return taxonomy_wo_sp_label
