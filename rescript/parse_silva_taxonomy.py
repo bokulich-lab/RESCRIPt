@@ -28,7 +28,7 @@ ALLOWED_RANKS = OrderedDict({'domain': 'd__', 'phylum': 'p__', 'class': 'c__',
 
 def _keep_allowed_chars(lin_name, allowed_chars = ALLOWED_CHARS,
                         whitespace_pattern = WHITESPACE_REGEX):
-    # Only keep "safe" characters
+    # Only keep "safe" characters and replace whitespace with '_'
     new_lin_name = whitespace_pattern.sub("_", lin_name.strip())
     new_lin_name = ''.join(i for i in new_lin_name if i in allowed_chars)
     return new_lin_name
@@ -37,7 +37,8 @@ def _keep_allowed_chars(lin_name, allowed_chars = ALLOWED_CHARS,
 def _build_base_silva_taxonomy(tree, taxrank, allowed_ranks):
     # Return base silva taxonomy dataframe by traversing taxonomy tree
     # and forward filling the lower ranks with upper-level taxonomy, then
-    # pre-pend the rank labels.
+    # pre-pend the rank labels. May be able to forgo traversing taxonomy tree
+    # in the future and parse the taxrank file directly.
     tid = {}
     for node in tree.postorder():
         if node.is_root():
@@ -83,7 +84,7 @@ def _prep_taxranks(taxrank):
     # return only taxonomy rank information indexed by taxonomy ID
     taxrank = taxrank[[1, 2]].reset_index()
     taxrank.columns = ['taxid_taxonomy', 'taxid', 'taxrank']
-    taxrank = taxrank.set_index('taxid')
+    taxrank.set_index('taxid', inplace=True)
     # return only the last taxonomy from a given taxonomy path
     taxrank.loc[:, 'taxid_taxonomy'] = taxrank.loc[:,'taxid_taxonomy'].apply(
                             lambda x: _keep_allowed_chars(x.rsplit(';')[-2]))

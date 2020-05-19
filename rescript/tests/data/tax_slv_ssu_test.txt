@@ -1,0 +1,10 @@
+Archaea;	2	domain		
+Archaea;Aenigmarchaeota;	11084	phylum		123
+Archaea;Aenigmarchaeota;Aenigmarchaeia;	42913	class		138
+Archaea;Aenigmarchaeota;Aenigmarchaeia;Aenigmarchaeales;	42914	order		138
+Archaea;Aenigmarchaeota;Aenigmarchaeia;Aenigmarchaeales;Candidatus Aenigmarchaeum;	42915	genus		138
+Archaea;Aenigmarchaeota;Deep Sea Euryarchaeotic Group(DSEG);	11089	class		123
+Archaea;Altiarchaeota;	24228	phylum		132
+Archaea;Altiarchaeota;Altiarchaeia;	24229	class		132
+Archaea;Altiarchaeota;Altiarchaeia;Altiarchaeales;	42916	order		138
+Archaea;Altiarchaeota;Altiarchaeia;Altiarchaeales;Altiarchaeaceae;	42917	family		138
