@@ -1,0 +1,5 @@
+primaryAccession	start	stop	path	organism_name	taxid
+A16379	1	1485	Bacteria;Proteobacteria;Gammaproteobacteria;Pasteurellales;Pasteurellaceae;Haemophilus;	[Haemophilus] ducreyi	3698
+A45315	1	1521	Bacteria;Firmicutes;Bacilli;Bacillales;Salisediminibacteriaceae;Salipaludibacillus;	Bacillus sp. (in: Bacteria)	45177
+A61579	1	1437	Bacteria;Thermotogota;Thermotogae;Thermotogales;Fervidobacteriaceae;Thermopallium;	Thermopallium natronophilum	46692
+AAAA02020713	1	1297	Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacterales;Enterobacteriaceae;Escherichia-Shigella;	Oryza sativa Indica Group (long-grained rice)	46463

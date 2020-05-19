@@ -9,7 +9,8 @@
 import qiime2
 from qiime2.plugin.testing import TestPluginBase
 from rescript.parse_silva_taxonomy import (parse_silva_taxonomy,
-                                           _keep_allowed_chars, _prep_taxranks)
+                                           _keep_allowed_chars, _prep_taxranks,
+                                           _prep_taxmap)
 from q2_types.feature_data import FeatureData, Taxonomy
 from q2_types.tree import Phylogeny, Rooted
 import rescript
@@ -30,6 +31,7 @@ class TestParseSilvaTaxonomy(TestPluginBase):
         self.bad_char_str = '~`!@#$%^&*;:\"?<>'
         self.good_char_str = '1 am a G00d str1ng.'
         self.taxranks = self.get_data_path('tax_slv_ssu_test.txt')
+        self.taxmap = self.get_data_path('taxmap_slv_ssu_ref_nr_test.txt')
 
 
     def test_keep_allowed_chars(self):
@@ -61,3 +63,21 @@ class TestParseSilvaTaxonomy(TestPluginBase):
         exp_taxranks.set_index('taxid', inplace=True)
         exp_taxranks.sort_index(inplace=True)
         assert_frame_equal(obs_taxranks, exp_taxranks)
+
+
+    def test_prep_taxmap(self):
+        input_taxmap = qiime2.Artifact.import_data(
+                            'FeatureData[SILVATaxidMap]', self.taxmap)
+        input_taxmap = input_taxmap.view(pd.DataFrame)
+        obs_taxmap = _prep_taxmap(input_taxmap)
+        obs_taxmap.sort_index(inplace=True)
+        dm = {'Feature ID': ['A16379.1.1485', 'A45315.1.1521', 'A61579.1.1437',
+                             'AAAA02020713.1.1297'],
+              'organism_name': ['[Haemophilus]_ducreyi', 'Bacillus_sp.',
+                                'Thermopallium_natronophilum',
+                                'Oryza_sativa'],
+              'taxid': ['3698', '45177', '46692', '46463']}
+        exp_taxmap = pd.DataFrame(dm)
+        exp_taxmap.set_index('Feature ID', inplace=True)
+        exp_taxmap.sort_index(inplace=True)
+        assert_frame_equal(obs_taxmap, exp_taxmap)

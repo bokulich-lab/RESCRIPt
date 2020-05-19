@@ -72,6 +72,7 @@ def _prep_taxmap(taxmap):
     # Return silva taxonomy dataframe map indexed by accession.seqtart.seqstop
     # This is how the coreesponding FASTA file IDs are structured
     taxmap.index = taxmap.index + '.' + taxmap.start + '.' + taxmap.stop
+    taxmap.index.name = 'Feature ID'
     taxmap = taxmap.loc[:,['organism_name','taxid']]
     # parse organism name (i.e. "species") by only returning the first two
     # words (many species labels are very long or contain sub-species info).
@@ -107,11 +108,9 @@ def parse_silva_taxonomy(taxonomy_tree: TreeNode,
         taxonomy_w_sp_label = updated_taxmap['full_tax_str_w_orgname']
         # rename indices for FeatureData[Taxonomy] format
         taxonomy_w_sp_label.rename('Taxon', inplace=True)
-        taxonomy_w_sp_label.index.name = 'Feature ID'
         return taxonomy_w_sp_label
     else:
         taxonomy_wo_sp_label = updated_taxmap["full_tax_str"]
         # rename indices for FeatureData[Taxonomy] format
         taxonomy_wo_sp_label.rename('Taxon', inplace=True)
-        taxonomy_wo_sp_label.index.name = 'Feature ID'
         return taxonomy_wo_sp_label
