@@ -384,7 +384,7 @@ plugin.methods.register_function(
                          'taxonomy identifier and the taxonomy.'
         },
     parameter_descriptions={
-        'include_species_labels': 'Unclude species rank labels in taxonomy '
+        'include_species_labels': 'Include species rank labels in taxonomy '
                                   'output. Note: species-labels may not be '
                                   'reliable in all cases.',
     },

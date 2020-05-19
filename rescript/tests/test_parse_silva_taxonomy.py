@@ -13,6 +13,7 @@ from rescript.parse_silva_taxonomy import (parse_silva_taxonomy,
                                            _prep_taxmap)
 from q2_types.feature_data import FeatureData, Taxonomy
 from q2_types.tree import Phylogeny, Rooted
+from skbio.tree import TreeNode
 import rescript
 from rescript.types._format import (
     SILVATaxonomyFormat, SILVATaxonomyDirectoryFormat, SILVATaxidMapFormat,
