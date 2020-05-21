@@ -44,6 +44,10 @@ def _build_base_silva_taxonomy(tree, taxrank, allowed_ranks):
         if node.is_root():
             break
         rank_list = []
+
+        # should probably add a try statement there
+        # to catch the case for then a node in the tree is
+        # not in the taxrank dataframe.
         rank, taxonomy = taxrank.loc[str(node.name), ['taxrank',
                                                       'taxid_taxonomy']]
         # only pull taxonomy from allowed ranks
@@ -60,6 +64,7 @@ def _build_base_silva_taxonomy(tree, taxrank, allowed_ranks):
         tid[node.name.strip()] = dict(rank_list)
     silva_tax_id_df = pd.DataFrame.from_dict(tid, orient = 'index',
                                              columns=ALLOWED_RANKS.values())
+    silva_tax_id_df.index.name = 'taxid'
     # forward fill missing taxonomy with upper level taxonomy
     silva_tax_id_df.ffill(axis=1, inplace=True)
     # add rank prefixes (i.e. 'p__')
