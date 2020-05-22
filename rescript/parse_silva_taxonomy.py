@@ -41,17 +41,13 @@ def _build_base_silva_taxonomy(taxrank, allowed_ranks):
         tr = row.taxrank.strip()
         if tr in allowed_ranks:
             curr_rs_cell_value = rs[tr]
-            print('\n\ncell-val: ', curr_rs_cell_value)
             tax = row.taxid_taxonomy.strip()
             if curr_rs_cell_value == np.NaN:
                 rs[tr] = tax
                 sdf.loc[row.Index, tr] = tax
-                #sdf.loc[row.Index, row.taxrank] = tax
-                print('\n###\n',row.Index, rs)
             else:
                 rs[tr:] = np.NaN
                 rs[tr] = tax
-                print('\n*** reset ***\n',rs)
                 sdf.loc[row.Index, :] = rs
     sdf.rename(columns=allowed_ranks, inplace=True)
     sdf.ffill(axis=1, inplace=True)
