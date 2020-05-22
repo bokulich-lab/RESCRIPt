@@ -22,7 +22,18 @@ ALLOWED_CHARS = set(''.join(['0123456789',
                              'abcdefghijklmnopqrstuvwxyz',
                              'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
                              '_-[]()/.\\']))
-ALLOWED_RANKS = OrderedDict({'domain': 'd__', 'phylum': 'p__', 'class': 'c__',
+
+# Do not use "'major_clade': 'mc__'" as this appears at multiple levels, even
+#      within the same lineage. Tough to disambiguate.
+ALLOWED_RANKS = OrderedDict({'domain': 'd__', 'superkingdom': 'sk__',
+                'kingdom': 'k__', 'subkingdom': 'ks__', 'superphylum': 'sp__',
+                'phylum': 'p__', 'subphylum': 'ps__', 'infraphylum': 'pi__',
+                'superclass': 'sc__', 'class': 'c__', 'subclass': 'cs__',
+                'infraclass': 'ci__', 'superorder': 'so__', 'order': 'o__',
+                'suborder': 'os__', 'superfamily': 'sf__', 'family': 'f__',
+                'subfamily': 'fs__', 'genus': 'g__'})
+
+SELECTED_RANKS = OrderedDict({'domain': 'd__', 'phylum': 'p__', 'class': 'c__',
                              'order': 'o__', 'family': 'f__', 'genus': 'g__'})
 
 
@@ -67,9 +78,6 @@ def _build_base_silva_taxonomy(tree, taxrank, allowed_ranks):
     silva_tax_id_df.index.name = 'taxid'
     # forward fill missing taxonomy with upper level taxonomy
     silva_tax_id_df.ffill(axis=1, inplace=True)
-    # add rank prefixes (i.e. 'p__')
-    silva_tax_id_df.loc[:,'full_tax_str'] = silva_tax_id_df.astype(
-                        str).apply(lambda x: x.name + x).agg('; '.join, axis=1)
     return silva_tax_id_df
 
 
@@ -97,6 +105,24 @@ def _prep_taxranks(taxrank):
     return taxrank
 
 
+def _compile_taxonomy_output(updated_taxmap, include_species_labels=False,
+                            selected_ranks=SELECTED_RANKS):
+    sr = list(selected_ranks.values())
+    # add rank prefixes (i.e. 'p__')
+    updated_taxmap.loc[:, sr] = updated_taxmap.loc[:, sr].apply(
+                                                    lambda x: x.name + x)
+    if include_species_labels:
+        updated_taxmap.loc[:, 'organism_name'] = updated_taxmap.loc[
+                                :,'organism_name'].apply(lambda x: 's__' + x)
+        sr.append('organism_name')
+        taxonomy = updated_taxmap.loc[:, sr].agg('; '.join, axis=1)
+        taxonomy.rename('Taxon', inplace=True)
+        return taxonomy
+    else:
+        taxonomy = updated_taxmap.loc[:, sr].agg('; '.join, axis=1)
+        taxonomy.rename('Taxon', inplace=True)
+        return taxonomy
+
 def parse_silva_taxonomy(taxonomy_tree: TreeNode,
                          taxonomy_map: pd.DataFrame,
                          taxonomy_ranks: pd.DataFrame,
@@ -107,15 +133,7 @@ def parse_silva_taxonomy(taxonomy_tree: TreeNode,
     taxmap = _prep_taxmap(taxonomy_map)
     updated_taxmap = pd.merge(taxmap, silva_tax_id_df, left_on='taxid',
                               right_index=True)
-    if include_species_labels:
-        updated_taxmap.loc[:,'full_tax_str_w_orgname'] = updated_taxmap.loc[
-            :,'full_tax_str'] + '; s__' + updated_taxmap.loc[:,'organism_name']
-        taxonomy_w_sp_label = updated_taxmap['full_tax_str_w_orgname']
-        # rename indices for FeatureData[Taxonomy] format
-        taxonomy_w_sp_label.rename('Taxon', inplace=True)
-        return taxonomy_w_sp_label
-    else:
-        taxonomy_wo_sp_label = updated_taxmap["full_tax_str"]
-        # rename indices for FeatureData[Taxonomy] format
-        taxonomy_wo_sp_label.rename('Taxon', inplace=True)
-        return taxonomy_wo_sp_label
+    taxonomy = _compile_taxonomy_output(updated_taxmap,
+                                        include_species_labels,
+                                        SELECTED_RANKS)
+    return taxonomy
