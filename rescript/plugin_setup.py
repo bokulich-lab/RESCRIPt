@@ -366,7 +366,7 @@ plugin.methods.register_function(
 plugin.methods.register_function(
     function=parse_silva_taxonomy,
     inputs={
-        #'taxonomy_tree': Phylogeny[Rooted],
+        'taxonomy_tree': Phylogeny[Rooted],
         'taxonomy_map': FeatureData[SILVATaxidMap],
         'taxonomy_ranks': FeatureData[SILVATaxonomy],
         },
@@ -375,7 +375,7 @@ plugin.methods.register_function(
         },
     outputs=[('taxonomy', FeatureData[Taxonomy])],
     input_descriptions={
-        #'taxonomy_tree': 'SILVA hierarchical taxonomy tree.',
+        'taxonomy_tree': 'SILVA hierarchical taxonomy tree.',
         'taxonomy_map': 'SILVA taxonomy map. This file contains a mapping'
                         'of the sequence accessions to the numeric taxonomy '
                         'identifiers and species label information.',
