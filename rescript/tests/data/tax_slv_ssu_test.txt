@@ -8,3 +8,4 @@ Archaea;Altiarchaeota;	24228	phylum		132
 Archaea;Altiarchaeota;Altiarchaeia;	24229	class		132
 Archaea;Altiarchaeota;Altiarchaeia;Altiarchaeales;	42916	order		138
 Archaea;Altiarchaeota;Altiarchaeia;Altiarchaeales;Altiarchaeaceae;	42917	family		138
+Archaea;Altiarchaeota;Altiarchaeia;Altiarchaeales;Altiarchaeaceae;Candidatus Altiarchaeum;	42918	genus		138
