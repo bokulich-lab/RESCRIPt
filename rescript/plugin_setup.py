@@ -9,7 +9,7 @@
 import importlib
 
 from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int,
-                           Float, Visualization)
+                           Float, Visualization, Bool)
 from .merge import merge_taxa
 from .dereplicate import dereplicate
 from .evaluate import evaluate_taxonomy
@@ -179,7 +179,8 @@ plugin.methods.register_function(
         'mode': Str % Choices(['uniq', 'lca', 'majority']),
         'threads': Int % Range(1, 256),
         'perc_identity': Float % Range(0, 1, inclusive_start=False,
-                                       inclusive_end=True)},
+                                       inclusive_end=True),
+        'derep_prefix': Bool},
     outputs=[('dereplicated_sequences', FeatureData[Sequence]),
              ('dereplicated_taxa', FeatureData[Taxonomy])],
     input_descriptions={
@@ -198,7 +199,12 @@ plugin.methods.register_function(
                    'of available CPU cores.',
         'perc_identity': 'The percent identity at which clustering should be '
                          'performed. This parameter maps to vsearch\'s --id '
-                         'parameter.'
+                         'parameter.',
+        'derep_prefix': 'Merge sequences with identical prefixes. If a '
+                        'sequence is identical to the prefix of two or more '
+                        'longer sequences, it is clustered with the shortest '
+                        'of them. If they are equally long, it is clustered '
+                        'with the most abundant.'
     },
     name='Dereplicate features with matching sequences and taxonomies.',
     description=(
