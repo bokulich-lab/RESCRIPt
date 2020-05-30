@@ -13,6 +13,7 @@ from rescript.parse_silva_taxonomy import (parse_silva_taxonomy,
                                            _prep_taxmap, ALLOWED_RANKS,
                                            SELECTED_RANKS,
                                            _build_base_silva_taxonomy,
+                                           _validate_taxrank_taxtree,
                                            _compile_taxonomy_output)
 from q2_types.feature_data import FeatureData, Taxonomy
 from q2_types.tree import Phylogeny, Rooted
@@ -44,6 +45,7 @@ class TestParseSilvaTaxonomy(TestPluginBase):
         self.taxranks = self.get_data_path('tax_slv_ssu_test.txt')
         self.taxonomy_tree = self.get_data_path('taxid_tree.tre')
         self.taxmap2 = self.get_data_path('taxmap_test_match_tree.txt')
+        self.taxonomy_tree2 = self.get_data_path('taxid_tree_missing_id.tre')
 
 
     def test_keep_allowed_chars(self):
@@ -233,6 +235,19 @@ class TestParseSilvaTaxonomy(TestPluginBase):
         sr = SELECTED_RANKS.values()
         exp_6r_tax.rename('Taxon', inplace=True)
         exp_6r_tax.index.name = 'Feature ID'
-        #exp_6r_tax.set_index('Feature ID', inplace=True)
         exp_6r_tax.sort_index(inplace=True)
         assert_series_equal(obs_6r_tax, exp_6r_tax)
+
+
+    def test_validate_taxrank_taxtree_fail(self):
+        # taxonomy ranks
+        input_taxrank = qiime2.Artifact.import_data(
+                            'FeatureData[SILVATaxonomy]', self.taxranks)
+        input_taxrank = input_taxrank.view(pd.DataFrame)
+        input_taxrank = _prep_taxranks(input_taxrank)
+        # tree
+        input_taxtree = qiime2.Artifact.import_data(
+                            'Phylogeny[Rooted]', self.taxonomy_tree2)
+        input_taxtree = input_taxtree.view(TreeNode)
+        self.assertRaises(ValueError,
+                        _validate_taxrank_taxtree, input_taxrank, input_taxtree)

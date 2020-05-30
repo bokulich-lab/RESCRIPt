@@ -104,6 +104,22 @@ def _prep_taxranks(taxrank):
                             lambda x: _keep_allowed_chars(x.rsplit(';')[-2]))
     return taxrank
 
+def _validate_taxrank_taxtree(prepped_taxrank, taxtree):
+    # prepass to make sure there is 100 % agreement with the taxids
+    # present within the taxranks and taxtree files.
+    tree_taxids = [node.name for node in taxtree.postorder()]
+    tree_taxids.pop() # '1' is the root of the tree of life,
+                      # which has no tax rank info in any other files.
+    tts = set(tree_taxids)
+    ptrs = set(prepped_taxrank.index.unique())
+    if tts != ptrs:
+        diffs = tts.symmetric_difference(ptrs)
+        d_str = ', '.join(diffs)
+        raise ValueError("The taxids of the SILVA Taxonomy Tree file "
+                         "and the Taxonomy Ranks file do not match! "
+                         "The values that are missing in at least one or "
+                         "the other files are: %s" % d_str)
+
 
 def _compile_taxonomy_output(updated_taxmap, include_species_labels=False,
                             selected_ranks=SELECTED_RANKS):
@@ -128,6 +144,7 @@ def parse_silva_taxonomy(taxonomy_tree: TreeNode,
                          taxonomy_ranks: pd.DataFrame,
                          include_species_labels: bool = False) -> pd.Series:
     taxrank = _prep_taxranks(taxonomy_ranks)
+    _validate_taxrank_taxtree(taxrank, taxonomy_tree)
     silva_tax_id_df = _build_base_silva_taxonomy(taxonomy_tree, taxrank,
                                                  ALLOWED_RANKS)
     taxmap = _prep_taxmap(taxonomy_map)
