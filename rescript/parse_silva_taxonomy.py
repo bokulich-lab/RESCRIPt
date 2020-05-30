@@ -56,9 +56,9 @@ def _build_base_silva_taxonomy(tree, taxrank, allowed_ranks):
             break
         rank_list = []
 
-        # should probably add a try statement here
-        # to catch the case for when a node in the tree is
-        # not dound in the taxrank dataframe.
+        # should probably add a try statement here?
+        # though the _validate_taxrank_taxtree func should run
+        # before getting here
         rank, taxonomy = taxrank.loc[str(node.name), ['taxrank',
                                                       'taxid_taxonomy']]
         # only pull taxonomy from allowed ranks
