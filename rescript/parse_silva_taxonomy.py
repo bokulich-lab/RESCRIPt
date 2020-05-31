@@ -103,6 +103,9 @@ def _prep_taxmap(taxmap):
 
 
 def _get_terminal_taxon(name):
+    # Return the last taxonomy of a taxonomy path. That is
+    # return: 'Aenigmarchaeales'
+    # from: 'Archaea;Aenigmarchaeota;Aenigmarchaeia;Aenigmarchaeales;'
     return _keep_allowed_chars(name.rsplit(';')[-2])
 
 
