@@ -371,7 +371,7 @@ plugin.methods.register_function(
         'taxonomy_ranks': FeatureData[SILVATaxonomy],
         },
     parameters={
-        'include_species_labels' : Bool
+        'include_species_labels': Bool
         },
     outputs=[('taxonomy', FeatureData[Taxonomy])],
     input_descriptions={
