@@ -375,13 +375,20 @@ plugin.methods.register_function(
         },
     outputs=[('taxonomy', FeatureData[Taxonomy])],
     input_descriptions={
-        'taxonomy_tree': 'SILVA hierarchical taxonomy tree.',
+        'taxonomy_tree': 'SILVA hierarchical taxonomy tree. Typically in the '
+                         'form of: \'tax_slv_ssu_X.tre\', where \'X\' is '
+                         'the SILVA version number.',
         'taxonomy_map': 'SILVA taxonomy map. This file contains a mapping'
                         'of the sequence accessions to the numeric taxonomy '
-                        'identifiers and species label information.',
+                        'identifiers and species label information.'
+                        'Typically in the form of: '
+                        '\'taxmap_slv_ssu_ref_nr_X.txt\', where \'X\' is '
+                        'the SILVA version number.',
         'taxonomy_ranks': 'SILVA taxonomy file. This file contains the '
                          'taxonomic rank information for each numeric '
-                         'taxonomy identifier and the taxonomy.'
+                         'taxonomy identifier and the taxonomy. Typically '
+                         'in the form of: \'tax_slv_ssu_X.tre\', where \'X\' '
+                         'is the SILVA version number.',
         },
     parameter_descriptions={
         'include_species_labels': 'Include species rank labels in taxonomy '
@@ -394,8 +401,10 @@ plugin.methods.register_function(
     name='Generates a SILVA fixed-rank taxonomy.',
     description=(
         'Parses several files from the SILVA reference database to produce a '
-        'GreenGenes-like fixed rank taxonomy.'
-        )
+        'GreenGenes-like fixed rank taxonomy 6 or 7 rank-levels deep.'
+        ),
+    citations=[citations['Pruesse2007'],
+               citations['Quast2013']]
 )
 
 
