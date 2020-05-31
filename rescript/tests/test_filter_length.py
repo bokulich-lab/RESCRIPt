@@ -243,11 +243,11 @@ class TestFilterGlobally(TestPluginBase):
     def test_filter_seqs_by_taxon_no_filters_error(self):
         with self.assertRaisesRegex(
                 ValueError, "No filters were applied.*global_min, global_max"):
-            rescript.actions.filter_seqs_globally(self.seqs)
+            rescript.actions.filter_seqs_length(self.seqs)
 
-    def test_filter_seqs_globally_by_min_length(self):
+    def test_filter_seqs_length_by_min_length(self):
         # filter out seqs < 270 nt (N = 4)
-        filtered, failed = rescript.actions.filter_seqs_globally(
+        filtered, failed = rescript.actions.filter_seqs_length(
             self.seqs, global_min=270, global_max=None)
         filtered_ids = {
             seq.metadata['id'] for seq in filtered.view(DNAIterator)}
@@ -258,9 +258,9 @@ class TestFilterGlobally(TestPluginBase):
         exp_failed_ids = {'C1a', 'C1b', 'C1c', 'C1d'}
         self.assertEqual(failed_ids, exp_failed_ids)
 
-    def test_filter_seqs_globally_by_max_length(self):
+    def test_filter_seqs_length_by_max_length(self):
         # filter out seqs > 280 nt (N = 12)
-        filtered, failed = rescript.actions.filter_seqs_globally(
+        filtered, failed = rescript.actions.filter_seqs_length(
             self.seqs, global_min=None, global_max=280)
         filtered_ids = {
             seq.metadata['id'] for seq in filtered.view(DNAIterator)}
@@ -272,9 +272,9 @@ class TestFilterGlobally(TestPluginBase):
         self.assertEqual(failed_ids, exp_failed_ids)
 
     # this test makes sure that empty outputs pass
-    def test_filter_seqs_globally_all_filtered_out(self):
+    def test_filter_seqs_length_all_filtered_out(self):
         # all seqs are < 270 or > 280
-        filtered, failed = rescript.actions.filter_seqs_globally(
+        filtered, failed = rescript.actions.filter_seqs_length(
             self.seqs, global_min=270, global_max=280)
         filtered_ids = {
             seq.metadata['id'] for seq in filtered.view(DNAIterator)}
@@ -286,9 +286,9 @@ class TestFilterGlobally(TestPluginBase):
         self.assertEqual(failed_ids, exp_failed_ids)
 
     # this test makes sure that empty outputs pass
-    def test_filter_seqs_globally_no_failures(self):
+    def test_filter_seqs_length_no_failures(self):
         # all seqs are > 100 min_len
-        filtered, failed = rescript.actions.filter_seqs_globally(
+        filtered, failed = rescript.actions.filter_seqs_length(
             self.seqs, global_min=100, global_max=300)
         filtered_ids = {
             seq.metadata['id'] for seq in filtered.view(DNAIterator)}
