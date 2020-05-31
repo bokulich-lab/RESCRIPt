@@ -7,11 +7,13 @@
 # ----------------------------------------------------------------------------
 
 from ._format import (SILVATaxonomyFormat, SILVATaxonomyDirectoryFormat,
-                      SILVATaxidMapFormat, SILVATaxidMapDirectoryFormat)
-from ._type import SILVATaxonomy, SILVATaxidMap
+                      SILVATaxidMapFormat, SILVATaxidMapDirectoryFormat,
+                      RNAFASTAFormat, RNASequencesDirectoryFormat)
+from ._type import SILVATaxonomy, SILVATaxidMap, RNASequence
 
 __version__ = '0.0-dev'
 
 __all__ = ['SILVATaxonomyFormat', 'SILVATaxonomyDirectoryFormat',
            'SILVATaxidMapFormat', 'SILVATaxidMapDirectoryFormat',
-           'SILVATaxonomy', 'SILVATaxidMap']
+           'SILVATaxonomy', 'SILVATaxidMap', 'RNAFASTAFormat',
+           'RNASequencesDirectoryFormat', 'RNASequence']
