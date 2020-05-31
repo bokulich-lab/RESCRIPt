@@ -15,7 +15,7 @@ from .dereplicate import dereplicate
 from .evaluate import evaluate_taxonomy
 from .screenseq import screen_sequences
 from .cross_validate import cross_validate, evaluate_classifications
-from .filter_length import filter_seqs_by_taxon, filter_seqs_length
+from .filter_length import filter_seqs_length_by_taxon, filter_seqs_length
 from q2_types.feature_data import FeatureData, Taxonomy, Sequence
 from q2_feature_classifier.classifier import (_parameter_descriptions,
                                               _classify_parameters)
@@ -288,7 +288,7 @@ FILTER_OUTPUT_DESCRIPTIONS = {
 
 
 plugin.methods.register_function(
-    function=filter_seqs_by_taxon,
+    function=filter_seqs_length_by_taxon,
     inputs={'sequences': FeatureData[Sequence],
             'taxonomy': FeatureData[Taxonomy]},
     parameters={
@@ -356,7 +356,8 @@ plugin.methods.register_function(
     name='Filter sequences by length.',
     description=(
         'Filter sequences by length with VSEARCH. For a combination of global '
-        'and conditional taxonomic filtering, see filter_seqs_by_taxon.'),
+        'and conditional taxonomic filtering, see filter_seqs_length_by_taxon.'
+    ),
     citations=[citations['rognes2016vsearch']]
 )
 

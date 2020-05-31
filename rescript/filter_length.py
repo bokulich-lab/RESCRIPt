@@ -37,14 +37,14 @@ def filter_seqs_length(sequences: DNAFASTAFormat,
     return result, failures
 
 
-def filter_seqs_by_taxon(sequences: DNAFASTAFormat,
-                         taxonomy: pd.Series,
-                         labels: str,
-                         min_lens: int = None,
-                         max_lens: int = None,
-                         global_min: int = None,
-                         global_max: int = None
-                         ) -> (DNAFASTAFormat, DNAFASTAFormat):
+def filter_seqs_length_by_taxon(sequences: DNAFASTAFormat,
+                                taxonomy: pd.Series,
+                                labels: str,
+                                min_lens: int = None,
+                                max_lens: int = None,
+                                global_min: int = None,
+                                global_max: int = None
+                                ) -> (DNAFASTAFormat, DNAFASTAFormat):
     # Validate filtering options
     if min_lens is max_lens is None:
         raise ValueError(ERROR_FILTER_OPTIONS + 'min_lens, max_lens.')

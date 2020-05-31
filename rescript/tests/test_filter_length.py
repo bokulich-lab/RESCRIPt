@@ -36,7 +36,7 @@ class TestFilterByTaxonomy(TestPluginBase):
     # lengths; this filters based on multiple criteria, and ensures that nested
     # filtering works when more stringent filters are applied for genus/species
     # level than at kingdom level.
-    def test_filter_seqs_by_taxon_nested(self):
+    def test_filter_seqs_length_by_taxon_nested(self):
         # if a sequence matches multiple taxonomic terms in the search, we
         # grab the most stringent: longest minimum length and/or shortest
         # maximum length for filtering.
@@ -45,7 +45,7 @@ class TestFilterByTaxonomy(TestPluginBase):
         max_lens = [500, 500, 500, 290]
         global_min = 270
         global_max = 500
-        filtered, failed = rescript.actions.filter_seqs_by_taxon(
+        filtered, failed = rescript.actions.filter_seqs_length_by_taxon(
             sequences=self.seqs, taxonomy=self.taxa, labels=labels,
             min_lens=min_lens, max_lens=max_lens, global_min=global_min,
             global_max=global_max)
@@ -75,7 +75,7 @@ class TestFilterByTaxonomy(TestPluginBase):
         # max_len filter, however, gets applied (as already tested above).
         min_lens = [270, 260, 1]
         max_lens = [500, 500, 280]
-        filtered, failed = rescript.actions.filter_seqs_by_taxon(
+        filtered, failed = rescript.actions.filter_seqs_length_by_taxon(
             sequences=self.seqs, taxonomy=self.taxa, labels=labels,
             min_lens=min_lens, max_lens=max_lens, global_min=None,
             global_max=None)
@@ -89,9 +89,9 @@ class TestFilterByTaxonomy(TestPluginBase):
         self.assertEqual(failed_ids, exp_failed_ids)
 
     # this test makes sure that empty outputs pass
-    def test_filter_seqs_by_taxon_no_seqs_pass_filter(self):
+    def test_filter_seqs_length_by_taxon_no_seqs_pass_filter(self):
         # all seqs are < 300 min_len
-        filtered, failed = rescript.actions.filter_seqs_by_taxon(
+        filtered, failed = rescript.actions.filter_seqs_length_by_taxon(
             sequences=self.seqs, taxonomy=self.taxa, labels=['Bacteria'],
             min_lens=[300])
         filtered_ids = {
@@ -104,9 +104,9 @@ class TestFilterByTaxonomy(TestPluginBase):
         self.assertEqual(failed_ids, exp_failed_ids)
 
     # this test makes sure that empty outputs pass
-    def test_filter_seqs_by_taxon_no_failures(self):
+    def test_filter_seqs_length_by_taxon_no_failures(self):
         # all seqs are > 100 min_len
-        filtered, failed = rescript.actions.filter_seqs_by_taxon(
+        filtered, failed = rescript.actions.filter_seqs_length_by_taxon(
             sequences=self.seqs, taxonomy=self.taxa, labels=['Bacteria'],
             min_lens=[100])
         filtered_ids = {
@@ -119,33 +119,33 @@ class TestFilterByTaxonomy(TestPluginBase):
         exp_failed_ids = set()
         self.assertEqual(failed_ids, exp_failed_ids)
 
-    def test_filter_seqs_by_taxon_no_filters_error(self):
+    def test_filter_seqs_length_by_taxon_no_filters_error(self):
         with self.assertRaisesRegex(
                 ValueError, "No filters were applied.*min_lens, max_lens."):
-            rescript.actions.filter_seqs_by_taxon(
+            rescript.actions.filter_seqs_length_by_taxon(
                 sequences=self.seqs, taxonomy=self.taxa, labels=['Bacteria'])
 
-    def test_filter_seqs_by_taxon_index_mismatch_error(self):
+    def test_filter_seqs_length_by_taxon_index_mismatch_error(self):
         missing_taxa = import_data(
             'FeatureData[Taxonomy]',
             self.taxa.view(pd.Series).drop(['C1', 'C2']))
         with self.assertRaisesRegex(
                 ValueError, "sequences are missing.*C1, C2"):
-            rescript.actions.filter_seqs_by_taxon(
+            rescript.actions.filter_seqs_length_by_taxon(
                 sequences=self.seqs, taxonomy=missing_taxa,
                 labels=['Bacteria'], min_lens=[1200])
 
-    def test_filter_seqs_by_taxon_min_lens_mismatch(self):
+    def test_filter_seqs_length_by_taxon_min_lens_mismatch(self):
         with self.assertRaisesRegex(
                 ValueError, "labels and min_lens must contain"):
-            rescript.actions.filter_seqs_by_taxon(
+            rescript.actions.filter_seqs_length_by_taxon(
                 sequences=self.seqs, taxonomy=self.taxa, labels=['Bacteria'],
                 min_lens=[1200, 100])
 
-    def test_filter_seqs_by_taxon_max_lens_mismatch(self):
+    def test_filter_seqs_length_by_taxon_max_lens_mismatch(self):
         with self.assertRaisesRegex(
                 ValueError, "labels and max_lens must contain"):
-            rescript.actions.filter_seqs_by_taxon(
+            rescript.actions.filter_seqs_length_by_taxon(
                 sequences=self.seqs, taxonomy=self.taxa,
                 labels=['Bacteria', 'Archaea'], min_lens=None, max_lens=[300])
 
@@ -240,7 +240,7 @@ class TestFilterGlobally(TestPluginBase):
         self.seqs = import_data(
             'FeatureData[Sequence]', self.get_data_path('derep-test.fasta'))
 
-    def test_filter_seqs_by_taxon_no_filters_error(self):
+    def test_filter_seqs_length_by_taxon_no_filters_error(self):
         with self.assertRaisesRegex(
                 ValueError, "No filters were applied.*global_min, global_max"):
             rescript.actions.filter_seqs_length(self.seqs)
