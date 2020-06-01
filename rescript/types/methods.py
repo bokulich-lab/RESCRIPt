@@ -6,13 +6,12 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-from qiime2.plugin import SemanticType
-from q2_types.feature_data import FeatureData
+from q2_types.feature_data import DNAFASTAFormat
+
+from rescript.types._format import RNAFASTAFormat
+from rescript._utilities import _rna_to_dna
 
 
-SILVATaxonomy = SemanticType(
-    'SILVATaxonomy', variant_of=FeatureData.field['type'])
-SILVATaxidMap = SemanticType(
-    'SILVATaxidMap', variant_of=FeatureData.field['type'])
-
-RNASequence = SemanticType('RNASequence', variant_of=FeatureData.field['type'])
+# This exposes the transformer as its own method
+def reverse_transcribe(rna_sequences: RNAFASTAFormat) -> DNAFASTAFormat:
+    return _rna_to_dna(str(rna_sequences))

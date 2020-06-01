@@ -7,9 +7,11 @@
 # ----------------------------------------------------------------------------
 
 import pandas as pd
+from q2_types.feature_data import DNAFASTAFormat, DNAIterator
 
 from ..plugin_setup import plugin
-from ._format import SILVATaxonomyFormat, SILVATaxidMapFormat
+from ._format import SILVATaxonomyFormat, SILVATaxidMapFormat, RNAFASTAFormat
+from rescript._utilities import _rna_to_dna, _read_dna_fasta
 
 
 def _read_dataframe(fh, header=0):
@@ -49,3 +51,15 @@ def _5(ff: SILVATaxidMapFormat) -> (pd.DataFrame):
     with ff.open() as fh:
         df = _read_dataframe(fh, header=0)
         return df
+
+
+@plugin.register_transformer
+def _6(data: RNAFASTAFormat) -> DNAFASTAFormat:
+    return _rna_to_dna(str(data))
+
+
+@plugin.register_transformer
+def _7(data: RNAFASTAFormat) -> DNAIterator:
+    converted_dna = _rna_to_dna(str(data))
+    generator = _read_dna_fasta(str(converted_dna))
+    return DNAIterator(generator)

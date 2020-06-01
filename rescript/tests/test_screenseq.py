@@ -9,8 +9,10 @@
 
 import qiime2
 from qiime2.plugin.testing import TestPluginBase
-from rescript.screenseq import screen_sequences
 from q2_types.feature_data import DNAFASTAFormat, DNAIterator
+
+from rescript.screenseq import screen_sequences
+from rescript.types._format import RNAFASTAFormat
 
 
 import_data = qiime2.Artifact.import_data
@@ -27,6 +29,15 @@ class TestCleanseq(TestPluginBase):
     def test_screen_sequences_default_params(self):
         # Test default params: num_degenerates = 5, homopolymer_length = 8
         obs = screen_sequences(self.seqs1)
+        obs_ids = {seq.metadata['id'] for seq in obs.view(DNAIterator)}
+        exp_ids = {'Ambig2', 'cleanseq'}
+        self.assertEqual(obs_ids, exp_ids)
+
+    def test_screen_sequences_rna_default_params(self):
+        # Test default params work with RNA seqs as input
+        rna_path = self.get_data_path('cleanseq-test-1-rna.fasta')
+        rna_seqs = RNAFASTAFormat(rna_path, mode='r').view(DNAIterator)
+        obs = screen_sequences(rna_seqs)
         obs_ids = {seq.metadata['id'] for seq in obs.view(DNAIterator)}
         exp_ids = {'Ambig2', 'cleanseq'}
         self.assertEqual(obs_ids, exp_ids)

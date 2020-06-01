@@ -23,8 +23,9 @@ from q2_feature_classifier.classifier import (_parameter_descriptions,
 import rescript
 from rescript.types._format import (
     SILVATaxonomyFormat, SILVATaxonomyDirectoryFormat, SILVATaxidMapFormat,
-    SILVATaxidMapDirectoryFormat)
-from rescript.types._type import SILVATaxonomy, SILVATaxidMap
+    SILVATaxidMapDirectoryFormat, RNAFASTAFormat, RNASequencesDirectoryFormat)
+from rescript.types._type import SILVATaxonomy, SILVATaxidMap, RNASequence
+from rescript.types.methods import reverse_transcribe
 
 
 citations = Citations.load('citations.bib', package='rescript')
@@ -244,7 +245,7 @@ plugin.pipelines.register_function(
 plugin.methods.register_function(
     function=screen_sequences,
     inputs={
-        'sequences': FeatureData[Sequence]
+        'sequences': FeatureData[Sequence | RNASequence]
         },
     parameters={
         'num_degenerates': Int % Range(1, None),
@@ -252,8 +253,8 @@ plugin.methods.register_function(
         },
     outputs=[('clean_sequences', FeatureData[Sequence])],
     input_descriptions={
-        'sequences': 'Sequences to be screened for removal based on '
-                     'degenerate base and homopolymer screening criteria.'
+        'sequences': 'DNA or RNA Sequences to be screened for removal based '
+                     'on degenerate base and homopolymer screening criteria.'
         },
     parameter_descriptions={
         'num_degenerates': 'Sequences with N, or more, degenerate bases will '
@@ -262,17 +263,19 @@ plugin.methods.register_function(
                               'length N, or greater, will be removed.',
     },
     output_descriptions={
-        'clean_sequences': 'The resulting sequences that pass degenerate base '
-                           'and homopolymer screening criteria.'
+        'clean_sequences': 'The resulting DNA sequences that pass degenerate '
+                           'base and homopolymer screening criteria.'
         },
     name='Removes sequences that contain at least the specified number of '
          'degenerate bases and/or homopolymers of a given length.',
     description=(
-        'Removes DNA sequences that have the specified number, or more, '
-        'of IUPAC compliant degenerate bases. Remaining sequences are removed '
-        'if they contain homopolymers equal to or longer than the specified '
-        'length.'
-        )
+        'Filter DNA or RNA sequences that contain ambiguous bases and '
+        'homopolymers, and output filtered DNA sequences. Removes DNA '
+        'sequences that have the specified number, or more, of IUPAC '
+        'compliant degenerate bases. Remaining sequences are removed if they '
+        'contain homopolymers equal to or longer than the specified length. '
+        'If the input consists of RNA sequences, they are reverse transcribed '
+        'to DNA before filtering.')
 )
 
 
@@ -368,14 +371,33 @@ plugin.methods.register_function(
 )
 
 
+plugin.methods.register_function(
+    function=reverse_transcribe,
+    inputs={'rna_sequences': FeatureData[RNASequence]},
+    parameters={},
+    outputs=[('dna_sequences', FeatureData[Sequence])],
+    input_descriptions={
+        'rna_sequences': 'RNA Sequences to reverse transcribe to DNA.'},
+    parameter_descriptions={},
+    output_descriptions={
+        'dna_sequences': 'Reverse-transcribed DNA sequences.'},
+    name='Reverse transcribe RNA to DNA sequences.',
+    description=('Reverse transcribe RNA to DNA sequences.')
+)
+
+
 # Registrations
-plugin.register_semantic_types(SILVATaxonomy, SILVATaxidMap)
+plugin.register_semantic_types(SILVATaxonomy, SILVATaxidMap, RNASequence)
 plugin.register_semantic_type_to_format(
     FeatureData[SILVATaxonomy],
     artifact_format=SILVATaxonomyDirectoryFormat)
 plugin.register_semantic_type_to_format(
     FeatureData[SILVATaxidMap],
     artifact_format=SILVATaxidMapDirectoryFormat)
+plugin.register_semantic_type_to_format(
+    FeatureData[RNASequence],
+    artifact_format=RNASequencesDirectoryFormat)
 plugin.register_formats(SILVATaxonomyFormat, SILVATaxonomyDirectoryFormat,
-                        SILVATaxidMapFormat, SILVATaxidMapDirectoryFormat)
+                        SILVATaxidMapFormat, SILVATaxidMapDirectoryFormat,
+                        RNAFASTAFormat, RNASequencesDirectoryFormat)
 importlib.import_module('rescript.types._transformer')
