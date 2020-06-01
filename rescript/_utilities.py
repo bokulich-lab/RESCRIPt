@@ -9,6 +9,8 @@
 from itertools import zip_longest, takewhile
 from re import sub
 import subprocess
+import skbio
+from q2_types.feature_data import DNAFASTAFormat
 
 
 def _find_lca_in_series(t1, t2):
@@ -72,3 +74,19 @@ def run_command(cmd, verbose=True):
     print("\nCommand:", end=' ')
     print(" ".join(cmd), end='\n\n')
     subprocess.run(cmd, check=True)
+
+
+def _read_rna_fasta(path):
+    return skbio.read(path, format='fasta', constructor=skbio.RNA)
+
+
+def _read_dna_fasta(path):
+    return skbio.read(path, format='fasta', constructor=skbio.DNA)
+
+
+def _rna_to_dna(path):
+    ff = DNAFASTAFormat()
+    with ff.open() as outfasta:
+        for seq in _read_rna_fasta(path):
+            seq.reverse_transcribe().write(outfasta)
+    return ff

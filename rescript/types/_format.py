@@ -6,8 +6,12 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
+import itertools
+
 import qiime2.plugin.model as model
 from qiime2.plugin import ValidationError
+
+from rescript._utilities import _read_rna_fasta
 
 
 def _validate_record_len(cells, current_line_number, exp_len):
@@ -122,3 +126,21 @@ class SILVATaxidMapFormat(model.TextFileFormat):
 SILVATaxidMapDirectoryFormat = model.SingleFileDirectoryFormat(
     'SILVATaxidMapDirectoryFormat', 'silva_taxmap.tsv',
     SILVATaxidMapFormat)
+
+
+class RNAFASTAFormat(model.TextFileFormat):
+    def _validate(self, n_records=None):
+        generator = _read_rna_fasta(str(self))
+        if n_records is not None:
+            generator = itertools.islice(generator, n_records)
+        # just loop over contents with skbio generator
+        # skbio will raise an error if any record is not an RNA sequence
+        [i for i in generator]
+
+    def _validate_(self, level):
+        record_count_map = {'min': 5, 'max': None}
+        self._validate(record_count_map[level])
+
+
+RNASequencesDirectoryFormat = model.SingleFileDirectoryFormat(
+    'RNASequencesDirectoryFormat', 'rna-sequences.fasta', RNAFASTAFormat)

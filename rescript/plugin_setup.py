@@ -16,7 +16,7 @@ from .evaluate import evaluate_taxonomy
 from .screenseq import screen_sequences
 from .parse_silva_taxonomy import parse_silva_taxonomy
 from .cross_validate import cross_validate, evaluate_classifications
-from .filter_length import filter_seqs_by_taxon, filter_seqs_globally
+from .filter_length import filter_seqs_length_by_taxon, filter_seqs_length
 from q2_types.feature_data import FeatureData, Taxonomy, Sequence
 from q2_types.tree import Phylogeny, Rooted
 from q2_feature_classifier.classifier import (_parameter_descriptions,
@@ -25,8 +25,9 @@ from q2_feature_classifier.classifier import (_parameter_descriptions,
 import rescript
 from rescript.types._format import (
     SILVATaxonomyFormat, SILVATaxonomyDirectoryFormat, SILVATaxidMapFormat,
-    SILVATaxidMapDirectoryFormat)
-from rescript.types._type import SILVATaxonomy, SILVATaxidMap
+    SILVATaxidMapDirectoryFormat, RNAFASTAFormat, RNASequencesDirectoryFormat)
+from rescript.types._type import SILVATaxonomy, SILVATaxidMap, RNASequence
+from rescript.types.methods import reverse_transcribe
 
 
 citations = Citations.load('citations.bib', package='rescript')
@@ -181,7 +182,8 @@ plugin.methods.register_function(
         'mode': Str % Choices(['uniq', 'lca', 'majority']),
         'threads': Int % Range(1, 256),
         'perc_identity': Float % Range(0, 1, inclusive_start=False,
-                                       inclusive_end=True)},
+                                       inclusive_end=True),
+        'derep_prefix': Bool},
     outputs=[('dereplicated_sequences', FeatureData[Sequence]),
              ('dereplicated_taxa', FeatureData[Taxonomy])],
     input_descriptions={
@@ -200,7 +202,12 @@ plugin.methods.register_function(
                    'of available CPU cores.',
         'perc_identity': 'The percent identity at which clustering should be '
                          'performed. This parameter maps to vsearch\'s --id '
-                         'parameter.'
+                         'parameter.',
+        'derep_prefix': 'Merge sequences with identical prefixes. If a '
+                        'sequence is identical to the prefix of two or more '
+                        'longer sequences, it is clustered with the shortest '
+                        'of them. If they are equally long, it is clustered '
+                        'with the most abundant.'
     },
     name='Dereplicate features with matching sequences and taxonomies.',
     description=(
@@ -240,7 +247,7 @@ plugin.pipelines.register_function(
 plugin.methods.register_function(
     function=screen_sequences,
     inputs={
-        'sequences': FeatureData[Sequence]
+        'sequences': FeatureData[Sequence | RNASequence]
         },
     parameters={
         'num_degenerates': Int % Range(1, None),
@@ -248,8 +255,8 @@ plugin.methods.register_function(
         },
     outputs=[('clean_sequences', FeatureData[Sequence])],
     input_descriptions={
-        'sequences': 'Sequences to be screened for removal based on '
-                     'degenerate base and homopolymer screening criteria.'
+        'sequences': 'DNA or RNA Sequences to be screened for removal based '
+                     'on degenerate base and homopolymer screening criteria.'
         },
     parameter_descriptions={
         'num_degenerates': 'Sequences with N, or more, degenerate bases will '
@@ -258,17 +265,19 @@ plugin.methods.register_function(
                               'length N, or greater, will be removed.',
     },
     output_descriptions={
-        'clean_sequences': 'The resulting sequences that pass degenerate base '
-                           'and homopolymer screening criteria.'
+        'clean_sequences': 'The resulting DNA sequences that pass degenerate '
+                           'base and homopolymer screening criteria.'
         },
     name='Removes sequences that contain at least the specified number of '
          'degenerate bases and/or homopolymers of a given length.',
     description=(
-        'Removes DNA sequences that have the specified number, or more, '
-        'of IUPAC compliant degenerate bases. Remaining sequences are removed '
-        'if they contain homopolymers equal to or longer than the specified '
-        'length.'
-        )
+        'Filter DNA or RNA sequences that contain ambiguous bases and '
+        'homopolymers, and output filtered DNA sequences. Removes DNA '
+        'sequences that have the specified number, or more, of IUPAC '
+        'compliant degenerate bases. Remaining sequences are removed if they '
+        'contain homopolymers equal to or longer than the specified length. '
+        'If the input consists of RNA sequences, they are reverse transcribed '
+        'to DNA before filtering.')
 )
 
 
@@ -290,7 +299,7 @@ FILTER_OUTPUT_DESCRIPTIONS = {
 
 
 plugin.methods.register_function(
-    function=filter_seqs_by_taxon,
+    function=filter_seqs_length_by_taxon,
     inputs={'sequences': FeatureData[Sequence],
             'taxonomy': FeatureData[Taxonomy]},
     parameters={
@@ -335,12 +344,12 @@ plugin.methods.register_function(
         'nested taxonomic filters can be applied (e.g., to apply a more '
         'stringent filter for a particular genus, but a less stringent filter '
         'for other members of the kingdom). For global length-based filtering '
-        'without conditional taxonomic filtering, see filter_seqs_globally.'),
+        'without conditional taxonomic filtering, see filter_seqs_length.'),
 )
 
 
 plugin.methods.register_function(
-    function=filter_seqs_globally,
+    function=filter_seqs_length,
     inputs={'sequences': FeatureData[Sequence]},
     parameters={
         **FILTER_PARAMS,
@@ -358,13 +367,13 @@ plugin.methods.register_function(
     name='Filter sequences by length.',
     description=(
         'Filter sequences by length with VSEARCH. For a combination of global '
-        'and conditional taxonomic filtering, see filter_seqs_by_taxon.'),
+        'and conditional taxonomic filtering, see filter_seqs_length_by_taxon.'
+    ),
     citations=[citations['rognes2016vsearch']]
 )
 
 
-plugin.methods.register_function(
-    function=parse_silva_taxonomy,
+plugin.methods.register_function(function=parse_silva_taxonomy,
     inputs={
         'taxonomy_tree': Phylogeny[Rooted],
         'taxonomy_map': FeatureData[SILVATaxidMap],
@@ -408,14 +417,33 @@ plugin.methods.register_function(
 )
 
 
+plugin.methods.register_function(
+    function=reverse_transcribe,
+    inputs={'rna_sequences': FeatureData[RNASequence]},
+    parameters={},
+    outputs=[('dna_sequences', FeatureData[Sequence])],
+    input_descriptions={
+        'rna_sequences': 'RNA Sequences to reverse transcribe to DNA.'},
+    parameter_descriptions={},
+    output_descriptions={
+        'dna_sequences': 'Reverse-transcribed DNA sequences.'},
+    name='Reverse transcribe RNA to DNA sequences.',
+    description=('Reverse transcribe RNA to DNA sequences.')
+)
+
+
 # Registrations
-plugin.register_semantic_types(SILVATaxonomy, SILVATaxidMap)
+plugin.register_semantic_types(SILVATaxonomy, SILVATaxidMap, RNASequence)
 plugin.register_semantic_type_to_format(
     FeatureData[SILVATaxonomy],
     artifact_format=SILVATaxonomyDirectoryFormat)
 plugin.register_semantic_type_to_format(
     FeatureData[SILVATaxidMap],
     artifact_format=SILVATaxidMapDirectoryFormat)
+plugin.register_semantic_type_to_format(
+    FeatureData[RNASequence],
+    artifact_format=RNASequencesDirectoryFormat)
 plugin.register_formats(SILVATaxonomyFormat, SILVATaxonomyDirectoryFormat,
-                        SILVATaxidMapFormat, SILVATaxidMapDirectoryFormat)
+                        SILVATaxidMapFormat, SILVATaxidMapDirectoryFormat,
+                        RNAFASTAFormat, RNASequencesDirectoryFormat)
 importlib.import_module('rescript.types._transformer')

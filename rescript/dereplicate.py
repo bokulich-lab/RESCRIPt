@@ -15,14 +15,20 @@ from q2_types.feature_data import DNAFASTAFormat
 from ._utilities import run_command, _find_lca, _majority
 
 
-def dereplicate(sequences: DNAFASTAFormat, taxa: pd.DataFrame,
-                mode: str = 'uniq', perc_identity: float = 1.0,
-                threads: int = 1) -> (pd.Series, pd.DataFrame):
+def dereplicate(sequences: DNAFASTAFormat,
+                taxa: pd.DataFrame,
+                mode: str = 'uniq',
+                perc_identity: float = 1.0,
+                threads: int = 1,
+                derep_prefix: bool = False) -> (pd.Series, pd.DataFrame):
     with tempfile.NamedTemporaryFile() as out_fasta:
         with tempfile.NamedTemporaryFile() as out_uc:
             # dereplicate sequences with vsearch
-            _vsearch_derep_fulllength(
-                str(sequences), out_fasta.name, out_uc.name, str(threads))
+            # note that multithreading is not supported, but we will leave the
+            # threads argument in the command in case support is added one day.
+            # (multithreading _is_ supported in _vsearch_cluster_size below)
+            _vsearch_derep(str(sequences), out_fasta.name, out_uc.name,
+                           str(threads), derep_prefix)
             out_uc.seek(0)
 
             uc = _parse_uc(out_uc.name)
@@ -56,7 +62,8 @@ def dereplicate(sequences: DNAFASTAFormat, taxa: pd.DataFrame,
     return seqs_out, derep_taxa
 
 
-def _vsearch_derep_fulllength(sequences_fp, out_fasta_fp, out_uc_fp, threads):
+def _vsearch_derep(sequences_fp, out_fasta_fp, out_uc_fp, threads,
+                   derep_prefix):
     cmd = ['vsearch',
            '--derep_fulllength', sequences_fp,
            '--output', out_fasta_fp,
@@ -64,6 +71,8 @@ def _vsearch_derep_fulllength(sequences_fp, out_fasta_fp, out_uc_fp, threads):
            '--qmask', 'none',
            '--xsize',
            '--threads', threads]
+    if derep_prefix:
+        cmd[1] = '--derep_prefix'
     run_command(cmd)
 
 

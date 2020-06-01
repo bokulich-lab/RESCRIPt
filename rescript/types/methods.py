@@ -6,8 +6,12 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-import importlib
+from q2_types.feature_data import DNAFASTAFormat
 
-__version__ = '2020.6.0.dev0'
+from rescript.types._format import RNAFASTAFormat
+from rescript._utilities import _rna_to_dna
 
-importlib.import_module('rescript.types')
+
+# This exposes the transformer as its own method
+def reverse_transcribe(rna_sequences: RNAFASTAFormat) -> DNAFASTAFormat:
+    return _rna_to_dna(str(rna_sequences))

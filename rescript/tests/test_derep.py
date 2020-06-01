@@ -54,6 +54,14 @@ class TestDerep(TestPluginBase):
                                exp_taxa.sort_index(), check_names=False)
         pdt.assert_index_equal(seqs.view(pd.Series).sort_index().index,
                                exp_taxa.sort_index().index, check_names=False)
+        # use derep_prefix=True; should still obtain same result if the prefix
+        # seqs bear unique taxonomic labels, as seen in this test case
+        seqs, taxa, = self.dereplicate(
+            self.seqs, self.taxa, mode='uniq', derep_prefix=True)
+        pdt.assert_frame_equal(taxa.view(pd.DataFrame).sort_index(),
+                               exp_taxa.sort_index(), check_names=False)
+        pdt.assert_index_equal(seqs.view(pd.Series).sort_index().index,
+                               exp_taxa.sort_index().index, check_names=False)
 
     def test_dereplicate_uniq_99_perc(self):
         seqs, taxa, = self.dereplicate(
@@ -81,6 +89,14 @@ class TestDerep(TestPluginBase):
                                exp_taxa.sort_index(), check_names=False)
         pdt.assert_index_equal(seqs.view(pd.Series).sort_index().index,
                                exp_taxa.sort_index().index, check_names=False)
+        # use derep_prefix=True; should still obtain same result if the prefix
+        # seqs bear unique taxonomic labels, as seen in this test case
+        seqs, taxa, = self.dereplicate(self.seqs, self.taxa, mode='uniq',
+                                       perc_identity=0.99, derep_prefix=True)
+        pdt.assert_frame_equal(taxa.view(pd.DataFrame).sort_index(),
+                               exp_taxa.sort_index(), check_names=False)
+        pdt.assert_index_equal(seqs.view(pd.Series).sort_index().index,
+                               exp_taxa.sort_index().index, check_names=False)
 
     def test_dereplicate_lca(self):
         seqs, taxa, = self.dereplicate(self.seqs, self.taxa, mode='lca')
@@ -97,6 +113,27 @@ class TestDerep(TestPluginBase):
                    '; f__Lactobacillaceae; g__Lactobacillus; s__pseudocasei',
             'C1a': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
                    '; f__Lactobacillaceae'}})
+        pdt.assert_frame_equal(taxa.view(pd.DataFrame).sort_index(),
+                               exp_taxa.sort_index(), check_names=False)
+        pdt.assert_index_equal(seqs.view(pd.Series).sort_index().index,
+                               exp_taxa.sort_index().index, check_names=False)
+
+    # test that LCA taxonomy assignment works when derep_prefix=True
+    # here derep_prefix + LCA leads to collapsed C-group seqs + LCA taxonomy
+    def test_dereplicate_prefix_lca(self):
+        seqs, taxa, = self.dereplicate(
+            self.seqs, self.taxa, mode='lca', derep_prefix=True)
+        exp_taxa = pd.DataFrame({'Taxon': {
+            'A1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; '
+                  'f__Paenibacillaceae; g__Paenibacillus',
+            'B1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales;'
+                  ' f__Lactobacillaceae; g__Lactobacillus',
+            'C1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales;'
+                  ' f__Lactobacillaceae',
+            'B1a': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
+                   '; f__Lactobacillaceae; g__Lactobacillus; s__vaginalis',
+            'B1b': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
+                   '; f__Lactobacillaceae; g__Lactobacillus; s__pseudocasei'}})
         pdt.assert_frame_equal(taxa.view(pd.DataFrame).sort_index(),
                                exp_taxa.sort_index(), check_names=False)
         pdt.assert_index_equal(seqs.view(pd.Series).sort_index().index,
@@ -134,6 +171,27 @@ class TestDerep(TestPluginBase):
                    '; f__Lactobacillaceae; g__Lactobacillus; s__pseudocasei',
             'C1a': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
                    '; f__Lactobacillaceae; g__Pediococcus; s__acidilacti'}})
+        pdt.assert_frame_equal(taxa.view(pd.DataFrame).sort_index(),
+                               exp_taxa.sort_index(), check_names=False)
+        pdt.assert_index_equal(seqs.view(pd.Series).sort_index().index,
+                               exp_taxa.sort_index().index, check_names=False)
+
+    # test that majority taxonomy assignment works when derep_prefix=True
+    # all C-group seqs should be merged, and P. acidilacti is the majority
+    def test_dereplicate_prefix_majority(self):
+        seqs, taxa, = self.dereplicate(
+            self.seqs, self.taxa, mode='majority', derep_prefix=True)
+        exp_taxa = pd.DataFrame({'Taxon': {
+            'A1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; '
+                  'f__Paenibacillaceae; g__Paenibacillus; s__alvei',
+            'B1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales;'
+                  ' f__Lactobacillaceae; g__Lactobacillus; s__casei',
+            'C1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales;'
+                  ' f__Lactobacillaceae; g__Pediococcus; s__acidilacti',
+            'B1a': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
+                   '; f__Lactobacillaceae; g__Lactobacillus; s__vaginalis',
+            'B1b': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
+                   '; f__Lactobacillaceae; g__Lactobacillus; s__pseudocasei'}})
         pdt.assert_frame_equal(taxa.view(pd.DataFrame).sort_index(),
                                exp_taxa.sort_index(), check_names=False)
         pdt.assert_index_equal(seqs.view(pd.Series).sort_index().index,
