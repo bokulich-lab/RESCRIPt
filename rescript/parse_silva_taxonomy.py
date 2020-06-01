@@ -116,7 +116,7 @@ def _prep_taxranks(taxrank):
     taxrank.set_index('taxid', inplace=True)
     # return only the last taxonomy from a given taxonomy path
     taxrank.loc[:, 'taxid_taxonomy'] = taxrank.loc[:, 'taxid_taxonomy'].apply(
-                                            lambda x: _get_terminal_taxon(x))
+                                             _get_terminal_taxon)
     return taxrank
 
 
@@ -124,7 +124,6 @@ def _validate_taxrank_taxtree(prepped_taxrank, taxtree):
     # prepass to make sure there is 100 % agreement with the taxids
     # present within the taxranks and taxtree files.
     tree_taxids = {node.name for node in taxtree.postorder()}
-    print(tree_taxids)
     # '1' is the root of the tree of life,
     # which has no tax rank info in any other files.
     tree_taxids.remove('1')

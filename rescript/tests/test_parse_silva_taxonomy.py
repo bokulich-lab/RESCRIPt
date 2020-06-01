@@ -27,26 +27,36 @@ class TestParseSilvaTaxonomy(TestPluginBase):
 
     def setUp(self):
         super().setUp()
-        self.taxmap = qiime2.Artifact.import_data(
+        # taxonomy mapping file 1
+        tm = qiime2.Artifact.import_data(
                         'FeatureData[SILVATaxidMap]', self.get_data_path(
                             'taxmap_slv_ssu_ref_nr_test.txt'))
+        self.taxmap = tm.view(pd.DataFrame)
         # note the tax ranks and tree files below need to be consistant,
         # i.e., share 100% of the taxids for later tests to work!
         # Thus the resulting taxmap file is limited to two example
         # accessions with the matching taxonomy. Hence taxmap2.
         # We'll keep taxmap 1 for better test case with more data.
-        self.taxranks = qiime2.Artifact.import_data(
+        # silva taxonomy ranks file:
+        tr = qiime2.Artifact.import_data(
                             'FeatureData[SILVATaxonomy]',
                             self.get_data_path('tax_slv_ssu_test.txt'))
-        self.tax_tree = qiime2.Artifact.import_data('Phylogeny[Rooted]',
-                                                    self.get_data_path(
-                                                     'taxid_tree.tre'))
-        self.taxmap2 = qiime2.Artifact.import_data(
+        self.taxranks = tr.view(pd.DataFrame)
+        # silva taxonomy tree file 1
+        tt = qiime2.Artifact.import_data(
+                            'Phylogeny[Rooted]',
+                            self.get_data_path('taxid_tree.tre'))
+        self.taxtree = tt.view(TreeNode)
+        # taxonomy mapping file 2
+        tm2 = qiime2.Artifact.import_data(
                               'FeatureData[SILVATaxidMap]',
                               self.get_data_path('taxmap_test_match_tree.txt'))
-        self.tax_tree2 = qiime2.Artifact.import_data(
+        self.taxmap2 = tm2.view(pd.DataFrame)
+        # taxonomy tree file with missing taxid:
+        tt2 = qiime2.Artifact.import_data(
                             'Phylogeny[Rooted]', self.get_data_path(
                              'taxid_tree_missing_id.tre'))
+        self.taxtree2 = tt2.view(TreeNode)
 
     def test_keep_allowed_chars(self):
         obs_bad = _keep_allowed_chars('~`!@#$%^&*;:\"?<>')
@@ -76,8 +86,7 @@ class TestParseSilvaTaxonomy(TestPluginBase):
         self.assertEqual(term_tax, exp_term_tax)
 
     def test_prep_taxranks(self):
-        input_taxranks = self.taxranks.view(pd.DataFrame)
-        obs_taxranks = _prep_taxranks(input_taxranks)
+        obs_taxranks = _prep_taxranks(self.taxranks)
         obs_taxranks.sort_index(inplace=True)
         dd = {'taxid': ['2', '11084', '42913', '42914', '42915',
                         '11089', '24228', '24229', '42916', '42917',
@@ -95,16 +104,16 @@ class TestParseSilvaTaxonomy(TestPluginBase):
         exp_taxranks = pd.DataFrame(dd)
         exp_taxranks.set_index('taxid', inplace=True)
         exp_taxranks.sort_index(inplace=True)
+        assert_frame_equal(obs_taxranks, exp_taxranks)
 
     def test_get_clean_organism_name(self):
-        org_name = '[Some] unpronouncable and long org name'
+        org_name = 'Acetobacterium sp. enrichment culture clone DhR^2/LM-A07'
         obs_clean_name = _get_clean_organism_name(org_name)
-        exp_clean_name = '[Some]_unpronouncable'
+        exp_clean_name = 'Acetobacterium_sp.'
         self.assertEqual(obs_clean_name, exp_clean_name)
 
     def test_prep_taxmap(self):
-        input_taxmap = self.taxmap.view(pd.DataFrame)
-        obs_taxmap = _prep_taxmap(input_taxmap)
+        obs_taxmap = _prep_taxmap(self.taxmap)
         obs_taxmap.sort_index(inplace=True)
         dm = {'Feature ID': ['A16379.1.1485', 'A45315.1.1521', 'A61579.1.1437',
                              'AAAA02020713.1.1297'],
@@ -118,10 +127,8 @@ class TestParseSilvaTaxonomy(TestPluginBase):
         assert_frame_equal(obs_taxmap, exp_taxmap)
 
     def test_build_base_silva_taxonomy(self):
-        input_taxranks = self.taxranks.view(pd.DataFrame)
-        input_taxranks = _prep_taxranks(input_taxranks)
-        input_taxtree = self.tax_tree.view(TreeNode)
-        obs_taxonomy = _build_base_silva_taxonomy(input_taxtree,
+        input_taxranks = _prep_taxranks(self.taxranks)
+        obs_taxonomy = _build_base_silva_taxonomy(self.taxtree,
                                                   input_taxranks,
                                                   ALLOWED_RANKS)
         obs_taxonomy.sort_index(inplace=True)
@@ -214,20 +221,12 @@ class TestParseSilvaTaxonomy(TestPluginBase):
         assert_frame_equal(obs_taxonomy, exp_taxonomy)
 
     def test_compile_taxonomy_output_default(self):
-        input_taxrank = self.taxranks.view(pd.DataFrame)
-        input_taxrank = _prep_taxranks(input_taxrank)
-        # process taxonomy tree
-        input_taxtree = self.tax_tree.view(TreeNode)
-        # make silva tax
-        silva_tax = _build_base_silva_taxonomy(input_taxtree, input_taxrank,
+        input_taxrank = _prep_taxranks(self.taxranks)
+        silva_tax = _build_base_silva_taxonomy(self.taxtree, input_taxrank,
                                                ALLOWED_RANKS)
-        # process taxmap data
-        input_taxmap = self.taxmap2.view(pd.DataFrame)
-        input_taxmap = _prep_taxmap(input_taxmap)
-        # merge taxmap and taxrank info
+        input_taxmap = _prep_taxmap(self.taxmap2)
         updated_taxmap = pd.merge(input_taxmap, silva_tax, left_on='taxid',
                                   right_index=True)
-        # compile_taxonomy
         obs_6r_tax = _compile_taxonomy_output(updated_taxmap,
                                               include_species_labels=False,
                                               selected_ranks=SELECTED_RANKS)
@@ -247,24 +246,13 @@ class TestParseSilvaTaxonomy(TestPluginBase):
         assert_series_equal(obs_6r_tax, exp_6r_tax)
 
     def test_validate_taxrank_taxtree_fail(self):
-        # taxonomy ranks
-        input_taxrank = self.taxranks.view(pd.DataFrame)
-        input_taxrank = _prep_taxranks(input_taxrank)
-        # tree
-        input_taxtree = self.tax_tree2.view(TreeNode)
+        input_taxrank = _prep_taxranks(self.taxranks)
         self.assertRaises(ValueError, _validate_taxrank_taxtree,
-                          input_taxrank, input_taxtree)
+                          input_taxrank, self.taxtree2)
 
     def test_parse_silva_taxonomy(self):
-        # taxrank
-        input_taxrank = self.taxranks.view(pd.DataFrame)
-        # tree
-        input_taxtree = self.tax_tree.view(TreeNode)
-        # taxmap
-        input_taxmap = self.taxmap2.view(pd.DataFrame)
-        # observed
-        obs_res = parse_silva_taxonomy(input_taxtree, input_taxmap,
-                                       input_taxrank,
+        obs_res = parse_silva_taxonomy(self.taxtree, self.taxmap2,
+                                       self.taxranks,
                                        include_species_labels=True)
         obs_res.sort_index(inplace=True)
         # expected:
