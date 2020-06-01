@@ -10,7 +10,7 @@ from ._format import (SILVATaxonomyFormat, SILVATaxonomyDirectoryFormat,
                       SILVATaxidMapFormat, SILVATaxidMapDirectoryFormat)
 from ._type import SILVATaxonomy, SILVATaxidMap
 
-__version__ = '0.0-dev'
+__version__ = '2020.6'
 
 __all__ = ['SILVATaxonomyFormat', 'SILVATaxonomyDirectoryFormat',
            'SILVATaxidMapFormat', 'SILVATaxidMapDirectoryFormat',
