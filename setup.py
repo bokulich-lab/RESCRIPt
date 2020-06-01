@@ -10,7 +10,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="rescript",
-    version='2020.5',
+    version='2020.6.0.dev0',
     packages=find_packages(),
     author="Nicholas Bokulich",
     author_email="nbokulich@gmail.com",

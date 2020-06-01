@@ -22,9 +22,9 @@ requirements:
     - pandas >=0.25.3
     - scikit-learn
     - scikit-bio
-    - q2-types {{ release }}
-    - q2-longitudinal {{ release }}
-    - q2-feature-classifier {{ release }}
+    - q2-types {{ release }}.*
+    - q2-longitudinal {{ release }}.*
+    - q2-feature-classifier {{ release }}.*
     - qiime2 {{ release }}.*
 
 test:
