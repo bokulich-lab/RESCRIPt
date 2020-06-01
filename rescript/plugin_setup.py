@@ -373,12 +373,13 @@ plugin.methods.register_function(
 )
 
 
-plugin.methods.register_function(function=parse_silva_taxonomy,
+plugin.methods.register_function(
+    function=parse_silva_taxonomy,
     inputs={
-        'taxonomy_tree': Phylogeny[Rooted],
-        'taxonomy_map': FeatureData[SILVATaxidMap],
-        'taxonomy_ranks': FeatureData[SILVATaxonomy],
-        },
+            'taxonomy_tree': Phylogeny[Rooted],
+            'taxonomy_map': FeatureData[SILVATaxidMap],
+            'taxonomy_ranks': FeatureData[SILVATaxonomy],
+            },
     parameters={
         'include_species_labels': Bool
         },

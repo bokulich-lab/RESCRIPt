@@ -59,7 +59,6 @@ def _build_base_silva_taxonomy(tree, taxrank, allowed_ranks):
         if node.is_root():
             break
         rank_list = []
-
         # should probably add a try statement here?
         # though the _validate_taxrank_taxtree func should run
         # before getting here
