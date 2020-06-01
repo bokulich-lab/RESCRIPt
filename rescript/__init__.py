@@ -8,6 +8,6 @@
 
 import importlib
 
-__version__ = '0.0-dev'
+__version__ = '2020.6'
 
 importlib.import_module('rescript.types')
