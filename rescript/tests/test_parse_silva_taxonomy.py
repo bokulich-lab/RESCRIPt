@@ -235,8 +235,6 @@ class TestParseSilvaTaxonomy(TestPluginBase):
 
     def test_validate_taxrank_taxtree_fail(self):
         input_taxrank = _prep_taxranks(self.taxranks)
-        print(input_taxrank)
-        print(str(self.taxtree2))
         self.assertRaises(ValueError, _validate_taxrank_taxtree,
                           input_taxrank, self.taxtree2)
 

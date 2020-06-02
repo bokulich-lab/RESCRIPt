@@ -46,7 +46,7 @@ def _keep_allowed_chars(lin_name, allowed_chars=ALLOWED_CHARS,
 def _build_base_silva_taxonomy(tree, taxrank, allowed_ranks):
     # Return base silva taxonomy dataframe by traversing taxonomy tree
     # and forward filling the lower ranks with upper-level taxonomy, then
-    # pre-pend the rank labels. 
+    # pre-pend the rank labels.
     # tree : skbio.TreeNode
     # taxrank : output from _prep_taxranks
     # allowed_ranks : Ordered dict {'domain': 'd__', ...} of allowed ranks to
@@ -58,13 +58,12 @@ def _build_base_silva_taxonomy(tree, taxrank, allowed_ranks):
         if node.is_root():
             break
         rank_list = []
-        # should probably add a try statement here?
-        # though the _validate_taxrank_taxtree func should run
-        # before getting here
+        # the _validate_taxrank_taxtree func should run
+        # before getting here, so all looks up should pass
         rank, taxonomy = taxrank.loc[str(node.name), ['taxrank',
                                                       'taxid_taxonomy']]
         # only pull taxonomy from allowed ranks
-        if rank in allowed_ranks.keys():
+        if rank in allowed_ranks:
             rank_list.append((allowed_ranks[rank], taxonomy))
         for ancestor in node.ancestors():
             if ancestor.is_root():
@@ -72,11 +71,11 @@ def _build_base_silva_taxonomy(tree, taxrank, allowed_ranks):
             else:
                 arank, ataxonomy = taxrank.loc[str(ancestor.name),
                                                ['taxrank', 'taxid_taxonomy']]
-                if arank in allowed_ranks.keys():
+                if arank in allowed_ranks:
                     rank_list.append((allowed_ranks[arank], ataxonomy))
         tid[node.name.strip()] = dict(rank_list)
     silva_tax_id_df = pd.DataFrame.from_dict(tid, orient='index',
-                                             columns=ALLOWED_RANKS.values())
+                                             columns=allowed_ranks.values())
     silva_tax_id_df.index.name = 'taxid'
     # forward fill missing taxonomy with upper level taxonomy
     silva_tax_id_df.ffill(axis=1, inplace=True)
