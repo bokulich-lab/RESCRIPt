@@ -7,6 +7,7 @@
 # ----------------------------------------------------------------------------
 
 import qiime2
+import pkg_resources
 from qiime2.plugin.testing import TestPluginBase
 from rescript.parse_silva_taxonomy import (parse_silva_taxonomy,
                                            _keep_allowed_chars, _prep_taxranks,
@@ -28,19 +29,22 @@ class TestParseSilvaTaxonomy(TestPluginBase):
     def setUp(self):
         super().setUp()
         # taxonomy mapping file 1
+        tm_path = pkg_resources.resource_filename('rescript.types.tests',
+                                                  'data/silva_taxamap.tsv')
         tm = qiime2.Artifact.import_data(
-                        'FeatureData[SILVATaxidMap]', self.get_data_path(
-                            'taxmap_slv_ssu_ref_nr_test.txt'))
+                        'FeatureData[SILVATaxidMap]', tm_path)
         self.taxmap = tm.view(pd.DataFrame)
-        # note the tax ranks and tree files below need to be consistant,
-        # i.e., share 100% of the taxids for later tests to work!
+        # Note: below, the tax ranks and tree files below need to be
+        # consistant, i.e., share 100% of the taxids for later tests to work!
         # Thus the resulting taxmap file is limited to two example
         # accessions with the matching taxonomy. Hence taxmap2.
         # We'll keep taxmap 1 for better test case with more data.
+        # So self.taxmap2, self.taxtree2, and self.tr must match.
         # silva taxonomy ranks file:
+        tr_path = pkg_resources.resource_filename('rescript.types.tests',
+                                                  'data/silva_taxa.tsv')
         tr = qiime2.Artifact.import_data(
-                            'FeatureData[SILVATaxonomy]',
-                            self.get_data_path('tax_slv_ssu_test.txt'))
+                            'FeatureData[SILVATaxonomy]', tr_path)
         self.taxranks = tr.view(pd.DataFrame)
         # silva taxonomy tree file 1
         tt = qiime2.Artifact.import_data(
@@ -89,18 +93,15 @@ class TestParseSilvaTaxonomy(TestPluginBase):
         obs_taxranks = _prep_taxranks(self.taxranks)
         obs_taxranks.sort_index(inplace=True)
         dd = {'taxid': ['2', '11084', '42913', '42914', '42915',
-                        '11089', '24228', '24229', '42916', '42917',
-                        '42918'],
+                        '11089', '24228', '24229', '42916', '42917'],
               'taxid_taxonomy': ['Archaea', 'Aenigmarchaeota',
                                  'Aenigmarchaeia', 'Aenigmarchaeales',
                                  'Candidatus_Aenigmarchaeum',
                                  'Deep_Sea_Euryarchaeotic_Group(DSEG)',
                                  'Altiarchaeota', 'Altiarchaeia',
-                                 'Altiarchaeales', 'Altiarchaeaceae',
-                                 'Candidatus_Altiarchaeum'],
+                                 'Altiarchaeales', 'Altiarchaeaceae'],
               'taxrank': ['domain', 'phylum', 'class', 'order', 'genus',
-                          'class', 'phylum', 'class', 'order', 'family',
-                          'genus']}
+                          'class', 'phylum', 'class', 'order', 'family']}
         exp_taxranks = pd.DataFrame(dd)
         exp_taxranks.set_index('taxid', inplace=True)
         exp_taxranks.sort_index(inplace=True)
@@ -116,11 +117,17 @@ class TestParseSilvaTaxonomy(TestPluginBase):
         obs_taxmap = _prep_taxmap(self.taxmap)
         obs_taxmap.sort_index(inplace=True)
         dm = {'Feature ID': ['A16379.1.1485', 'A45315.1.1521', 'A61579.1.1437',
-                             'AAAA02020713.1.1297'],
+                             'AAAA02020713.1.1297', 'AAAA02020714.1.1202',
+                             'AAAA02038450.2584.4394', 'AAAA02039541.11.1886',
+                             'AAAA02041579.2617.4209', 'AAAA02046270.117.1956',
+                             'AAAA02048270.689.2185'],
               'organism_name': ['[Haemophilus]_ducreyi', 'Bacillus_sp.',
                                 'Thermopallium_natronophilum',
+                                'Oryza_sativa', 'Oryza_sativa', 'Oryza_sativa',
+                                'Oryza_sativa', 'Oryza_sativa', 'Oryza_sativa',
                                 'Oryza_sativa'],
-              'taxid': ['3698', '45177', '46692', '46463']}
+              'taxid': ['3698', '45177', '46692', '46463', '2852', '10099',
+                        '47183', '4432', '4432', '44317']}
         exp_taxmap = pd.DataFrame(dm)
         exp_taxmap.set_index('Feature ID', inplace=True)
         exp_taxmap.sort_index(inplace=True)
@@ -133,88 +140,73 @@ class TestParseSilvaTaxonomy(TestPluginBase):
                                                   ALLOWED_RANKS)
         obs_taxonomy.sort_index(inplace=True)
         tid = {'taxid': ['2', '11084', '42913', '42914', '42915',
-                         '11089', '24228', '24229', '42916', '42917', '42918'],
+                         '11089', '24228', '24229', '42916', '42917'],
                'd__': ['Archaea', 'Archaea', 'Archaea', 'Archaea', 'Archaea',
-                       'Archaea', 'Archaea', 'Archaea', 'Archaea', 'Archaea',
-                       'Archaea'],
+                       'Archaea', 'Archaea', 'Archaea', 'Archaea', 'Archaea'],
                'sk__': ['Archaea', 'Archaea', 'Archaea', 'Archaea', 'Archaea',
-                        'Archaea', 'Archaea', 'Archaea', 'Archaea', 'Archaea',
-                        'Archaea'],
+                        'Archaea', 'Archaea', 'Archaea', 'Archaea', 'Archaea'],
                'k__': ['Archaea', 'Archaea', 'Archaea', 'Archaea', 'Archaea',
-                       'Archaea', 'Archaea', 'Archaea', 'Archaea', 'Archaea',
-                       'Archaea'],
+                       'Archaea', 'Archaea', 'Archaea', 'Archaea', 'Archaea'],
                'ks__': ['Archaea', 'Archaea', 'Archaea', 'Archaea', 'Archaea',
-                        'Archaea', 'Archaea', 'Archaea', 'Archaea', 'Archaea',
-                        'Archaea'],
+                        'Archaea', 'Archaea', 'Archaea', 'Archaea', 'Archaea'],
                'sp__': ['Archaea', 'Archaea', 'Archaea', 'Archaea', 'Archaea',
-                        'Archaea', 'Archaea', 'Archaea', 'Archaea', 'Archaea',
-                        'Archaea'],
+                        'Archaea', 'Archaea', 'Archaea', 'Archaea', 'Archaea'],
                'p__': ['Archaea', 'Aenigmarchaeota', 'Aenigmarchaeota',
                        'Aenigmarchaeota', 'Aenigmarchaeota', 'Aenigmarchaeota',
                        'Altiarchaeota', 'Altiarchaeota', 'Altiarchaeota',
-                       'Altiarchaeota', 'Altiarchaeota'],
+                       'Altiarchaeota'],
                'ps__': ['Archaea', 'Aenigmarchaeota', 'Aenigmarchaeota',
                         'Aenigmarchaeota', 'Aenigmarchaeota',
                         'Aenigmarchaeota', 'Altiarchaeota', 'Altiarchaeota',
-                        'Altiarchaeota', 'Altiarchaeota', 'Altiarchaeota'],
+                        'Altiarchaeota', 'Altiarchaeota'],
                'pi__': ['Archaea', 'Aenigmarchaeota', 'Aenigmarchaeota',
                         'Aenigmarchaeota', 'Aenigmarchaeota',
                         'Aenigmarchaeota', 'Altiarchaeota', 'Altiarchaeota',
-                        'Altiarchaeota', 'Altiarchaeota', 'Altiarchaeota'],
+                        'Altiarchaeota', 'Altiarchaeota'],
                'sc__': ['Archaea', 'Aenigmarchaeota', 'Aenigmarchaeota',
                         'Aenigmarchaeota', 'Aenigmarchaeota',
                         'Aenigmarchaeota', 'Altiarchaeota', 'Altiarchaeota',
-                        'Altiarchaeota', 'Altiarchaeota', 'Altiarchaeota'],
+                        'Altiarchaeota', 'Altiarchaeota'],
                'c__': ['Archaea', 'Aenigmarchaeota', 'Aenigmarchaeia',
                        'Aenigmarchaeia', 'Aenigmarchaeia',
                        'Deep_Sea_Euryarchaeotic_Group(DSEG)', 'Altiarchaeota',
-                       'Altiarchaeia', 'Altiarchaeia', 'Altiarchaeia',
-                       'Altiarchaeia'],
+                       'Altiarchaeia', 'Altiarchaeia', 'Altiarchaeia'],
                'cs__': ['Archaea', 'Aenigmarchaeota', 'Aenigmarchaeia',
                         'Aenigmarchaeia', 'Aenigmarchaeia',
                         'Deep_Sea_Euryarchaeotic_Group(DSEG)', 'Altiarchaeota',
-                        'Altiarchaeia', 'Altiarchaeia', 'Altiarchaeia',
-                        'Altiarchaeia'],
+                        'Altiarchaeia', 'Altiarchaeia', 'Altiarchaeia'],
                'ci__': ['Archaea', 'Aenigmarchaeota', 'Aenigmarchaeia',
                         'Aenigmarchaeia', 'Aenigmarchaeia',
                         'Deep_Sea_Euryarchaeotic_Group(DSEG)', 'Altiarchaeota',
-                        'Altiarchaeia', 'Altiarchaeia', 'Altiarchaeia',
-                        'Altiarchaeia'],
+                        'Altiarchaeia', 'Altiarchaeia', 'Altiarchaeia'],
                'so__': ['Archaea', 'Aenigmarchaeota', 'Aenigmarchaeia',
                         'Aenigmarchaeia', 'Aenigmarchaeia',
                         'Deep_Sea_Euryarchaeotic_Group(DSEG)', 'Altiarchaeota',
-                        'Altiarchaeia', 'Altiarchaeia', 'Altiarchaeia',
-                        'Altiarchaeia'],
+                        'Altiarchaeia', 'Altiarchaeia', 'Altiarchaeia'],
                'o__': ['Archaea', 'Aenigmarchaeota', 'Aenigmarchaeia',
                        'Aenigmarchaeales', 'Aenigmarchaeales',
                        'Deep_Sea_Euryarchaeotic_Group(DSEG)', 'Altiarchaeota',
-                       'Altiarchaeia', 'Altiarchaeales', 'Altiarchaeales',
-                       'Altiarchaeales'],
+                       'Altiarchaeia', 'Altiarchaeales', 'Altiarchaeales'],
                'os__': ['Archaea', 'Aenigmarchaeota', 'Aenigmarchaeia',
                         'Aenigmarchaeales', 'Aenigmarchaeales',
                         'Deep_Sea_Euryarchaeotic_Group(DSEG)', 'Altiarchaeota',
-                        'Altiarchaeia', 'Altiarchaeales', 'Altiarchaeales',
-                        'Altiarchaeales'],
+                        'Altiarchaeia', 'Altiarchaeales', 'Altiarchaeales'],
                'sf__': ['Archaea', 'Aenigmarchaeota', 'Aenigmarchaeia',
                         'Aenigmarchaeales', 'Aenigmarchaeales',
                         'Deep_Sea_Euryarchaeotic_Group(DSEG)', 'Altiarchaeota',
-                        'Altiarchaeia', 'Altiarchaeales', 'Altiarchaeales',
-                        'Altiarchaeales'],
+                        'Altiarchaeia', 'Altiarchaeales', 'Altiarchaeales'],
                'f__': ['Archaea', 'Aenigmarchaeota', 'Aenigmarchaeia',
                        'Aenigmarchaeales', 'Aenigmarchaeales',
                        'Deep_Sea_Euryarchaeotic_Group(DSEG)', 'Altiarchaeota',
-                       'Altiarchaeia', 'Altiarchaeales', 'Altiarchaeaceae',
-                       'Altiarchaeaceae'],
+                       'Altiarchaeia', 'Altiarchaeales', 'Altiarchaeaceae'],
                'fs__': ['Archaea', 'Aenigmarchaeota', 'Aenigmarchaeia',
                         'Aenigmarchaeales', 'Aenigmarchaeales',
                         'Deep_Sea_Euryarchaeotic_Group(DSEG)', 'Altiarchaeota',
-                        'Altiarchaeia', 'Altiarchaeales', 'Altiarchaeaceae',
-                        'Altiarchaeaceae'],
+                        'Altiarchaeia', 'Altiarchaeales', 'Altiarchaeaceae'],
                'g__': ['Archaea', 'Aenigmarchaeota', 'Aenigmarchaeia',
                        'Aenigmarchaeales', 'Candidatus_Aenigmarchaeum',
                        'Deep_Sea_Euryarchaeotic_Group(DSEG)', 'Altiarchaeota',
-                       'Altiarchaeia', 'Altiarchaeales', 'Altiarchaeaceae',
-                       'Candidatus_Altiarchaeum']}
+                       'Altiarchaeia', 'Altiarchaeales', 'Altiarchaeaceae']}
         exp_taxonomy = pd.DataFrame(tid)
         exp_taxonomy.set_index('taxid', inplace=True)
         exp_taxonomy.sort_index(inplace=True)
@@ -235,11 +227,7 @@ class TestParseSilvaTaxonomy(TestPluginBase):
         t1 = ("d__Archaea; p__Aenigmarchaeota; c__Aenigmarchaeia; "
               "o__Aenigmarchaeales; f__Aenigmarchaeales; "
               "g__Candidatus_Aenigmarchaeum")
-        t2 = ("d__Archaea; p__Altiarchaeota; c__Altiarchaeia; "
-              "o__Altiarchaeales; f__Altiarchaeaceae; "
-              "g__Candidatus_Altiarchaeum")
-        exp_6r_tax = pd.Series([t1, t2],
-                               index=['AB600437.1.1389', 'AB301876.1.930'])
+        exp_6r_tax = pd.Series(t1, index=['AB600437.1.1389'])
         exp_6r_tax.rename('Taxon', inplace=True)
         exp_6r_tax.index.name = 'Feature ID'
         exp_6r_tax.sort_index(inplace=True)
@@ -247,6 +235,8 @@ class TestParseSilvaTaxonomy(TestPluginBase):
 
     def test_validate_taxrank_taxtree_fail(self):
         input_taxrank = _prep_taxranks(self.taxranks)
+        print(input_taxrank)
+        print(str(self.taxtree2))
         self.assertRaises(ValueError, _validate_taxrank_taxtree,
                           input_taxrank, self.taxtree2)
 
@@ -259,11 +249,7 @@ class TestParseSilvaTaxonomy(TestPluginBase):
         t1 = ("d__Archaea; p__Aenigmarchaeota; c__Aenigmarchaeia; "
               "o__Aenigmarchaeales; f__Aenigmarchaeales; "
               "g__Candidatus_Aenigmarchaeum; s__uncultured_archaeon")
-        t2 = ("d__Archaea; p__Altiarchaeota; c__Altiarchaeia; "
-              "o__Altiarchaeales; f__Altiarchaeaceae; "
-              "g__Candidatus_Altiarchaeum; s__uncultured_archaeon")
-        exp_res = pd.Series([t1, t2],
-                            index=['AB600437.1.1389', 'AB301876.1.930'])
+        exp_res = pd.Series(t1, index=['AB600437.1.1389'])
         exp_res.rename('Taxon', inplace=True)
         exp_res.index.name = 'Feature ID'
         exp_res.sort_index(inplace=True)

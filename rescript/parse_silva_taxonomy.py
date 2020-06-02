@@ -129,11 +129,10 @@ def _validate_taxrank_taxtree(prepped_taxrank, taxtree):
     ptrs = set(prepped_taxrank.index.unique())
     if tree_taxids != ptrs:
         diffs = tree_taxids.symmetric_difference(ptrs)
-        d_str = ', '.join(diffs)
         raise ValueError("The taxids of the SILVA Taxonomy Tree file "
                          "and the Taxonomy Ranks file do not match! "
                          "The values that are missing in at least one or "
-                         "the other files are: %s" % d_str)
+                         "the other files are: ", diffs)
 
 
 def _compile_taxonomy_output(updated_taxmap, include_species_labels=False,
