@@ -2,6 +2,8 @@ name: lint-build-test
 # build on every PR and commit to master
 on:
   pull_request:
+    branches:
+      - master
   push:
     branches:
       - master
