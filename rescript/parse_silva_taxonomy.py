@@ -46,8 +46,7 @@ def _keep_allowed_chars(lin_name, allowed_chars=ALLOWED_CHARS,
 def _build_base_silva_taxonomy(tree, taxrank, allowed_ranks):
     # Return base silva taxonomy dataframe by traversing taxonomy tree
     # and forward filling the lower ranks with upper-level taxonomy, then
-    # pre-pend the rank labels. May be able to forgo traversing taxonomy tree
-    # in the future and parse the taxrank file directly.
+    # pre-pend the rank labels. 
     # tree : skbio.TreeNode
     # taxrank : output from _prep_taxranks
     # allowed_ranks : Ordered dict {'domain': 'd__', ...} of allowed ranks to
