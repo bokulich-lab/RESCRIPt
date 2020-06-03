@@ -64,6 +64,13 @@ rank_handle_extra_note = (
     'Note that rank_handles are removed but not replaced; use the '
     'new_rank_handle parameter to replace the rank handles.')
 
+labels_description = (
+    'List of labels to use for labeling taxonomic results in the resulting '
+    'visualization. Taxonomies are labeled with labels in the order that each '
+    'is input. If there are fewer labels than taxonomies (or no labels), '
+    'unnamed taxonomies are labeled numerically in sequential order. Extra '
+    'labels are ignored.')
+
 
 plugin.pipelines.register_function(
     function=cross_validate,
@@ -114,7 +121,7 @@ plugin.pipelines.register_function(
     function=evaluate_classifications,
     inputs={'expected_taxonomies': List[FeatureData[Taxonomy]],
             'observed_taxonomies': List[FeatureData[Taxonomy]]},
-    parameters={},
+    parameters={'labels': List[Str]},
     outputs=[('evaluation', Visualization)],
     input_descriptions={
         'expected_taxonomies': 'True taxonomic labels for one more more sets '
@@ -122,7 +129,7 @@ plugin.pipelines.register_function(
         'observed_taxonomies': 'Predicted classifications of same sets of '
                                'features, input in same order as '
                                'expected_taxonomies.'},
-    parameter_descriptions={},
+    parameter_descriptions={'labels': labels_description},
     output_descriptions={
         'evaluation': 'Visualization of classification accuracy results.'},
     name=('Interactively evaluate taxonomic classification accuracy.'),
@@ -226,11 +233,13 @@ plugin.methods.register_function(
 plugin.pipelines.register_function(
     function=evaluate_taxonomy,
     inputs={'taxonomies': List[FeatureData[Taxonomy]]},
-    parameters={'rank_handle': Str},
+    parameters={'labels': List[Str],
+                'rank_handle': Str},
     outputs=[('taxonomy_stats', Visualization)],
     input_descriptions={
         'taxonomies': 'One or more taxonomies to evaluate.'},
     parameter_descriptions={
+        'labels': labels_description,
         'rank_handle': rank_handle_description,
     },
     name='Compute summary statistics on taxonomy artifact(s).',

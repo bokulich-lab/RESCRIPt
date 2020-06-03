@@ -8,11 +8,12 @@
 
 import pandas as pd
 import qiime2 as q2
-from q2_types.feature_data import DNAFASTAFormat, DNAIterator
+import timeit
 from sklearn.model_selection import StratifiedKFold
 
-from .evaluate import _taxonomic_depth
-import timeit
+from q2_types.feature_data import DNAFASTAFormat, DNAIterator
+
+from .evaluate import _taxonomic_depth, _process_labels
 
 
 def cross_validate(ctx,
@@ -117,13 +118,17 @@ def _split_fasta(sequences, train_ids, test_ids):
     return train_seqs, test_seqs
 
 
-def evaluate_classifications(ctx, expected_taxonomies, observed_taxonomies):
+def evaluate_classifications(ctx,
+                             expected_taxonomies,
+                             observed_taxonomies,
+                             labels=None):
     volatility = ctx.get_action('longitudinal', 'volatility')
     # Validate inputs.
     if len(expected_taxonomies) != len(observed_taxonomies):
         raise ValueError('Expected and Observed Taxonomies do not match. '
                          'Input must contain an equal number of expected and '
                          'observed taxonomies.')
+    labels = _process_labels(labels, expected_taxonomies)
     # Do a quick iteration over input pairs to validate indices match.
     # Why loop over twice? So this does not fail midway through computing
     # results on a big batch of inputs if a user makes a mistake.
@@ -131,7 +136,6 @@ def evaluate_classifications(ctx, expected_taxonomies, observed_taxonomies):
     observed_taxonomies = [t.view(pd.Series) for t in observed_taxonomies]
     for n, (t1, t2) in enumerate(zip(
             expected_taxonomies, observed_taxonomies), 1):
-        # if set(t1.index) != set(t2.index):
         try:
             _validate_indices_match(t1.index, t2.index)
         except ValueError:
@@ -141,15 +145,13 @@ def evaluate_classifications(ctx, expected_taxonomies, observed_taxonomies):
                 'pair {0} do not match.'.format(n))
 
     results = []
-    for n, (t1, t2) in enumerate(zip(
-            expected_taxonomies, observed_taxonomies), 1):
+    for t1, t2, name in zip(expected_taxonomies, observed_taxonomies, labels):
         # Align Indices
         expected_taxonomy, observed_taxonomy = t1.align(t2)
-
         # Evaluate classification accuracy
         precision_recall = _calculate_per_rank_precision_recall(
             expected_taxonomy, observed_taxonomy)
-        precision_recall['Dataset'] = str(n)
+        precision_recall['Dataset'] = str(name)
         results.append(precision_recall)
     precision_recall = pd.concat(results)
     # convert index to strings

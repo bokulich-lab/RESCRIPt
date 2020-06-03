@@ -18,6 +18,33 @@ from rescript import evaluate
 import_data = qiime2.Artifact.import_data
 
 
+class TestEvaluateUtilities(TestPluginBase):
+    package = 'rescript.tests'
+
+    # test that warning is raised when there are fewer labels than Taxonomies
+    # and that missing labels are labeled numerically
+    def test_process_labels_warning(self):
+        labels = ['a', 'b']
+        # this function just looks at lists, not the actual contents type
+        dummy_taxonomies = [1, 2, 3, 4, 5]
+        with self.assertWarnsRegex(
+                UserWarning, "taxonomies and labels are different lengths"):
+            new_labels = evaluate._process_labels(labels, dummy_taxonomies)
+        self.assertEqual(new_labels, ['a', 'b', 3, 4, 5])
+
+    # test that _process_labels trims labels when too many are given
+    def test_process_labels_too_many_labels(self):
+        labels = ['a', 'b', 'c', 'd', 'e']
+        dummy_taxonomies = [1, 2, 3]
+        new_labels = evaluate._process_labels(labels, dummy_taxonomies)
+        self.assertEqual(new_labels, ['a', 'b', 'c'])
+
+    def test_process_labels_empty(self):
+        dummy_taxonomies = [1, 2, 3]
+        new_labels = evaluate._process_labels(None, dummy_taxonomies)
+        self.assertEqual(new_labels, [1, 2, 3])
+
+
 class TestEvaluateTaxonomy(TestPluginBase):
     package = 'rescript.tests'
 
@@ -29,7 +56,7 @@ class TestEvaluateTaxonomy(TestPluginBase):
 
     # this just tests that the pipeline runs, other tests test proper function
     def test_pipeline(self):
-        rescript.actions.evaluate_taxonomy([self.taxa], "")
+        rescript.actions.evaluate_taxonomy([self.taxa], ["name"], "")
 
     def test_taxonomic_depth(self):
         obs_depths = evaluate._taxonomic_depth(self.taxa.view(pd.Series), "")
