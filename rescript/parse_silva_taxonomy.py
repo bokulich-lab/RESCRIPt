@@ -129,23 +129,21 @@ def _validate_taxrank_taxmap_taxtree(prepped_taxrank, prepped_taxmap, taxtree):
     ptrs = set(prepped_taxrank.index.unique())  # taxrand taxids
     ptms = set(prepped_taxmap.taxid.unique())  # taxmap taxids
 
-    if tree_taxids != ptrs:
-        diffs = tree_taxids.symmetric_difference(ptrs)
+    tree_rank_diffs = tree_taxids.symmetric_difference(ptrs)
+    if any(tree_rank_diffs):
         raise ValueError("The taxids of the SILVA Taxonomy Tree file "
                          "and the Taxonomy Ranks file do not match! "
                          "Please check that you are using the same SILVA "
                          "release versions of your files! The taxids that "
                          "are missing in at least one or the other files "
-                         "are: ", diffs)
-    if tree_taxids.issuperset(ptms):
-        pass
-    else:
-        diffs = tree_taxids.symmetric_difference(ptms)
+                         "are: ", tree_rank_diffs)
+    tree_map_diffs = ptms.difference(tree_taxids)
+    if len(tree_map_diffs) > 0:
         raise ValueError("The SILVA Taxonomy Map file conains taxids not "
                          "present within the the SILVA Taxonomy Tree file! "
                          "Please check that you are using the same SILVA "
                          "release versions of your files! The missing "
-                         "taxids are: ", diffs)
+                         "taxids are: ", tree_map_diffs)
 
 
 def _compile_taxonomy_output(updated_taxmap, include_species_labels=False,
