@@ -8,6 +8,7 @@
 
 import pandas as pd
 import scipy
+import warnings
 import qiime2 as q2
 
 from collections import Counter
@@ -18,11 +19,16 @@ from ._utilities import _taxon_to_list
 
 def evaluate_taxonomy(ctx,
                       taxonomies,
+                      labels=None,
                       rank_handle=None):
+    labels = _process_labels(labels, taxonomies)
     summaries = []
-    for n, taxonomy in enumerate(taxonomies, 1):
+    for name, taxonomy in zip(labels, taxonomies):
         summary = _evaluate_taxonomy(taxonomy.view(pd.Series), rank_handle)
-        summary['Dataset'] = str(n)
+        # note: what if n equals an existing name? do we want to error out or
+        # just assume a user knows what they are doing? For now I am just
+        # adding this info to the warning to make this behavior transparent.
+        summary['Dataset'] = str(name)
         summaries.append(summary)
     results = pd.concat(summaries).reset_index()
     # convert index to strings
@@ -35,6 +41,29 @@ def evaluate_taxonomy(ctx,
                         default_group_column='Dataset',
                         default_metric='Taxonomic Entropy')
     return plots
+
+
+def _process_labels(labels, taxonomies):
+    if labels is None:
+        labels = []
+    n_labels, n_taxonomies = len(labels), len(taxonomies)
+    # warn if fewer labels than taxonomies
+    if n_labels < n_taxonomies:
+        _warn_uneven_length()
+        labels = [name if name is not None else n for n, (name, t)
+                  in enumerate(zip_longest(labels, taxonomies), 1)]
+    # trim labels to number of Taxonomies
+    elif n_labels > n_taxonomies:
+        labels = labels[:n_taxonomies]
+    return labels
+
+
+def _warn_uneven_length():
+    msg = ("The lists of input taxonomies and labels are different lengths. "
+           "Additional taxonomies will be labeled numerically by their order "
+           "in the inputs. Note that if these numbers equal any existing "
+           "labels, those data will be grouped in the visualization.")
+    warnings.warn(msg, UserWarning)
 
 
 def _evaluate_taxonomy(taxonomy, rank_handle):
