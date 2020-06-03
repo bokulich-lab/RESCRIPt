@@ -117,20 +117,35 @@ def _prep_taxranks(taxrank):
     return taxrank
 
 
-def _validate_taxrank_taxtree(prepped_taxrank, taxtree):
-    # prepass to make sure there is 100 % agreement with the taxids
-    # present within the taxranks and taxtree files.
+def _validate_taxrank_taxmap_taxtree(prepped_taxrank, prepped_taxmap, taxtree):
+    # Prepass to make sure there is 100 % agreement with the taxids
+    # present within the taxranks and taxtree files. Then check that
+    # the taxids in the tree are a superset of the taxmap, i.e. not necessarily
+    # all taxids are represented by accessioned sequences.
     tree_taxids = {node.name for node in taxtree.postorder()}
     # '1' is the root of the tree of life,
     # which has no tax rank info in any other files.
-    tree_taxids.remove('1')
-    ptrs = set(prepped_taxrank.index.unique())
+    tree_taxids.remove('1')  # tree taxids
+    ptrs = set(prepped_taxrank.index.unique())  # taxrand taxids
+    ptms = set(prepped_taxmap.taxid.unique())  # taxmap taxids
+
     if tree_taxids != ptrs:
         diffs = tree_taxids.symmetric_difference(ptrs)
         raise ValueError("The taxids of the SILVA Taxonomy Tree file "
                          "and the Taxonomy Ranks file do not match! "
-                         "The values that are missing in at least one or "
-                         "the other files are: ", diffs)
+                         "Please check that you are using the same SILVA "
+                         "release versions of your files! The taxids that "
+                         "are missing in at least one or the other files "
+                         "are: ", diffs)
+    if tree_taxids.issuperset(ptms):
+        pass
+    else:
+        diffs = tree_taxids.symmetric_difference(ptms)
+        raise ValueError("The SILVA Taxonomy Map file conains taxids not "
+                         "present within the the SILVA Taxonomy Tree file! "
+                         "Please check that you are using the same SILVA "
+                         "release versions of your files! The missing "
+                         "taxids are: ", diffs)
 
 
 def _compile_taxonomy_output(updated_taxmap, include_species_labels=False,
@@ -164,10 +179,10 @@ def parse_silva_taxonomy(taxonomy_tree: TreeNode,
     # mapped to each Accesioned sequence via the taxonomy_map. An option
     # to include the, potentially untrustworthy, species labels is provided.
     taxrank = _prep_taxranks(taxonomy_ranks)
-    _validate_taxrank_taxtree(taxrank, taxonomy_tree)
+    taxmap = _prep_taxmap(taxonomy_map)
+    _validate_taxrank_taxmap_taxtree(taxrank, taxmap, taxonomy_tree)
     silva_tax_id_df = _build_base_silva_taxonomy(taxonomy_tree, taxrank,
                                                  ALLOWED_RANKS)
-    taxmap = _prep_taxmap(taxonomy_map)
     updated_taxmap = pd.merge(taxmap, silva_tax_id_df, left_on='taxid',
                               right_index=True)
     taxonomy = _compile_taxonomy_output(updated_taxmap,

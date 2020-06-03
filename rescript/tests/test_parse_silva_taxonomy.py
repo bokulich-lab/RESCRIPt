@@ -14,7 +14,7 @@ from rescript.parse_silva_taxonomy import (parse_silva_taxonomy,
                                            _prep_taxmap, ALLOWED_RANKS,
                                            SELECTED_RANKS,
                                            _build_base_silva_taxonomy,
-                                           _validate_taxrank_taxtree,
+                                           _validate_taxrank_taxmap_taxtree,
                                            _compile_taxonomy_output,
                                            _get_clean_organism_name,
                                            _get_terminal_taxon)
@@ -233,10 +233,28 @@ class TestParseSilvaTaxonomy(TestPluginBase):
         exp_6r_tax.sort_index(inplace=True)
         assert_series_equal(obs_6r_tax, exp_6r_tax)
 
-    def test_validate_taxrank_taxtree_fail(self):
+    def test_validate_taxrank_taxmap_taxtree_pass(self):
+        # all files should meet the criteria and return None
         input_taxrank = _prep_taxranks(self.taxranks)
-        self.assertRaises(ValueError, _validate_taxrank_taxtree,
-                          input_taxrank, self.taxtree2)
+        input_taxmap = _prep_taxmap(self.taxmap2)
+        exp = _validate_taxrank_taxmap_taxtree(input_taxrank, input_taxmap,
+                                               self.taxtree)
+        self.assertEqual(None, exp)
+
+    def test_validate_taxrank_taxmap_taxtree_fail(self):
+        # test for missing taxid in tree file
+        input_taxrank = _prep_taxranks(self.taxranks)
+        input_taxmap = _prep_taxmap(self.taxmap2)
+        self.assertRaises(ValueError, _validate_taxrank_taxmap_taxtree,
+                          input_taxrank, input_taxmap, self.taxtree2)
+
+    def test_validate_taxrank_taxmap_taxtree_fail2(self):
+        # test for case which taxmap file has more taxids
+        # than is presnet in the taxonomy tree.
+        input_taxrank = _prep_taxranks(self.taxranks)
+        input_taxmap = _prep_taxmap(self.taxmap)
+        self.assertRaises(ValueError, _validate_taxrank_taxmap_taxtree,
+                          input_taxrank, input_taxmap, self.taxtree)
 
     def test_parse_silva_taxonomy(self):
         obs_res = parse_silva_taxonomy(self.taxtree, self.taxmap2,
