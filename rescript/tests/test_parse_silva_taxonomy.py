@@ -250,7 +250,7 @@ class TestParseSilvaTaxonomy(TestPluginBase):
 
     def test_validate_taxrank_taxmap_taxtree_fail2(self):
         # test for case which taxmap file has more taxids
-        # than is presnet in the taxonomy tree.
+        # than is present in the taxonomy tree.
         input_taxrank = _prep_taxranks(self.taxranks)
         input_taxmap = _prep_taxmap(self.taxmap)
         self.assertRaises(ValueError, _validate_taxrank_taxmap_taxtree,
