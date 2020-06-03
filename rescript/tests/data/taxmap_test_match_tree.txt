@@ -1,0 +1,2 @@
+primaryAccession	start	stop	path	organism_name	taxid
+AB600437	1	1389	Archaea;Aenigmarchaeota;Aenigmarchaeia;Aenigmarchaeales;Candidatus Aenigmarchaeum;	uncultured archaeon	42915

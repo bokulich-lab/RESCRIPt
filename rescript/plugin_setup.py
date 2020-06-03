@@ -14,9 +14,11 @@ from .merge import merge_taxa
 from .dereplicate import dereplicate
 from .evaluate import evaluate_taxonomy
 from .screenseq import screen_sequences
+from .parse_silva_taxonomy import parse_silva_taxonomy
 from .cross_validate import cross_validate, evaluate_classifications
 from .filter_length import filter_seqs_length_by_taxon, filter_seqs_length
 from q2_types.feature_data import FeatureData, Taxonomy, Sequence
+from q2_types.tree import Phylogeny, Rooted
 from q2_feature_classifier.classifier import (_parameter_descriptions,
                                               _classify_parameters)
 
@@ -368,6 +370,59 @@ plugin.methods.register_function(
         'and conditional taxonomic filtering, see filter_seqs_length_by_taxon.'
     ),
     citations=[citations['rognes2016vsearch']]
+)
+
+
+plugin.methods.register_function(
+    function=parse_silva_taxonomy,
+    inputs={
+            'taxonomy_tree': Phylogeny[Rooted],
+            'taxonomy_map': FeatureData[SILVATaxidMap],
+            'taxonomy_ranks': FeatureData[SILVATaxonomy],
+            },
+    parameters={
+        'include_species_labels': Bool
+        },
+    outputs=[('taxonomy', FeatureData[Taxonomy])],
+    input_descriptions={
+        'taxonomy_tree': 'SILVA hierarchical taxonomy tree. The SILVA '
+                         'release filename typically takes the form '
+                         'of: \'tax_slv_ssu_X.tre\', where \'X\' is '
+                         'the SILVA version number.',
+        'taxonomy_map': 'SILVA taxonomy map. This file contains a mapping '
+                        'of the sequence accessions to the numeric taxonomy '
+                        'identifiers and species label information. '
+                        'The SILVA release filename is typically in the '
+                        'form of: \'taxmap_slv_ssu_ref_X.txt\', or '
+                        '\'taxmap_slv_ssu_ref_nr_X.txt\' where \'X\' is '
+                        'the SILVA version number.',
+        'taxonomy_ranks': 'SILVA taxonomy file. This file contains the '
+                         'taxonomic rank information for each numeric '
+                         'taxonomy identifier and the taxonomy. The SILVA '
+                         ' filename typically takes the form of: '
+                         '\'tax_slv_ssu_X.txt\', where \'X\' is the SILVA '
+                         'version number.',
+        },
+    parameter_descriptions={
+        'include_species_labels': 'Include species rank labels in taxonomy '
+                                  'output. Note: species-labels may not be '
+                                  'reliable in all cases.',
+    },
+    output_descriptions={
+        'taxonomy': 'The resulting fixed-rank formatted SILVA taxonomy.'
+        },
+    name='Generates a SILVA fixed-rank taxonomy.',
+    description=(
+        'Parses several files from the SILVA reference database to produce a '
+        'GreenGenes-like fixed rank taxonomy that is 6 or 7 ranks deep, '
+        'depending on whether or not `include_species_labels` is applied. '
+        'The generated ranks (and the rank handles used to label these '
+        'ranks in the resulting taxonomy) are: domain (d__), phylum (p__), '
+        'class (c__), order (o__), family (f__), genus (g__), and species '
+        '(s__).'
+        ),
+    citations=[citations['Pruesse2007'],
+               citations['Quast2013']]
 )
 
 
