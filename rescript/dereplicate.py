@@ -20,6 +20,7 @@ def dereplicate(sequences: DNAFASTAFormat,
                 mode: str = 'uniq',
                 perc_identity: float = 1.0,
                 threads: int = 1,
+                rank_handles: str = "d__; p__; c__; o__; f__; g__; s__",
                 derep_prefix: bool = False) -> (pd.Series, pd.DataFrame):
     with tempfile.NamedTemporaryFile() as out_fasta:
         with tempfile.NamedTemporaryFile() as out_uc:
@@ -59,7 +60,21 @@ def dereplicate(sequences: DNAFASTAFormat,
             derep_taxa, seqs_out = _dereplicate_taxa(
                 taxa, sequences, derep_seqs, uc, mode=mode)
 
+            if rank_handles != 'none':
+                rank_handles = rank_handles.split(';')
+                derep_taxa.loc[:, 'Taxon'] = derep_taxa['Taxon'].apply(
+                    _backfill_taxonomy, args=([rank_handles]))
+
     return seqs_out, derep_taxa
+
+
+def _backfill_taxonomy(taxon, rank_handles):
+    formatted_taxon = taxon.split(';')
+    tax_len = len(formatted_taxon)
+    if tax_len >= len(rank_handles):
+        return taxon
+    else:
+        return ';'.join(formatted_taxon + rank_handles[tax_len:])
 
 
 def _vsearch_derep(sequences_fp, out_fasta_fp, out_uc_fp, threads,

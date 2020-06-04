@@ -190,7 +190,8 @@ plugin.methods.register_function(
         'threads': Int % Range(1, 256),
         'perc_identity': Float % Range(0, 1, inclusive_start=False,
                                        inclusive_end=True),
-        'derep_prefix': Bool},
+        'derep_prefix': Bool,
+        'rank_handles': Str},
     outputs=[('dereplicated_sequences', FeatureData[Sequence]),
              ('dereplicated_taxa', FeatureData[Taxonomy])],
     input_descriptions={
@@ -214,7 +215,12 @@ plugin.methods.register_function(
                         'sequence is identical to the prefix of two or more '
                         'longer sequences, it is clustered with the shortest '
                         'of them. If they are equally long, it is clustered '
-                        'with the most abundant.'
+                        'with the most abundant.',
+        'rank_handles': (
+            'A semicolon-delimited string of rank handles to use to backfill '
+            'missing ranks in the resulting dereplicated taxonomy. The '
+            'default setting will backfill SILVA-style 7-level rank handles. '
+            'Set to "none" to disable backfilling.')
     },
     name='Dereplicate features with matching sequences and taxonomies.',
     description=(
