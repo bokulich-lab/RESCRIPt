@@ -17,10 +17,14 @@ from rescript.parse_silva_taxonomy import (parse_silva_taxonomy,
                                            _validate_taxrank_taxmap_taxtree,
                                            _compile_taxonomy_output,
                                            _get_clean_organism_name,
-                                           _get_terminal_taxon)
+                                           _get_terminal_taxon,
+                                           _assemble_silva_data_urls,
+                                           _retrieve_data_from_silva)
+from rescript.plugin_setup import _SILVA_VERSIONS, _SILVA_TARGETS
 from skbio.tree import TreeNode
 import pandas as pd
 from pandas.testing import assert_frame_equal, assert_series_equal
+from urllib.request import urlopen
 
 
 class TestParseSilvaTaxonomy(TestPluginBase):
@@ -270,3 +274,23 @@ class TestParseSilvaTaxonomy(TestPluginBase):
         exp_res.index.name = 'Feature ID'
         exp_res.sort_index(inplace=True)
         assert_series_equal(obs_res, exp_res)
+
+
+class TestGetSILVA(TestPluginBase):
+    package = 'rescript.tests'
+
+    # test that appropriate URLs are assembled, and those URLs work
+    def test_assemble_silva_data_urls(self):
+        for version in _SILVA_VERSIONS:
+            for target in _SILVA_TARGETS:
+                # LSU is currently not in release 132, so don't test
+                if target == 'LSURef' and version == '132':
+                    continue
+                obs = _assemble_silva_data_urls(version, target)
+                # validate URLs
+                for _, u, _ in obs:
+                    urlopen(u)
+
+    def test_retrieve_data_from_silva(self):
+        _retrieve_data_from_silva()
+        pass

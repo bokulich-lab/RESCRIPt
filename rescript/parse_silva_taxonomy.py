@@ -6,10 +6,19 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-from skbio.tree import TreeNode
+import os
 import re
+import tempfile
+import hashlib
+import shutil
+import gzip
+
+import qiime2
 import pandas as pd
+from skbio.tree import TreeNode
 from collections import OrderedDict
+from urllib.request import urlretrieve
+
 
 WHITESPACE_REGEX = re.compile(r'\s+')
 ALLOWED_CHARS = set(''.join(['0123456789',
@@ -187,3 +196,100 @@ def parse_silva_taxonomy(taxonomy_tree: TreeNode,
                                         include_species_labels,
                                         SELECTED_RANKS)
     return taxonomy
+
+
+def retrieve_silva_data(ctx,
+                        version='138',
+                        target='SSURef_NR99',
+                        include_species_labels=False):
+    # download data from SILVA
+    print('Downloading raw files may take some time... get some coffee.')
+    queries = _assemble_silva_data_urls(version, target)
+    results = _retrieve_data_from_silva(queries)
+    # parse taxonomy
+    parse_taxonomy = ctx.get_action('rescript', 'parse_silva_taxonomy')
+    taxonomy, = parse_taxonomy(
+        taxonomy_tree=results['taxonomy tree'],
+        taxonomy_map=results['taxonomy map'],
+        taxonomy_ranks=results['taxonomy ranks'],
+        include_species_labels=include_species_labels)
+    return results['sequences'], taxonomy
+
+
+def _assemble_silva_data_urls(version, target):
+    '''Generate SILVA urls, given database version and reference target.'''
+    # assemble target urls
+    ref_map = {'SSURef_NR99': 'ssu_ref_nr',
+               'SSURef': 'ssu_ref',
+               'LSURef': 'lsu_ref'}
+    base_url = 'https://www.arb-silva.de/fileadmin/silva_databases/'\
+               'release_{0}/Exports/'.format(version)
+    base_url_seqs = base_url + 'SILVA_{0}_{1}_tax_silva.fasta.gz'.format(
+        version, target)
+    base_url_taxmap = '{0}taxonomy/taxmap_slv_{1}_{2}.txt'.format(
+        base_url, ref_map[target], version)
+    base_url_tax = '{0}taxonomy/tax_slv_{1}_{2}'.format(
+        base_url, ref_map[target].split('_')[0], version)
+
+    # download and validate silva files
+    queries = [('sequences', base_url_seqs, 'FeatureData[Sequence]'),
+               ('taxonomy map', base_url_taxmap, 'FeatureData[SILVATaxidMap]'),
+               ('taxonomy tree', base_url_tax + '.tre', 'Phylogeny[Rooted]'),
+               ('taxonomy ranks', base_url_tax + '.txt',
+                'FeatureData[SILVATaxonomy]')]
+    return queries
+
+
+def _retrieve_data_from_silva(queries):
+    '''
+    Download data from SILVA, given a list of queries.
+
+    queries: list of tuples of (str, str, str)
+        (name, urlpath, QIIME 2 artifact type)
+    '''
+    results = dict()
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        for name, query, dtype in queries:
+            print('retrieving {0} from: {1}'.format(name, query))
+            # grab url
+            destination = os.path.join(tmpdirname, 'dna-sequences.fasta')
+            gzipped_destination = destination + '.gz'
+            urlretrieve(query, gzipped_destination)
+            _gzip_decompress(gzipped_destination, destination)
+            file_md5 = _get_md5(destination)
+            # grab expected md5
+            md5_destination = os.path.join(tmpdirname, 'md5')
+            urlretrieve(query + '.md5', md5_destination)
+            exp_md5 = _read_silva_md5(md5_destination)
+            # validate md5 checksum
+            if not exp_md5 == file_md5:
+                raise ValueError(
+                    'md5 sums do not match. Manually verify md5 checksums '
+                    'before proceeding.\nTarget file: {0}\nExpected md5: {1}\n'
+                    'Observed md5: {2}\n'.format(query, exp_md5, file_md5))
+            # import as artifacts
+            results[name] = qiime2.Artifact.import_data(dtype, destination)
+    return results
+
+
+# This function is specific for reading the SILVA md5 record files, which are
+# a single line txt file in the format "md5  filename"
+def _read_silva_md5(file):
+    with open(file, 'r') as _md5:
+        _md5 = _md5.read().split(' ')[0]
+    return _md5
+
+
+def _get_md5(file, chunksize=8192):
+    md5_hash = hashlib.md5()
+    with open(file, "rb") as f:
+        # Read and update hash in chunks of 4K
+        for chunk in iter(lambda: f.read(chunksize), b""):
+            md5_hash.update(chunk)
+    return md5_hash.hexdigest()
+
+
+def _gzip_decompress(input_fp, output_fp):
+    with gzip.open(input_fp, 'rt') as temp_in:
+        with open(output_fp, 'w') as temp_out:
+            shutil.copyfileobj(temp_in, temp_out)

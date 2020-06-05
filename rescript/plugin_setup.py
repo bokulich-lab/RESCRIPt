@@ -14,7 +14,7 @@ from .merge import merge_taxa
 from .dereplicate import dereplicate
 from .evaluate import evaluate_taxonomy
 from .screenseq import screen_sequences
-from .parse_silva_taxonomy import parse_silva_taxonomy
+from .parse_silva_taxonomy import parse_silva_taxonomy, retrieve_silva_data
 from .cross_validate import cross_validate, evaluate_classifications
 from .filter_length import filter_seqs_length_by_taxon, filter_seqs_length
 from .orient import orient_seqs
@@ -24,6 +24,7 @@ from q2_feature_classifier.classifier import (_parameter_descriptions,
                                               _classify_parameters)
 
 import rescript
+from rescript._utilities import _rank_handles
 from rescript.types._format import (
     SILVATaxonomyFormat, SILVATaxonomyDirectoryFormat, SILVATaxidMapFormat,
     SILVATaxidMapDirectoryFormat, RNAFASTAFormat, RNASequencesDirectoryFormat)
@@ -58,7 +59,7 @@ rank_handle_description = (
     'effect is that ambiguous or empty levels can be '
     'removed prior to comparison, enabling selection of '
     'taxonomies with more complete taxonomic information. '
-    'For example, "^[kpcofgs]__" will recognize greengenes rank '
+    'For example, "^[dkpcofgs]__" will recognize greengenes or silva rank '
     'handles. ')
 
 rank_handle_extra_note = (
@@ -150,8 +151,8 @@ plugin.methods.register_function(
     inputs={'data': List[FeatureData[Taxonomy]]},
     parameters={
         'mode': Str % Choices(['len', 'lca', 'score']),
-        'rank_handle': Str,
-        'new_rank_handle': Str},
+        'rank_handle_regex': Str,
+        'new_rank_handle': Str % Choices(list(_rank_handles.keys()))},
     outputs=[('merged_data', FeatureData[Taxonomy])],
     input_descriptions={
         'data': 'Two or more feature taxonomies to be merged.'},
@@ -164,15 +165,18 @@ plugin.methods.register_function(
                 'consensus score). Note that "score" assumes that this score '
                 'is always contained as the second column in a feature '
                 'taxonomy dataframe.',
-        'rank_handle': rank_handle_description + rank_handle_extra_note,
-        'new_rank_handle': 'A semicolon-delimited string of rank handles to '
-                           'prepend to taxonomic labels at each rank. For '
-                           'example, "k__;p__;c__;o__;f__;g__;s__" will '
-                           'prepend greengenes-style rank handles. Note that '
-                           'merged taxonomies will only contain as many '
-                           'levels as there are handles if this parameter is '
-                           'used. So "k__;p__" will trim all taxonomies to '
-                           'phylum level, even if longer annotations exist.'},
+        'rank_handle_regex': rank_handle_description + rank_handle_extra_note,
+        'new_rank_handle': (
+            'Specifies the set of rank handles to prepend to taxonomic labels '
+            'at each rank. For example, "greengenes" will prepend 7-level '
+            'greengenes-style rank handles. Note that merged taxonomies will '
+            'only contain as many levels as there are handles if this '
+            'parameter is used. So "greengenes" will trim all taxonomies to '
+            'seven levels, even if longer annotations exist. Note that this '
+            'parameter will prepend rank handles whether or not they already '
+            'exist in the taxonomy, so should ALWAYS be used in conjunction '
+            'with `rank_handle_regex` if rank handles exist in any of the '
+            'inputs.')},
     name='Compare taxonomies and select the longest, highest scoring, or find '
          'the least common ancestor.',
     description='Compare taxonomy annotations and choose the best one. Can '
@@ -211,7 +215,8 @@ plugin.methods.register_function(
         'mode': Str % Choices(['uniq', 'lca', 'majority']),
         'threads': VSEARCH_PARAMS['threads'],
         'perc_identity': VSEARCH_PARAMS['perc_identity'],
-        'derep_prefix': Bool},
+        'derep_prefix': Bool,
+        'rank_handles': Str % Choices(list(_rank_handles.keys()))},
     outputs=[('dereplicated_sequences', FeatureData[Sequence]),
              ('dereplicated_taxa', FeatureData[Taxonomy])],
     input_descriptions={
@@ -231,7 +236,12 @@ plugin.methods.register_function(
                         'sequence is identical to the prefix of two or more '
                         'longer sequences, it is clustered with the shortest '
                         'of them. If they are equally long, it is clustered '
-                        'with the most abundant.'
+                        'with the most abundant.',
+        'rank_handles': (
+            'Specifies the set of rank handles used to backfill '
+            'missing ranks in the resulting dereplicated taxonomy. The '
+            'default setting will backfill SILVA-style 7-level rank handles. '
+            'Set to "none" to disable backfilling.')
     },
     name='Dereplicate features with matching sequences and taxonomies.',
     description=(
@@ -251,13 +261,13 @@ plugin.pipelines.register_function(
     function=evaluate_taxonomy,
     inputs={'taxonomies': List[FeatureData[Taxonomy]]},
     parameters={'labels': List[Str],
-                'rank_handle': Str},
+                'rank_handle_regex': Str},
     outputs=[('taxonomy_stats', Visualization)],
     input_descriptions={
         'taxonomies': 'One or more taxonomies to evaluate.'},
     parameter_descriptions={
         'labels': labels_description,
-        'rank_handle': rank_handle_description,
+        'rank_handle_regex': rank_handle_description,
     },
     name='Compute summary statistics on taxonomy artifact(s).',
     description=(
@@ -424,6 +434,44 @@ plugin.methods.register_function(
 )
 
 
+INCLUDE_SPECIES_LABELS_DESCRIPTION = (
+    'Include species rank labels in taxonomy output. Note: species-labels may '
+    'not be reliable in all cases.')
+
+
+_SILVA_VERSIONS = ['119', '123', '126', '128', '132', '138']
+_SILVA_TARGETS = ['SSURef_NR99', 'SSURef', 'LSURef']
+
+plugin.pipelines.register_function(
+    function=retrieve_silva_data,
+    inputs={},
+    parameters={
+        'version': Str % Choices(_SILVA_VERSIONS),
+        'target': Str % Choices(_SILVA_TARGETS),
+        'include_species_labels': Bool},
+    outputs=[('sequences', FeatureData[Sequence]),
+             ('taxonomy', FeatureData[Taxonomy])],
+    input_descriptions={},
+    parameter_descriptions={
+        'version': 'SILVA database version to download.',
+        'target': 'Reference sequence target to download. SSURef = redundant '
+                  'small subunit reference. LSURef = redundant large subunit '
+                  'reference. SSURef_NR99 = non-redundant (clustered at 99% '
+                  'similarity) small subunit reference.',
+        'include_species_labels': INCLUDE_SPECIES_LABELS_DESCRIPTION},
+    output_descriptions={
+        'sequences': 'SILVA reference sequences.',
+        'taxonomy': 'SILVA reference taxonomy.'},
+    name='Download, parse, and import SILVA database.',
+    description=(
+        'Download, parse, and import SILVA database files, given a version '
+        'number and reference target. Downloads data directly from SILVA, '
+        'parses the taxonomy files, and outputs ready-to-use sequence and '
+        'taxonomy artifacts. REQUIRES STABLE INTERNET CONNECTION.'),
+    citations=[citations['Pruesse2007'], citations['Quast2013']]
+)
+
+
 plugin.methods.register_function(
     function=parse_silva_taxonomy,
     inputs={
@@ -455,9 +503,7 @@ plugin.methods.register_function(
                          'version number.',
         },
     parameter_descriptions={
-        'include_species_labels': 'Include species rank labels in taxonomy '
-                                  'output. Note: species-labels may not be '
-                                  'reliable in all cases.',
+        'include_species_labels': INCLUDE_SPECIES_LABELS_DESCRIPTION,
     },
     output_descriptions={
         'taxonomy': 'The resulting fixed-rank formatted SILVA taxonomy.'
