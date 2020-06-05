@@ -14,7 +14,7 @@ from ._utilities import (_find_lca_in_series, _rank_length, _taxon_to_list,
 
 def merge_taxa(data: pd.DataFrame,
                mode: str = 'len',
-               rank_handle_regex: str = '^[kpcofgs]__',
+               rank_handle_regex: str = '^[dkpcofgs]__',
                new_rank_handle: str = None) -> pd.DataFrame:
     # Convert taxonomies to list; optionally remove rank handle
     for d in data:
