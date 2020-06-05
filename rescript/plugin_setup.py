@@ -17,6 +17,7 @@ from .screenseq import screen_sequences
 from .parse_silva_taxonomy import parse_silva_taxonomy
 from .cross_validate import cross_validate, evaluate_classifications
 from .filter_length import filter_seqs_length_by_taxon, filter_seqs_length
+from .orient import orient_seqs
 from q2_types.feature_data import FeatureData, Taxonomy, Sequence
 from q2_types.tree import Phylogeny, Rooted
 from q2_feature_classifier.classifier import (_parameter_descriptions,
@@ -185,15 +186,35 @@ plugin.methods.register_function(
 )
 
 
+VSEARCH_PARAMS = {
+    'threads': Int % Range(1, 256),
+    'perc_identity': Float % Range(0, 1, inclusive_start=False,
+                                   inclusive_end=True),
+    'left_justify': Bool,
+    'query_cov': Float % Range(0.0, 1.0, inclusive_end=True),
+}
+
+VSEARCH_PARAM_DESCRIPTIONS = {
+    'threads': 'Number of computation threads to use (1 to 256). The '
+               'number of threads should be lesser or equal to the number '
+               'of available CPU cores.',
+    'perc_identity': 'The percent identity at which clustering should be '
+                     'performed. This parameter maps to vsearch\'s --id '
+                     'parameter.',
+    'left_justify': 'Reject match if the pairwise alignment begins with gaps',
+    'query_cov': 'Reject match if query alignment coverage per high-scoring '
+                 'pair is lower.',
+}
+
+
 plugin.methods.register_function(
     function=dereplicate,
     inputs={'sequences': FeatureData[Sequence],
             'taxa': FeatureData[Taxonomy]},
     parameters={
         'mode': Str % Choices(['uniq', 'lca', 'majority']),
-        'threads': Int % Range(1, 256),
-        'perc_identity': Float % Range(0, 1, inclusive_start=False,
-                                       inclusive_end=True),
+        'threads': VSEARCH_PARAMS['threads'],
+        'perc_identity': VSEARCH_PARAMS['perc_identity'],
         'derep_prefix': Bool,
         'rank_handles': Str % Choices(list(_rank_handles.keys()))},
     outputs=[('dereplicated_sequences', FeatureData[Sequence]),
@@ -209,12 +230,8 @@ plugin.methods.register_function(
                 'find the most common taxonomic label associated with that '
                 'sequence; note that in the event of a tie, "majority" will '
                 'pick the winner arbitrarily.',
-        'threads': 'Number of computation threads to use (1 to 256). The '
-                   'number of threads should be lesser or equal to the number '
-                   'of available CPU cores.',
-        'perc_identity': 'The percent identity at which clustering should be '
-                         'performed. This parameter maps to vsearch\'s --id '
-                         'parameter.',
+        'threads': VSEARCH_PARAM_DESCRIPTIONS['threads'],
+        'perc_identity': VSEARCH_PARAM_DESCRIPTIONS['perc_identity'],
         'derep_prefix': 'Merge sequences with identical prefixes. If a '
                         'sequence is identical to the prefix of two or more '
                         'longer sequences, it is clustered with the shortest '
@@ -318,6 +335,33 @@ FILTER_OUTPUT_DESCRIPTIONS = {
 
 
 plugin.methods.register_function(
+    function=orient_seqs,
+    inputs={'sequences': FeatureData[Sequence],
+            'reference_sequences': FeatureData[Sequence]},
+    parameters=VSEARCH_PARAMS,
+    outputs=[('oriented_seqs', FeatureData[Sequence]),
+             ('unmatched_seqs', FeatureData[Sequence])],
+    input_descriptions={
+        'sequences': 'Sequences to be oriented.',
+        'reference_sequences': 'Reference sequences to orient against.'},
+    parameter_descriptions=VSEARCH_PARAM_DESCRIPTIONS,
+    output_descriptions={
+        'oriented_seqs': 'Query sequences in same orientation as top matching '
+                         'reference sequence.',
+        'unmatched_seqs': 'Query sequences that fail to match at least one '
+                          'reference sequence in either + or - orientation.'},
+    name='Orient input sequences by comparison against reference.',
+    description=(
+        'Orient input sequences by comparison against a set of reference '
+        'sequences using VSEARCH. This action can also be used to quickly '
+        'filter out sequences that (do not) match a set of reference '
+        'sequences in either orientation.'
+    ),
+    citations=[citations['rognes2016vsearch']]
+)
+
+
+plugin.methods.register_function(
     function=filter_seqs_length_by_taxon,
     inputs={'sequences': FeatureData[Sequence],
             'taxonomy': FeatureData[Taxonomy]},
@@ -372,16 +416,14 @@ plugin.methods.register_function(
     inputs={'sequences': FeatureData[Sequence]},
     parameters={
         **FILTER_PARAMS,
-        'threads': Int % Range(1, 256)},
+        'threads': VSEARCH_PARAMS['threads']},
     outputs=[('filtered_seqs', FeatureData[Sequence]),
              ('discarded_seqs', FeatureData[Sequence])],
     input_descriptions={
         'sequences': 'Sequences to be filtered by length.'},
     parameter_descriptions={
         **FILTER_PARAM_DESCRIPTIONS,
-        'threads': 'Number of computation threads to use (1 to 256). The '
-                   'number of threads should be lesser or equal to the number '
-                   'of available CPU cores.'},
+        'threads': VSEARCH_PARAM_DESCRIPTIONS['threads']},
     output_descriptions=FILTER_OUTPUT_DESCRIPTIONS,
     name='Filter sequences by length.',
     description=(
