@@ -295,7 +295,6 @@ def _read_silva_md5(file):
 def _get_md5(file, chunksize=8192):
     md5_hash = hashlib.md5()
     with open(file, "rb") as f:
-        # Read and update hash in chunks of 4K
         for chunk in iter(lambda: f.read(chunksize), b""):
             md5_hash.update(chunk)
     return md5_hash.hexdigest()
