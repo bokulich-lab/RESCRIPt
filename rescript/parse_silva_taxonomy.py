@@ -224,27 +224,29 @@ def _assemble_silva_data_urls(version, target):
                'SSURef': 'ssu_ref',
                'LSURef': 'lsu_ref'}
     # handle silly inconsistencies in filenames between versions
-    if target == 'SSURef_NR99' and int(version) < 132:
+    if target == 'SSURef_NR99' and int(version) < 138:
         target = 'SSURef_Nr99'
     insert = ref_map[target]
-    if version == '123'
-    insert = insert.replace('_ref', '')
     # now compile URLs
     base_url = 'https://www.arb-silva.de/fileadmin/silva_databases/'\
                'release_{0}/Exports/'.format(version)
     base_url_seqs = base_url + 'SILVA_{0}_{1}_tax_silva.fasta.gz'.format(
         version, target)
-    base_url_taxmap = '{0}taxonomy/taxmap_slv_{1}_{2}.txt'.format(
+    base_url_taxmap = '{0}taxonomy/taxmap_slv_{1}_{2}.txt.gz'.format(
         base_url, insert, version)
     base_url_tax = '{0}taxonomy/tax_slv_{1}_{2}'.format(
         base_url, insert.split('_')[0], version)
+    tree_url = base_url_tax + '.tre'
+    tax_url = base_url_tax + '.txt'
+    if version == '138':
+        tree_url += '.gz'
+        tax_url += '.gz'
 
     # download and validate silva files
     queries = [('sequences', base_url_seqs, 'FeatureData[Sequence]'),
                ('taxonomy map', base_url_taxmap, 'FeatureData[SILVATaxidMap]'),
-               ('taxonomy tree', base_url_tax + '.tre', 'Phylogeny[Rooted]'),
-               ('taxonomy ranks', base_url_tax + '.txt',
-                'FeatureData[SILVATaxonomy]')]
+               ('taxonomy tree', tree_url, 'Phylogeny[Rooted]'),
+               ('taxonomy ranks', tax_url, 'FeatureData[SILVATaxonomy]')]
     return queries
 
 
@@ -260,11 +262,13 @@ def _retrieve_data_from_silva(queries):
         for name, query, dtype in queries:
             print('retrieving {0} from: {1}'.format(name, query))
             # grab url
-            destination = os.path.join(tmpdirname, 'dna-sequences.fasta')
-            gzipped_destination = destination + '.gz'
-            urlretrieve(query, gzipped_destination)
-            _gzip_decompress(gzipped_destination, destination)
+            destination = os.path.join(tmpdirname, os.path.basename(query))
+            urlretrieve(query, destination)
             file_md5 = _get_md5(destination)
+            if destination.endswith('.gz'):
+                unzipped_destination = os.path.splitext(destination)[0]
+                _gzip_decompress(destination, unzipped_destination)
+                destination = unzipped_destination
             # grab expected md5
             md5_destination = os.path.join(tmpdirname, 'md5')
             urlretrieve(query + '.md5', md5_destination)

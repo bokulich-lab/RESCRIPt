@@ -25,6 +25,7 @@ from skbio.tree import TreeNode
 import pandas as pd
 from pandas.testing import assert_frame_equal, assert_series_equal
 from urllib.request import urlopen
+from urllib.error import HTTPError
 
 
 class TestParseSilvaTaxonomy(TestPluginBase):
@@ -283,16 +284,17 @@ class TestGetSILVA(TestPluginBase):
     def test_assemble_silva_data_urls(self):
         for version in _SILVA_VERSIONS:
             for target in _SILVA_TARGETS:
-                # LSU is currently not in release 132, so don't test
-                if target == 'LSURef' and version == '132':
+                # don't test incompatible version/target settings (these are
+                # prevented in the user interface by TypeMap)
+                if target == 'LSURef' and version == '138':
                     continue
                 obs = _assemble_silva_data_urls(version, target)
                 # validate URLs
                 for _, u, _ in obs:
-                    print(u)
-                    # https://www.arb-silva.de/fileadmin/silva_databases/release_119/Exports/SILVA_119_SSURef_NR99_tax_silva.fasta.gz
-                    # https://www.arb-silva.de/fileadmin/silva_databases/release_119/Exports/SILVA_119_SSURef_Nr99_tax_silva.fasta.gz
-                    urlopen(u)
+                    try:
+                        urlopen(u)
+                    except HTTPError:
+                        raise ValueError('Failed to open URL: ' + u)
 
     def test_retrieve_data_from_silva(self):
         pass

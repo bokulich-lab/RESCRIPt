@@ -438,13 +438,11 @@ INCLUDE_SPECIES_LABELS_DESCRIPTION = (
     'Include species rank labels in taxonomy output. Note: species-labels may '
     'not be reliable in all cases.')
 
-_SILVA_VERSIONS = ['119', '123', '128', '132', '138']
+_SILVA_VERSIONS = ['128', '132', '138']
 _SILVA_TARGETS = ['SSURef_NR99', 'SSURef', 'LSURef']
 
 version_map, target_map, _ = TypeMap({
-    (Str % Choices('119'), Str % Choices('SSURef_NR99', 'LSURef')):
-        Visualization,
-    (Str % Choices('123', '128', '132'),
+    (Str % Choices('128', '132'),
      Str % Choices('SSURef_NR99', 'SSURef', 'LSURef')): Visualization,
     (Str % Choices('138'), Str % Choices('SSURef_NR99', 'SSURef')):
         Visualization,
