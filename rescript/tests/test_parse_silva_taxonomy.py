@@ -297,4 +297,13 @@ class TestGetSILVA(TestPluginBase):
                         raise ValueError('Failed to open URL: ' + u)
 
     def test_retrieve_data_from_silva(self):
+        # we just test download with a single small query here
+        # this test just makes sure the method can download and validate
+        # we do not check the outputs, since a successful return implies
+        # that the contents are valid and imported successfully.
+        queries = [
+            ('taxa', 'https://www.arb-silva.de/fileadmin/silva_databases/'
+                     'release_138/Exports/taxonomy/tax_slv_ssu_138.txt.gz',
+             'FeatureData[SILVATaxonomy]')]
+        _retrieve_data_from_silva(queries)
         pass
