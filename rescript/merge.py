@@ -12,12 +12,14 @@ from ._utilities import (_find_lca_in_series, _rank_length, _taxon_to_list,
                          _find_top_score, _rank_handles)
 
 
-def merge_taxa(data: pd.DataFrame, mode: str = 'len', rank_handle: str = '',
+def merge_taxa(data: pd.DataFrame,
+               mode: str = 'len',
+               rank_handle_regex: str = '^[kpcofgs]__',
                new_rank_handle: str = None) -> pd.DataFrame:
     # Convert taxonomies to list; optionally remove rank handle
     for d in data:
         d['Taxon'] = d['Taxon'].apply(
-            lambda x: _taxon_to_list(x, rank_handle=rank_handle))
+            lambda x: _taxon_to_list(x, rank_handle=rank_handle_regex))
 
     # consensus and other dataset-specific data are meaningless after LCA
     # so we will just drop them.
