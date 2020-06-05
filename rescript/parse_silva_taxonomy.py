@@ -243,7 +243,7 @@ def _assemble_silva_data_urls(version, target):
         tax_url += '.gz'
 
     # download and validate silva files
-    queries = [('sequences', base_url_seqs, 'FeatureData[Sequence]'),
+    queries = [('sequences', base_url_seqs, 'FeatureData[RNASequence]'),
                ('taxonomy map', base_url_taxmap, 'FeatureData[SILVATaxidMap]'),
                ('taxonomy tree', tree_url, 'Phylogeny[Rooted]'),
                ('taxonomy ranks', tax_url, 'FeatureData[SILVATaxonomy]')]

@@ -456,7 +456,7 @@ plugin.pipelines.register_function(
         'version': version_map,
         'target': target_map,
         'include_species_labels': Bool},
-    outputs=[('sequences', FeatureData[Sequence]),
+    outputs=[('sequences', FeatureData[RNASequence]),
              ('taxonomy', FeatureData[Taxonomy])],
     input_descriptions={},
     parameter_descriptions={
