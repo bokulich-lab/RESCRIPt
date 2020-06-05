@@ -23,6 +23,7 @@ from q2_feature_classifier.classifier import (_parameter_descriptions,
                                               _classify_parameters)
 
 import rescript
+from rescript._utilities import _rank_handles
 from rescript.types._format import (
     SILVATaxonomyFormat, SILVATaxonomyDirectoryFormat, SILVATaxidMapFormat,
     SILVATaxidMapDirectoryFormat, RNAFASTAFormat, RNASequencesDirectoryFormat)
@@ -150,7 +151,7 @@ plugin.methods.register_function(
     parameters={
         'mode': Str % Choices(['len', 'lca', 'score']),
         'rank_handle': Str,
-        'new_rank_handle': Str},
+        'new_rank_handle': Str % Choices(list(_rank_handles.keys()))},
     outputs=[('merged_data', FeatureData[Taxonomy])],
     input_descriptions={
         'data': 'Two or more feature taxonomies to be merged.'},
@@ -164,14 +165,14 @@ plugin.methods.register_function(
                 'is always contained as the second column in a feature '
                 'taxonomy dataframe.',
         'rank_handle': rank_handle_description + rank_handle_extra_note,
-        'new_rank_handle': 'A semicolon-delimited string of rank handles to '
+        'new_rank_handle': 'Specifies the set of rank handles to '
                            'prepend to taxonomic labels at each rank. For '
-                           'example, "k__;p__;c__;o__;f__;g__;s__" will '
-                           'prepend greengenes-style rank handles. Note that '
+                           'example, "greengenes" will prepend 7-level '
+                           'greengenes-style rank handles. Note that '
                            'merged taxonomies will only contain as many '
                            'levels as there are handles if this parameter is '
-                           'used. So "k__;p__" will trim all taxonomies to '
-                           'phylum level, even if longer annotations exist.'},
+                           'used. So "greengenes" will trim all taxonomies to '
+                           'seven levels, even if longer annotations exist.'},
     name='Compare taxonomies and select the longest, highest scoring, or find '
          'the least common ancestor.',
     description='Compare taxonomy annotations and choose the best one. Can '
@@ -191,7 +192,7 @@ plugin.methods.register_function(
         'perc_identity': Float % Range(0, 1, inclusive_start=False,
                                        inclusive_end=True),
         'derep_prefix': Bool,
-        'rank_handles': Str},
+        'rank_handles': Str % Choices(list(_rank_handles.keys()))},
     outputs=[('dereplicated_sequences', FeatureData[Sequence]),
              ('dereplicated_taxa', FeatureData[Taxonomy])],
     input_descriptions={
@@ -217,7 +218,7 @@ plugin.methods.register_function(
                         'of them. If they are equally long, it is clustered '
                         'with the most abundant.',
         'rank_handles': (
-            'A semicolon-delimited string of rank handles to use to backfill '
+            'Specifies the set of rank handles used to backfill '
             'missing ranks in the resulting dereplicated taxonomy. The '
             'default setting will backfill SILVA-style 7-level rank handles. '
             'Set to "none" to disable backfilling.')

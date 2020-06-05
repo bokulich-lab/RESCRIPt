@@ -9,7 +9,7 @@
 
 import pandas as pd
 from ._utilities import (_find_lca_in_series, _rank_length, _taxon_to_list,
-                         _find_top_score)
+                         _find_top_score, _rank_handles)
 
 
 def merge_taxa(data: pd.DataFrame, mode: str = 'len', rank_handle: str = '',
@@ -60,9 +60,9 @@ def merge_taxa(data: pd.DataFrame, mode: str = 'len', rank_handle: str = '',
 
     # Insert new rank handles if selected
     if new_rank_handle is not None:
+        new_rank_handle = _rank_handles[new_rank_handle]
         result['Taxon'] = result['Taxon'].apply(
-            lambda x: ';'.join([''.join(t) for t in zip(
-                new_rank_handle.split(';'), x)]))
+            lambda x: ';'.join([''.join(t) for t in zip(new_rank_handle, x)]))
     else:
         result['Taxon'] = result['Taxon'].apply(lambda x: ';'.join(x))
 

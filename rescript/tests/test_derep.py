@@ -33,7 +33,7 @@ class TestDerep(TestPluginBase):
 
     def test_dereplicate_uniq(self):
         seqs, taxa, = self.dereplicate(
-            self.seqs, self.taxa, mode='uniq', rank_handles='none')
+            self.seqs, self.taxa, mode='uniq', rank_handles='disable')
         exp_taxa = pd.DataFrame({'Taxon': {
             'A1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; '
                   'f__Paenibacillaceae; g__Paenibacillus; s__chondroitinus',
@@ -60,7 +60,8 @@ class TestDerep(TestPluginBase):
         # use derep_prefix=True; should still obtain same result if the prefix
         # seqs bear unique taxonomic labels, as seen in this test case
         seqs, taxa, = self.dereplicate(self.seqs, self.taxa, mode='uniq',
-                                       derep_prefix=True, rank_handles='none')
+                                       derep_prefix=True,
+                                       rank_handles='disable')
         pdt.assert_frame_equal(taxa.view(pd.DataFrame).sort_index(),
                                exp_taxa.sort_index(), check_names=False)
         pdt.assert_index_equal(seqs.view(pd.Series).sort_index().index,
@@ -68,7 +69,8 @@ class TestDerep(TestPluginBase):
 
     def test_dereplicate_uniq_99_perc(self):
         seqs, taxa, = self.dereplicate(self.seqs, self.taxa, mode='uniq',
-                                       perc_identity=0.99, rank_handles='none')
+                                       perc_identity=0.99,
+                                       rank_handles='disable')
         exp_taxa = pd.DataFrame({'Taxon': {
             'A1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; '
                   'f__Paenibacillaceae; g__Paenibacillus; s__chondroitinus',
@@ -96,7 +98,7 @@ class TestDerep(TestPluginBase):
         # seqs bear unique taxonomic labels, as seen in this test case
         seqs, taxa, = self.dereplicate(self.seqs, self.taxa, mode='uniq',
                                        perc_identity=0.99, derep_prefix=True,
-                                       rank_handles='none')
+                                       rank_handles='disable')
         pdt.assert_frame_equal(taxa.view(pd.DataFrame).sort_index(),
                                exp_taxa.sort_index(), check_names=False)
         pdt.assert_index_equal(seqs.view(pd.Series).sort_index().index,
@@ -104,7 +106,7 @@ class TestDerep(TestPluginBase):
 
     def test_dereplicate_lca(self):
         seqs, taxa, = self.dereplicate(
-            self.seqs, self.taxa, mode='lca', rank_handles='none')
+            self.seqs, self.taxa, mode='lca', rank_handles='disable')
         exp_taxa = pd.DataFrame({'Taxon': {
             'A1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; '
                   'f__Paenibacillaceae; g__Paenibacillus',
@@ -127,7 +129,8 @@ class TestDerep(TestPluginBase):
     # here derep_prefix + LCA leads to collapsed C-group seqs + LCA taxonomy
     def test_dereplicate_prefix_lca(self):
         seqs, taxa, = self.dereplicate(self.seqs, self.taxa, mode='lca',
-                                       derep_prefix=True, rank_handles='none')
+                                       derep_prefix=True,
+                                       rank_handles='disable')
         exp_taxa = pd.DataFrame({'Taxon': {
             'A1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; '
                   'f__Paenibacillaceae; g__Paenibacillus',
@@ -146,7 +149,8 @@ class TestDerep(TestPluginBase):
 
     def test_dereplicate_lca_99_perc(self):
         seqs, taxa, = self.dereplicate(self.seqs, self.taxa, mode='lca',
-                                       perc_identity=0.99, rank_handles='none')
+                                       perc_identity=0.99,
+                                       rank_handles='disable')
         exp_taxa = pd.DataFrame({'Taxon': {
             'A1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; '
                   'f__Paenibacillaceae; g__Paenibacillus',
@@ -163,7 +167,7 @@ class TestDerep(TestPluginBase):
 
     def test_dereplicate_majority(self):
         seqs, taxa, = self.dereplicate(
-            self.seqs, self.taxa, mode='majority', rank_handles='none')
+            self.seqs, self.taxa, mode='majority', rank_handles='disable')
         exp_taxa = pd.DataFrame({'Taxon': {
             'A1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; '
                   'f__Paenibacillaceae; g__Paenibacillus; s__alvei',
@@ -186,7 +190,8 @@ class TestDerep(TestPluginBase):
     # all C-group seqs should be merged, and P. acidilacti is the majority
     def test_dereplicate_prefix_majority(self):
         seqs, taxa, = self.dereplicate(self.seqs, self.taxa, mode='majority',
-                                       derep_prefix=True, rank_handles='none')
+                                       derep_prefix=True,
+                                       rank_handles='disable')
         exp_taxa = pd.DataFrame({'Taxon': {
             'A1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; '
                   'f__Paenibacillaceae; g__Paenibacillus; s__alvei',
@@ -205,7 +210,8 @@ class TestDerep(TestPluginBase):
 
     def test_dereplicate_majority_perc99(self):
         seqs, taxa, = self.dereplicate(self.seqs, self.taxa, mode='majority',
-                                       perc_identity=0.99, rank_handles='none')
+                                       perc_identity=0.99,
+                                       rank_handles='disable')
         exp_taxa = pd.DataFrame({'Taxon': {
             'A1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; '
                   'f__Paenibacillaceae; g__Paenibacillus; s__alvei',

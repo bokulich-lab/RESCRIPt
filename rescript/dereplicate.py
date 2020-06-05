@@ -12,7 +12,7 @@ import qiime2
 
 from q2_types.feature_data import DNAFASTAFormat
 
-from ._utilities import run_command, _find_lca, _majority
+from ._utilities import run_command, _find_lca, _majority, _rank_handles
 
 
 def dereplicate(sequences: DNAFASTAFormat,
@@ -20,7 +20,7 @@ def dereplicate(sequences: DNAFASTAFormat,
                 mode: str = 'uniq',
                 perc_identity: float = 1.0,
                 threads: int = 1,
-                rank_handles: str = "d__; p__; c__; o__; f__; g__; s__",
+                rank_handles: str = 'silva',
                 derep_prefix: bool = False) -> (pd.Series, pd.DataFrame):
     with tempfile.NamedTemporaryFile() as out_fasta:
         with tempfile.NamedTemporaryFile() as out_uc:
@@ -60,8 +60,8 @@ def dereplicate(sequences: DNAFASTAFormat,
             derep_taxa, seqs_out = _dereplicate_taxa(
                 taxa, sequences, derep_seqs, uc, mode=mode)
 
-            if rank_handles != 'none':
-                rank_handles = rank_handles.split(';')
+            if rank_handles != 'disable':
+                rank_handles = _rank_handles[rank_handles]
                 derep_taxa.loc[:, 'Taxon'] = derep_taxa['Taxon'].apply(
                     _backfill_taxonomy, args=([rank_handles]))
 
