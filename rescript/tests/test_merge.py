@@ -96,7 +96,7 @@ class TestMergeTaxa(TestPluginBase):
         self.s3 = import_data('FeatureData[Taxonomy]', m3['Taxon'])
 
     def test_merge_taxa_lca(self):
-        one_col, = self.merge_taxa([self.s1, self.s2, self.s3], 'lca')
+        one_col, = self.merge_taxa([self.s1, self.s2, self.s3], 'lca', '')
         exp = pd.DataFrame({'Taxon': {
             '2562091': 'k__Bacteria;p__Actinobacteria;c__Acidimicrobiia;'
                        'o__Acidimicrobiales',
@@ -112,13 +112,13 @@ class TestMergeTaxa(TestPluginBase):
             'unique2': 'k__Bacteria;p__;c__;o__;f__;g__;s__blah'}})
         pdt.assert_frame_equal(
             one_col.view(pd.DataFrame), exp, check_names=False)
-        multi_col, = self.merge_taxa([self.m1, self.m2, self.m3], 'lca')
+        multi_col, = self.merge_taxa([self.m1, self.m2, self.m3], 'lca', '')
         pdt.assert_frame_equal(
             multi_col.view(pd.DataFrame), exp, check_names=False)
 
     def test_merge_taxa_lca_rank_handle(self):
         result, = self.merge_taxa(
-            [self.s1, self.s2, self.s3], 'lca', rank_handle='^[kpcofgs]__')
+            [self.s1, self.s2, self.s3], 'lca')
         exp = pd.DataFrame({'Taxon': {
             '2562091': 'Bacteria;Actinobacteria;Acidimicrobiia;'
                        'Acidimicrobiales',
@@ -136,8 +136,8 @@ class TestMergeTaxa(TestPluginBase):
 
     def test_merge_taxa_lca_rank_handle_plus_new_rank_handle(self):
         result, = self.merge_taxa(
-            [self.s1, self.s2, self.s3], 'lca', rank_handle='^[kpcofgs]__',
-            new_rank_handle='k__;p__;c__;o__;f__;g__;s__')
+            [self.s1, self.s2, self.s3], 'lca',
+            new_rank_handle='greengenes')
         exp = pd.DataFrame({'Taxon': {
             '2562091': 'k__Bacteria;p__Actinobacteria;c__Acidimicrobiia;'
                        'o__Acidimicrobiales',
@@ -155,7 +155,7 @@ class TestMergeTaxa(TestPluginBase):
             result.view(pd.DataFrame), exp, check_names=False)
 
     def test_merge_taxa_len(self):
-        one_col, = self.merge_taxa([self.s1, self.s2, self.s3], 'len')
+        one_col, = self.merge_taxa([self.s1, self.s2, self.s3], 'len', '')
         exp = pd.DataFrame({'Taxon': {
             '2562091': 'k__Bacteria;p__Actinobacteria;c__Acidimicrobiia;'
                        'o__Acidimicrobiales;f__Microthrixaceae;g__;s__',
@@ -183,14 +183,14 @@ class TestMergeTaxa(TestPluginBase):
                 '4361279': np.nan, '4369464': 0.99, 'unique': np.nan,
                 'unique1': 0.75, 'unique2': np.nan}
             })], axis=1)
-        multi_col, = self.merge_taxa([self.m1, self.m2, self.m3], 'len')
+        multi_col, = self.merge_taxa([self.m1, self.m2, self.m3], 'len', '')
         multi_col = multi_col.view(pd.DataFrame).apply(
             lambda x: pd.to_numeric(x, errors='ignore'))
         pdt.assert_frame_equal(multi_col, exp, check_names=False)
 
     def test_merge_taxa_len_rank_handle(self):
         result, = self.merge_taxa(
-            [self.m1, self.m2, self.m3], 'len', rank_handle='^[kpcofgs]__')
+            [self.m1, self.m2, self.m3], 'len')
         exp = pd.DataFrame({
             'Taxon': {
                 '2562091': 'Bacteria;Actinobacteria;Acidimicrobiia;'
@@ -221,8 +221,8 @@ class TestMergeTaxa(TestPluginBase):
 
     def test_merge_taxa_len_rank_handle_plus_new_rank_handle(self):
         result, = self.merge_taxa(
-            [self.m1, self.m2, self.m3], 'len', rank_handle='^[kpcofgs]__',
-            new_rank_handle='k__;p__;c__;o__;f__;g__;s__')
+            [self.m1, self.m2, self.m3], 'len',
+            new_rank_handle='greengenes')
         exp = pd.DataFrame({
             'Taxon': {
                 '2562091': 'k__Bacteria;p__Actinobacteria;c__Acidimicrobiia;'
@@ -257,10 +257,10 @@ class TestMergeTaxa(TestPluginBase):
     # score should fail if there is only one column in any dataset
     def test_merge_taxa_score_one_column(self):
         with self.assertRaisesRegex(IndexError, "second column"):
-            self.merge_taxa([self.m1, self.s2], 'score')
+            self.merge_taxa([self.m1, self.s2], 'score', '')
 
     def test_merge_taxa_score_multi_column(self):
-        new, = self.merge_taxa([self.m1, self.m2, self.m3], 'score')
+        new, = self.merge_taxa([self.m1, self.m2, self.m3], 'score', '')
         exp = pd.DataFrame({
             'Taxon': {
                 '2562091': 'k__Bacteria;p__Actinobacteria;c__Acidimicrobiia;'

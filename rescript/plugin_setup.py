@@ -24,6 +24,7 @@ from q2_feature_classifier.classifier import (_parameter_descriptions,
                                               _classify_parameters)
 
 import rescript
+from rescript._utilities import _rank_handles
 from rescript.types._format import (
     SILVATaxonomyFormat, SILVATaxonomyDirectoryFormat, SILVATaxidMapFormat,
     SILVATaxidMapDirectoryFormat, RNAFASTAFormat, RNASequencesDirectoryFormat)
@@ -58,7 +59,7 @@ rank_handle_description = (
     'effect is that ambiguous or empty levels can be '
     'removed prior to comparison, enabling selection of '
     'taxonomies with more complete taxonomic information. '
-    'For example, "^[kpcofgs]__" will recognize greengenes rank '
+    'For example, "^[dkpcofgs]__" will recognize greengenes or silva rank '
     'handles. ')
 
 rank_handle_extra_note = (
@@ -150,8 +151,8 @@ plugin.methods.register_function(
     inputs={'data': List[FeatureData[Taxonomy]]},
     parameters={
         'mode': Str % Choices(['len', 'lca', 'score']),
-        'rank_handle': Str,
-        'new_rank_handle': Str},
+        'rank_handle_regex': Str,
+        'new_rank_handle': Str % Choices(list(_rank_handles.keys()))},
     outputs=[('merged_data', FeatureData[Taxonomy])],
     input_descriptions={
         'data': 'Two or more feature taxonomies to be merged.'},
@@ -164,15 +165,18 @@ plugin.methods.register_function(
                 'consensus score). Note that "score" assumes that this score '
                 'is always contained as the second column in a feature '
                 'taxonomy dataframe.',
-        'rank_handle': rank_handle_description + rank_handle_extra_note,
-        'new_rank_handle': 'A semicolon-delimited string of rank handles to '
-                           'prepend to taxonomic labels at each rank. For '
-                           'example, "k__;p__;c__;o__;f__;g__;s__" will '
-                           'prepend greengenes-style rank handles. Note that '
-                           'merged taxonomies will only contain as many '
-                           'levels as there are handles if this parameter is '
-                           'used. So "k__;p__" will trim all taxonomies to '
-                           'phylum level, even if longer annotations exist.'},
+        'rank_handle_regex': rank_handle_description + rank_handle_extra_note,
+        'new_rank_handle': (
+            'Specifies the set of rank handles to prepend to taxonomic labels '
+            'at each rank. For example, "greengenes" will prepend 7-level '
+            'greengenes-style rank handles. Note that merged taxonomies will '
+            'only contain as many levels as there are handles if this '
+            'parameter is used. So "greengenes" will trim all taxonomies to '
+            'seven levels, even if longer annotations exist. Note that this '
+            'parameter will prepend rank handles whether or not they already '
+            'exist in the taxonomy, so should ALWAYS be used in conjunction '
+            'with `rank_handle_regex` if rank handles exist in any of the '
+            'inputs.')},
     name='Compare taxonomies and select the longest, highest scoring, or find '
          'the least common ancestor.',
     description='Compare taxonomy annotations and choose the best one. Can '
@@ -211,7 +215,8 @@ plugin.methods.register_function(
         'mode': Str % Choices(['uniq', 'lca', 'majority']),
         'threads': VSEARCH_PARAMS['threads'],
         'perc_identity': VSEARCH_PARAMS['perc_identity'],
-        'derep_prefix': Bool},
+        'derep_prefix': Bool,
+        'rank_handles': Str % Choices(list(_rank_handles.keys()))},
     outputs=[('dereplicated_sequences', FeatureData[Sequence]),
              ('dereplicated_taxa', FeatureData[Taxonomy])],
     input_descriptions={
@@ -231,7 +236,12 @@ plugin.methods.register_function(
                         'sequence is identical to the prefix of two or more '
                         'longer sequences, it is clustered with the shortest '
                         'of them. If they are equally long, it is clustered '
-                        'with the most abundant.'
+                        'with the most abundant.',
+        'rank_handles': (
+            'Specifies the set of rank handles used to backfill '
+            'missing ranks in the resulting dereplicated taxonomy. The '
+            'default setting will backfill SILVA-style 7-level rank handles. '
+            'Set to "none" to disable backfilling.')
     },
     name='Dereplicate features with matching sequences and taxonomies.',
     description=(
@@ -251,13 +261,13 @@ plugin.pipelines.register_function(
     function=evaluate_taxonomy,
     inputs={'taxonomies': List[FeatureData[Taxonomy]]},
     parameters={'labels': List[Str],
-                'rank_handle': Str},
+                'rank_handle_regex': Str},
     outputs=[('taxonomy_stats', Visualization)],
     input_descriptions={
         'taxonomies': 'One or more taxonomies to evaluate.'},
     parameter_descriptions={
         'labels': labels_description,
-        'rank_handle': rank_handle_description,
+        'rank_handle_regex': rank_handle_description,
     },
     name='Compute summary statistics on taxonomy artifact(s).',
     description=(

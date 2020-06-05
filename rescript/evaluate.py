@@ -20,11 +20,12 @@ from ._utilities import _taxon_to_list
 def evaluate_taxonomy(ctx,
                       taxonomies,
                       labels=None,
-                      rank_handle=None):
+                      rank_handle_regex=None):
     labels = _process_labels(labels, taxonomies)
     summaries = []
     for name, taxonomy in zip(labels, taxonomies):
-        summary = _evaluate_taxonomy(taxonomy.view(pd.Series), rank_handle)
+        summary = _evaluate_taxonomy(
+            taxonomy.view(pd.Series), rank_handle_regex)
         # note: what if n equals an existing name? do we want to error out or
         # just assume a user knows what they are doing? For now I am just
         # adding this info to the warning to make this behavior transparent.
@@ -66,21 +67,23 @@ def _warn_uneven_length():
     warnings.warn(msg, UserWarning)
 
 
-def _evaluate_taxonomy(taxonomy, rank_handle):
-    if rank_handle is None:
-        rank_handle = ""
+def _evaluate_taxonomy(taxonomy, rank_handle_regex):
+    if rank_handle_regex is None:
+        rank_handle_regex = ""
     # Count number of unique taxa and unclassifieds at each level
-    summary = summarize_taxonomic_depth(taxonomy, rank_handle=rank_handle)
+    summary = summarize_taxonomic_depth(
+        taxonomy, rank_handle_regex=rank_handle_regex)
     # Measure taxonomic entropy at each level
-    entropy = _taxonomic_entropy(taxonomy, rank_handle=rank_handle)
+    entropy = _taxonomic_entropy(
+        taxonomy, rank_handle_regex=rank_handle_regex)
     entropy = entropy.merge(summary, left_index=True, right_index=True)
     entropy.index.name = 'Level'
     return entropy
 
 
-def summarize_taxonomic_depth(taxonomy, rank_handle):
+def summarize_taxonomic_depth(taxonomy, rank_handle_regex):
     # measure number of levels in each taxonomy
-    depths = _taxonomic_depth(taxonomy, rank_handle=rank_handle)
+    depths = _taxonomic_depth(taxonomy, rank_handle_regex=rank_handle_regex)
     # count number + proportion of taxonomies per depth
     depths = depths.value_counts()
     total = remaining = depths.sum()
@@ -111,9 +114,9 @@ def summarize_taxonomic_depth(taxonomy, rank_handle):
     return depths
 
 
-def _taxonomic_entropy(taxonomy, rank_handle):
+def _taxonomic_entropy(taxonomy, rank_handle_regex):
     # convert each taxonomy to a list
-    taxa_lists = [_taxon_to_list(t, rank_handle=rank_handle)
+    taxa_lists = [_taxon_to_list(t, rank_handle=rank_handle_regex)
                   for t in taxonomy.values]
     # taxonomic labels should accumulate at each rank (e.g., to avoid
     # counting identical species names as duplicates when genus is unique)
@@ -131,6 +134,6 @@ def _taxonomic_entropy(taxonomy, rank_handle):
                         index=['Unique Labels', 'Taxonomic Entropy']).T
 
 
-def _taxonomic_depth(taxonomy, rank_handle):
+def _taxonomic_depth(taxonomy, rank_handle_regex):
     return taxonomy.apply(lambda x: len(set(_taxon_to_list(
-        x, rank_handle=rank_handle)) - {None, ''}))
+        x, rank_handle=rank_handle_regex)) - {None, ''}))
