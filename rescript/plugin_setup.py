@@ -9,7 +9,7 @@
 import importlib
 
 from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int,
-                           Float, Visualization, Bool)
+                           Float, Visualization, Bool, TypeMap)
 from .merge import merge_taxa
 from .dereplicate import dereplicate
 from .evaluate import evaluate_taxonomy
@@ -438,16 +438,25 @@ INCLUDE_SPECIES_LABELS_DESCRIPTION = (
     'Include species rank labels in taxonomy output. Note: species-labels may '
     'not be reliable in all cases.')
 
-
-_SILVA_VERSIONS = ['119', '123', '126', '128', '132', '138']
+_SILVA_VERSIONS = ['119', '123', '128', '132', '138']
 _SILVA_TARGETS = ['SSURef_NR99', 'SSURef', 'LSURef']
+
+version_map, target_map, _ = TypeMap({
+    (Str % Choices('119'), Str % Choices('SSURef_NR99', 'LSURef')):
+        Visualization,
+    (Str % Choices('123', '128', '132'),
+     Str % Choices('SSURef_NR99', 'SSURef', 'LSURef')): Visualization,
+    (Str % Choices('138'), Str % Choices('SSURef_NR99', 'SSURef')):
+        Visualization,
+})
+
 
 plugin.pipelines.register_function(
     function=retrieve_silva_data,
     inputs={},
     parameters={
-        'version': Str % Choices(_SILVA_VERSIONS),
-        'target': Str % Choices(_SILVA_TARGETS),
+        'version': version_map,
+        'target': target_map,
         'include_species_labels': Bool},
     outputs=[('sequences', FeatureData[Sequence]),
              ('taxonomy', FeatureData[Taxonomy])],

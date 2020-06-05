@@ -289,8 +289,10 @@ class TestGetSILVA(TestPluginBase):
                 obs = _assemble_silva_data_urls(version, target)
                 # validate URLs
                 for _, u, _ in obs:
+                    print(u)
+                    # https://www.arb-silva.de/fileadmin/silva_databases/release_119/Exports/SILVA_119_SSURef_NR99_tax_silva.fasta.gz
+                    # https://www.arb-silva.de/fileadmin/silva_databases/release_119/Exports/SILVA_119_SSURef_Nr99_tax_silva.fasta.gz
                     urlopen(u)
 
     def test_retrieve_data_from_silva(self):
-        _retrieve_data_from_silva()
         pass

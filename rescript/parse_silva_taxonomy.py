@@ -220,16 +220,24 @@ def _assemble_silva_data_urls(version, target):
     '''Generate SILVA urls, given database version and reference target.'''
     # assemble target urls
     ref_map = {'SSURef_NR99': 'ssu_ref_nr',
+               'SSURef_Nr99': 'ssu_ref_nr',
                'SSURef': 'ssu_ref',
                'LSURef': 'lsu_ref'}
+    # handle silly inconsistencies in filenames between versions
+    if target == 'SSURef_NR99' and int(version) < 132:
+        target = 'SSURef_Nr99'
+    insert = ref_map[target]
+    if version == '123'
+    insert = insert.replace('_ref', '')
+    # now compile URLs
     base_url = 'https://www.arb-silva.de/fileadmin/silva_databases/'\
                'release_{0}/Exports/'.format(version)
     base_url_seqs = base_url + 'SILVA_{0}_{1}_tax_silva.fasta.gz'.format(
         version, target)
     base_url_taxmap = '{0}taxonomy/taxmap_slv_{1}_{2}.txt'.format(
-        base_url, ref_map[target], version)
+        base_url, insert, version)
     base_url_tax = '{0}taxonomy/tax_slv_{1}_{2}'.format(
-        base_url, ref_map[target].split('_')[0], version)
+        base_url, insert.split('_')[0], version)
 
     # download and validate silva files
     queries = [('sequences', base_url_seqs, 'FeatureData[Sequence]'),
