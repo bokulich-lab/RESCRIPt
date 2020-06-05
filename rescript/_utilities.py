@@ -13,6 +13,14 @@ import skbio
 from q2_types.feature_data import DNAFASTAFormat
 
 
+_rank_handles = {
+    'silva': [' d__', ' p__', ' c__', ' o__', ' f__', ' g__', ' s__'],
+    'greengenes': ['k__', 'p__', 'c__', 'o__', 'f__', 'g__', 's__'],
+    'gtdb': ['k__', 'p__', 'c__', 'o__', 'f__', 'g__', 's__'],
+    'disable': None,
+}
+
+
 def _find_lca_in_series(t1, t2):
     '''
     Find least common ancestor between two semicolon-delimited strings.
