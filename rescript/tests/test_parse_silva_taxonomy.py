@@ -306,4 +306,4 @@ class TestGetSILVA(TestPluginBase):
                      'release_138/Exports/taxonomy/tax_slv_ssu_138.txt.gz',
              'FeatureData[SILVATaxonomy]')]
         _retrieve_data_from_silva(queries)
-        pass
+        self.assertTrue(True)
