@@ -265,10 +265,6 @@ def _retrieve_data_from_silva(queries):
             destination = os.path.join(tmpdirname, os.path.basename(query))
             urlretrieve(query, destination)
             file_md5 = _get_md5(destination)
-            if destination.endswith('.gz'):
-                unzipped_destination = os.path.splitext(destination)[0]
-                _gzip_decompress(destination, unzipped_destination)
-                destination = unzipped_destination
             # grab expected md5
             md5_destination = os.path.join(tmpdirname, 'md5')
             urlretrieve(query + '.md5', md5_destination)
@@ -279,6 +275,13 @@ def _retrieve_data_from_silva(queries):
                     'md5 sums do not match. Manually verify md5 checksums '
                     'before proceeding.\nTarget file: {0}\nExpected md5: {1}\n'
                     'Observed md5: {2}\n'.format(query, exp_md5, file_md5))
+            # gunzip on demand (SILVA releases are inconsistently gzipped)
+            try:
+                unzipped_destination = os.path.splitext(destination)[0]
+                _gzip_decompress(destination, unzipped_destination)
+                destination = unzipped_destination
+            except OSError:
+                pass
             # import as artifacts
             results[name] = qiime2.Artifact.import_data(dtype, destination)
     return results
