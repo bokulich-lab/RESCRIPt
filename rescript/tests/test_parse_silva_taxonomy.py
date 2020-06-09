@@ -9,6 +9,7 @@
 import qiime2
 import pkg_resources
 from qiime2.plugin.testing import TestPluginBase
+from qiime2.plugins import rescript
 from rescript.parse_silva_taxonomy import (parse_silva_taxonomy,
                                            _keep_allowed_chars, _prep_taxranks,
                                            _prep_taxmap, ALLOWED_RANKS,
@@ -26,6 +27,7 @@ import pandas as pd
 from pandas.testing import assert_frame_equal, assert_series_equal
 from urllib.request import urlopen
 from urllib.error import HTTPError
+from unittest.mock import patch
 
 
 class TestParseSilvaTaxonomy(TestPluginBase):
@@ -36,8 +38,7 @@ class TestParseSilvaTaxonomy(TestPluginBase):
         # taxonomy mapping file 1
         tm_path = pkg_resources.resource_filename('rescript.types.tests',
                                                   'data/silva_taxamap.tsv')
-        tm = qiime2.Artifact.import_data(
-                        'FeatureData[SILVATaxidMap]', tm_path)
+        tm = qiime2.Artifact.import_data('FeatureData[SILVATaxidMap]', tm_path)
         self.taxmap = tm.view(pd.DataFrame)
         # Note: below, the tax ranks and tree files below need to be
         # consistant, i.e., share 100% of the taxids for later tests to work!
@@ -48,23 +49,21 @@ class TestParseSilvaTaxonomy(TestPluginBase):
         # silva taxonomy ranks file:
         tr_path = pkg_resources.resource_filename('rescript.types.tests',
                                                   'data/silva_taxa.tsv')
-        tr = qiime2.Artifact.import_data(
-                            'FeatureData[SILVATaxonomy]', tr_path)
+        tr = qiime2.Artifact.import_data('FeatureData[SILVATaxonomy]', tr_path)
         self.taxranks = tr.view(pd.DataFrame)
         # silva taxonomy tree file 1
         tt = qiime2.Artifact.import_data(
-                            'Phylogeny[Rooted]',
-                            self.get_data_path('taxid_tree.tre'))
+            'Phylogeny[Rooted]', self.get_data_path('taxid_tree.tre'))
         self.taxtree = tt.view(TreeNode)
         # taxonomy mapping file 2
         tm2 = qiime2.Artifact.import_data(
-                              'FeatureData[SILVATaxidMap]',
-                              self.get_data_path('taxmap_test_match_tree.txt'))
+            'FeatureData[SILVATaxidMap]',
+            self.get_data_path('taxmap_test_match_tree.txt'))
         self.taxmap2 = tm2.view(pd.DataFrame)
         # taxonomy tree file with missing taxid:
         tt2 = qiime2.Artifact.import_data(
-                            'Phylogeny[Rooted]', self.get_data_path(
-                             'taxid_tree_missing_id.tre'))
+            'Phylogeny[Rooted]',
+            self.get_data_path('taxid_tree_missing_id.tre'))
         self.taxtree2 = tt2.view(TreeNode)
 
     def test_keep_allowed_chars(self):
@@ -303,7 +302,35 @@ class TestGetSILVA(TestPluginBase):
         # that the contents are valid and imported successfully.
         queries = [
             ('taxa', 'https://www.arb-silva.de/fileadmin/silva_databases/'
-                     'release_138/Exports/taxonomy/tax_slv_ssu_138.txt.gz',
-             'FeatureData[SILVATaxonomy]')]
+                     'release_138/Exports/taxonomy/tax_slv_ssu_138.tre.gz',
+             'Phylogeny[Rooted]')]
         _retrieve_data_from_silva(queries)
         self.assertTrue(True)
+
+    # This tests the full retrieve_silva_data pipeline, using mock data and
+    # skipping the seqs for the sake of time. All relevant internals are
+    # tested elsewhere in this test class, or in TestGetSILVA below, so this
+    # just ensures that the full pipeline operates seamlessly, using `mock`
+    # to mock data download and slip in fake data in its place.
+    def test_retrieve_silva_data(self):
+
+        def _fake_data_on_demand(give_me_anything_i_shall_ignore_it):
+            tr = qiime2.Artifact.import_data(
+                'FeatureData[SILVATaxonomy]',
+                pkg_resources.resource_filename(
+                    'rescript.types.tests', 'data/silva_taxa.tsv'))
+            tt = qiime2.Artifact.import_data(
+                'Phylogeny[Rooted]', self.get_data_path('taxid_tree.tre'))
+            tm2 = qiime2.Artifact.import_data(
+                'FeatureData[SILVATaxidMap]',
+                self.get_data_path('taxmap_test_match_tree.txt'))
+            fake_dict = {'taxonomy tree': tt,
+                         'taxonomy map': tm2,
+                         'taxonomy ranks': tr}
+            return fake_dict
+
+        with patch('rescript.parse_silva_taxonomy._retrieve_data_from_silva',
+                   new=_fake_data_on_demand):
+            rescript.actions.retrieve_silva_data(
+                version='132', target='SSURef_NR99', download_sequences=False)
+            self.assertTrue(True)

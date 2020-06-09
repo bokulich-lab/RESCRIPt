@@ -18,6 +18,7 @@ import pandas as pd
 from skbio.tree import TreeNode
 from collections import OrderedDict
 from urllib.request import urlretrieve
+from .types._format import RNAFASTAFormat
 
 
 WHITESPACE_REGEX = re.compile(r'\s+')
@@ -201,10 +202,11 @@ def parse_silva_taxonomy(taxonomy_tree: TreeNode,
 def retrieve_silva_data(ctx,
                         version='138',
                         target='SSURef_NR99',
-                        include_species_labels=False):
+                        include_species_labels=False,
+                        download_sequences=True):
     # download data from SILVA
     print('Downloading raw files may take some time... get some coffee.')
-    queries = _assemble_silva_data_urls(version, target)
+    queries = _assemble_silva_data_urls(version, target, download_sequences)
     results = _retrieve_data_from_silva(queries)
     # parse taxonomy
     parse_taxonomy = ctx.get_action('rescript', 'parse_silva_taxonomy')
@@ -213,10 +215,14 @@ def retrieve_silva_data(ctx,
         taxonomy_map=results['taxonomy map'],
         taxonomy_ranks=results['taxonomy ranks'],
         include_species_labels=include_species_labels)
+    # if skipping sequences, need to output an empty sequence file.
+    if not download_sequences:
+        results['sequences'] = qiime2.Artifact.import_data(
+            'FeatureData[RNASequence]', RNAFASTAFormat())
     return results['sequences'], taxonomy
 
 
-def _assemble_silva_data_urls(version, target):
+def _assemble_silva_data_urls(version, target, download_sequences=True):
     '''Generate SILVA urls, given database version and reference target.'''
     # assemble target urls
     ref_map = {'SSURef_NR99': 'ssu_ref_nr',
@@ -247,6 +253,11 @@ def _assemble_silva_data_urls(version, target):
                ('taxonomy map', base_url_taxmap, 'FeatureData[SILVATaxidMap]'),
                ('taxonomy tree', tree_url, 'Phylogeny[Rooted]'),
                ('taxonomy ranks', tax_url, 'FeatureData[SILVATaxonomy]')]
+
+    # optionally skip downloading sequences
+    if not download_sequences:
+        queries = queries[1:]
+
     return queries
 
 

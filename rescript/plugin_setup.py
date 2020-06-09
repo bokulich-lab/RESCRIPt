@@ -455,7 +455,8 @@ plugin.pipelines.register_function(
     parameters={
         'version': version_map,
         'target': target_map,
-        'include_species_labels': Bool},
+        'include_species_labels': Bool,
+        'download_sequences': Bool},
     outputs=[('silva-sequences', FeatureData[RNASequence]),
              ('silva-taxonomy', FeatureData[Taxonomy])],
     input_descriptions={},
@@ -465,7 +466,13 @@ plugin.pipelines.register_function(
                   'small subunit reference. LSURef = redundant large subunit '
                   'reference. SSURef_NR99 = non-redundant (clustered at 99% '
                   'similarity) small subunit reference.',
-        'include_species_labels': INCLUDE_SPECIES_LABELS_DESCRIPTION},
+        'include_species_labels': INCLUDE_SPECIES_LABELS_DESCRIPTION,
+        'download_sequences': 'Toggle whether or not to download and import '
+                              'the SILVA reference sequences associated with '
+                              'the release. Skipping the sequences is useful '
+                              'if you only want to download and parse the '
+                              'taxonomy, e.g., a local copy of the sequences '
+                              'already exists or for testing purposes.'},
     output_descriptions={
         'silva-sequences': 'SILVA reference sequences.',
         'silva-taxonomy': 'SILVA reference taxonomy.'},
