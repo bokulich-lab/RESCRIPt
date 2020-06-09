@@ -14,12 +14,14 @@ from .merge import merge_taxa
 from .dereplicate import dereplicate
 from .evaluate import evaluate_taxonomy
 from .screenseq import screen_sequences
+from .degap import degap_sequences
 from .parse_silva_taxonomy import parse_silva_taxonomy
 from .get_data import get_silva_data
 from .cross_validate import cross_validate, evaluate_classifications
 from .filter_length import filter_seqs_length_by_taxon, filter_seqs_length
 from .orient import orient_seqs
-from q2_types.feature_data import FeatureData, Taxonomy, Sequence
+from q2_types.feature_data import (FeatureData, Taxonomy, Sequence,
+                                   AlignedSequence)
 from q2_types.tree import Phylogeny, Rooted
 from q2_feature_classifier.classifier import (_parameter_descriptions,
                                               _classify_parameters)
@@ -315,6 +317,35 @@ plugin.methods.register_function(
         'contain homopolymers equal to or longer than the specified length. '
         'If the input consists of RNA sequences, they are reverse transcribed '
         'to DNA before filtering.')
+)
+
+
+plugin.methods.register_function(
+    function=degap_sequences,
+    inputs={
+        'aligned_sequences': FeatureData[AlignedSequence]
+        },
+    parameters={},
+    outputs=[('degapped_sequences', FeatureData[Sequence])],
+    input_descriptions={
+        'aligned_sequences': 'Aligned DNA Sequences to be \'degapped\', i.e. '
+                             'removal of indel characters. That is, the '
+                             'alignment will be returned as unalgined DNA '
+                             'Sequences.'
+        },
+    parameter_descriptions={},
+    output_descriptions={
+        'degapped_sequences': 'The resulting \'degapped \', i.e. unaligned, '
+                              'DNA sequences.'
+        },
+    name='Removes all indel characters, i.e. \'-\' (gaps) and \'.\' '
+         '(missing data) from a DNA sequence alignment.',
+    description=(
+        'Occasionally DNA sequence data is only available as an alignment, '
+        'which may limit its down-stream uses, e.g. making a taxonomy feature '
+        'classifier. This method simplifies the process by removing indel '
+        'characters i.e. \'-\' (gaps) and \'.\' (missing data) from the '
+        'alignment. Essentially, \'unaligning\' the sequences.')
 )
 
 
