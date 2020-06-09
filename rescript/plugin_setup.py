@@ -457,8 +457,8 @@ plugin.pipelines.register_function(
         'target': target_map,
         'include_species_labels': Bool,
         'download_sequences': Bool},
-    outputs=[('silva-sequences', FeatureData[RNASequence]),
-             ('silva-taxonomy', FeatureData[Taxonomy])],
+    outputs=[('silva_sequences', FeatureData[RNASequence]),
+             ('silva_taxonomy', FeatureData[Taxonomy])],
     input_descriptions={},
     parameter_descriptions={
         'version': 'SILVA database version to download.',
@@ -474,8 +474,8 @@ plugin.pipelines.register_function(
                               'taxonomy, e.g., a local copy of the sequences '
                               'already exists or for testing purposes.'},
     output_descriptions={
-        'silva-sequences': 'SILVA reference sequences.',
-        'silva-taxonomy': 'SILVA reference taxonomy.'},
+        'silva_sequences': 'SILVA reference sequences.',
+        'silva_taxonomy': 'SILVA reference taxonomy.'},
     name='Download, parse, and import SILVA database.',
     description=(
         'Download, parse, and import SILVA database files, given a version '
