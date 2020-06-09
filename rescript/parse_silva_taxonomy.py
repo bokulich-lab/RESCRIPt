@@ -313,8 +313,9 @@ def _retrieve_data_from_silva(queries):
 def _validate_md5(exp_md5, file_md5, filename):
     if not exp_md5 == file_md5:
         raise ValueError('md5 sums do not match. Manually verify md5 sums '
-            'before proceeding.\nTarget file: {0}\nExpected md5: '
-            '{1}\nObserved md5: {2}\n'.format(filename, exp_md5, file_md5))
+                         'before proceeding.\nTarget file: {0}\nExpected md5: '
+                         '{1}\nObserved md5: {2}\n'.format(
+                            filename, exp_md5, file_md5))
 
 
 # This function is specific for reading the SILVA md5 record files, which are
