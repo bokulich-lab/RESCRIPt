@@ -14,7 +14,8 @@ from .merge import merge_taxa
 from .dereplicate import dereplicate
 from .evaluate import evaluate_taxonomy
 from .screenseq import screen_sequences
-from .parse_silva_taxonomy import parse_silva_taxonomy, get_silva_data
+from .parse_silva_taxonomy import parse_silva_taxonomy
+from .get_data import get_silva_data
 from .cross_validate import cross_validate, evaluate_classifications
 from .filter_length import filter_seqs_length_by_taxon, filter_seqs_length
 from .orient import orient_seqs
