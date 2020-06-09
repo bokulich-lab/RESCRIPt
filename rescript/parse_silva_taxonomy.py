@@ -12,12 +12,14 @@ import tempfile
 import hashlib
 import shutil
 import gzip
+import warnings
 
 import qiime2
 import pandas as pd
 from skbio.tree import TreeNode
 from collections import OrderedDict
 from urllib.request import urlretrieve
+from urllib.error import HTTPError
 from .types._format import RNAFASTAFormat
 
 
@@ -238,8 +240,13 @@ def _assemble_silva_data_urls(version, target, download_sequences=True):
                'release_{0}/Exports/'.format(version)
     base_url_seqs = base_url + 'SILVA_{0}_{1}_tax_silva.fasta.gz'.format(
         version, target)
-    base_url_taxmap = '{0}taxonomy/taxmap_slv_{1}_{2}.txt.gz'.format(
+    base_url_taxmap = '{0}taxonomy/taxmap_slv_{1}_{2}'.format(
         base_url, insert, version)
+    # More SILVA release inconsistencies
+    if target == 'SSURef' and version == '132':
+        base_url_taxmap += '-corrected.txt.gz'
+    else:
+        base_url_taxmap += '.txt.gz'
     base_url_tax = '{0}taxonomy/tax_slv_{1}_{2}'.format(
         base_url, insert.split('_')[0], version)
     tree_url = base_url_tax + '.tre'
@@ -277,15 +284,20 @@ def _retrieve_data_from_silva(queries):
             urlretrieve(query, destination)
             file_md5 = _get_md5(destination)
             # grab expected md5
-            md5_destination = os.path.join(tmpdirname, 'md5')
-            urlretrieve(query + '.md5', md5_destination)
-            exp_md5 = _read_silva_md5(md5_destination)
-            # validate md5 checksum
-            if not exp_md5 == file_md5:
-                raise ValueError(
-                    'md5 sums do not match. Manually verify md5 checksums '
-                    'before proceeding.\nTarget file: {0}\nExpected md5: {1}\n'
-                    'Observed md5: {2}\n'.format(query, exp_md5, file_md5))
+            # NOTE: SILVA is missing md5s for some files, so we will just skip
+            try:
+                md5_destination = os.path.join(tmpdirname, 'md5')
+                urlretrieve(query + '.md5', md5_destination)
+                exp_md5 = _read_silva_md5(md5_destination)
+                # validate md5 checksum
+                _validate_md5(exp_md5, file_md5, query)
+            # if we get an HTTPError just move on, the md5 file does not exist
+            except HTTPError:
+                msg = ("No md5 file was detected in the SILVA archive for the "
+                       "following file. No action is required, but be aware "
+                       "that md5-hash validation was not performed for this "
+                       "file: " + query)
+                warnings.warn(msg, UserWarning)
             # gunzip on demand (SILVA releases are inconsistently gzipped)
             try:
                 unzipped_destination = os.path.splitext(destination)[0]
@@ -296,6 +308,15 @@ def _retrieve_data_from_silva(queries):
             # import as artifacts
             results[name] = qiime2.Artifact.import_data(dtype, destination)
     return results
+
+
+def _validate_md5(exp_md5, file_md5, filename):
+    if not exp_md5 == file_md5:
+        raise ValueError(
+            'md5 sums do not match. Manually verify md5 checksums '
+            'before proceeding.\nTarget file: {0}\nExpected md5: '
+            '{1}\nObserved md5: {2}\n'.format(
+                filename, exp_md5, file_md5))
 
 
 # This function is specific for reading the SILVA md5 record files, which are
