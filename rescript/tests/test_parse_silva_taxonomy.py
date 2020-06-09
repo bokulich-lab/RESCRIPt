@@ -307,12 +307,12 @@ class TestGetSILVA(TestPluginBase):
         _retrieve_data_from_silva(queries)
         self.assertTrue(True)
 
-    # This tests the full retrieve_silva_data pipeline, using mock data and
+    # This tests the full get_silva_data pipeline, using mock data and
     # skipping the seqs for the sake of time. All relevant internals are
     # tested elsewhere in this test class, or in TestGetSILVA below, so this
     # just ensures that the full pipeline operates seamlessly, using `mock`
     # to mock data download and slip in fake data in its place.
-    def test_retrieve_silva_data(self):
+    def test_get_silva_data(self):
 
         def _fake_data_on_demand(give_me_anything_i_shall_ignore_it):
             tr = qiime2.Artifact.import_data(
@@ -331,6 +331,6 @@ class TestGetSILVA(TestPluginBase):
 
         with patch('rescript.parse_silva_taxonomy._retrieve_data_from_silva',
                    new=_fake_data_on_demand):
-            rescript.actions.retrieve_silva_data(
+            rescript.actions.get_silva_data(
                 version='132', target='SSURef_NR99', download_sequences=False)
             self.assertTrue(True)

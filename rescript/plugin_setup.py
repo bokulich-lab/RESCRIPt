@@ -14,7 +14,7 @@ from .merge import merge_taxa
 from .dereplicate import dereplicate
 from .evaluate import evaluate_taxonomy
 from .screenseq import screen_sequences
-from .parse_silva_taxonomy import parse_silva_taxonomy, retrieve_silva_data
+from .parse_silva_taxonomy import parse_silva_taxonomy, get_silva_data
 from .cross_validate import cross_validate, evaluate_classifications
 from .filter_length import filter_seqs_length_by_taxon, filter_seqs_length
 from .orient import orient_seqs
@@ -450,7 +450,7 @@ version_map, target_map, _ = TypeMap({
 
 
 plugin.pipelines.register_function(
-    function=retrieve_silva_data,
+    function=get_silva_data,
     inputs={},
     parameters={
         'version': version_map,
