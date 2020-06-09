@@ -473,7 +473,10 @@ plugin.pipelines.register_function(
                               'the release. Skipping the sequences is useful '
                               'if you only want to download and parse the '
                               'taxonomy, e.g., a local copy of the sequences '
-                              'already exists or for testing purposes.'},
+                              'already exists or for testing purposes. NOTE: '
+                              'if this option is used, a `silva_sequences` '
+                              'output is still created, but contains no '
+                              'data.'},
     output_descriptions={
         'silva_sequences': 'SILVA reference sequences.',
         'silva_taxonomy': 'SILVA reference taxonomy.'},
