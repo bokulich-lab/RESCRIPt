@@ -86,11 +86,13 @@ class SILVATaxidMapFormat(model.TextFileFormat):
     def _validate(self, n_records=None):
         HEADER = ['primaryAccession', 'start', 'stop', 'path',
                   'organism_name', 'taxid']
+        HEADER_VERSION132 = ['primaryAccession', 'start', 'stop', 'path',
+                             'organismName', 'taxid']
         with self.open() as fh:
             # validate header
             # for now we will not validate any information in the header.
             line = [i.strip() for i in fh.readline().split('\t')]
-            if line != HEADER:
+            if line != HEADER and line != HEADER_VERSION132:
                 raise ValidationError(
                     "Header line does not match SILVA format. Must consist of "
                     "the following values: " + ', '.join(HEADER) +

@@ -9,12 +9,13 @@
 import importlib
 
 from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int,
-                           Float, Visualization, Bool)
+                           Float, Visualization, Bool, TypeMap)
 from .merge import merge_taxa
 from .dereplicate import dereplicate
 from .evaluate import evaluate_taxonomy
 from .screenseq import screen_sequences
 from .parse_silva_taxonomy import parse_silva_taxonomy
+from .get_data import get_silva_data
 from .cross_validate import cross_validate, evaluate_classifications
 from .filter_length import filter_seqs_length_by_taxon, filter_seqs_length
 from .orient import orient_seqs
@@ -434,6 +435,61 @@ plugin.methods.register_function(
 )
 
 
+INCLUDE_SPECIES_LABELS_DESCRIPTION = (
+    'Include species rank labels in taxonomy output. Note: species-labels may '
+    'not be reliable in all cases.')
+
+_SILVA_VERSIONS = ['128', '132', '138']
+_SILVA_TARGETS = ['SSURef_NR99', 'SSURef', 'LSURef']
+
+version_map, target_map, _ = TypeMap({
+    (Str % Choices('128', '132'),
+     Str % Choices('SSURef_NR99', 'SSURef', 'LSURef')): Visualization,
+    (Str % Choices('138'), Str % Choices('SSURef_NR99', 'SSURef')):
+        Visualization,
+})
+
+
+plugin.pipelines.register_function(
+    function=get_silva_data,
+    inputs={},
+    parameters={
+        'version': version_map,
+        'target': target_map,
+        'include_species_labels': Bool,
+        'download_sequences': Bool},
+    outputs=[('silva_sequences', FeatureData[RNASequence]),
+             ('silva_taxonomy', FeatureData[Taxonomy])],
+    input_descriptions={},
+    parameter_descriptions={
+        'version': 'SILVA database version to download.',
+        'target': 'Reference sequence target to download. SSURef = redundant '
+                  'small subunit reference. LSURef = redundant large subunit '
+                  'reference. SSURef_NR99 = non-redundant (clustered at 99% '
+                  'similarity) small subunit reference.',
+        'include_species_labels': INCLUDE_SPECIES_LABELS_DESCRIPTION,
+        'download_sequences': 'Toggle whether or not to download and import '
+                              'the SILVA reference sequences associated with '
+                              'the release. Skipping the sequences is useful '
+                              'if you only want to download and parse the '
+                              'taxonomy, e.g., a local copy of the sequences '
+                              'already exists or for testing purposes. NOTE: '
+                              'if this option is used, a `silva_sequences` '
+                              'output is still created, but contains no '
+                              'data.'},
+    output_descriptions={
+        'silva_sequences': 'SILVA reference sequences.',
+        'silva_taxonomy': 'SILVA reference taxonomy.'},
+    name='Download, parse, and import SILVA database.',
+    description=(
+        'Download, parse, and import SILVA database files, given a version '
+        'number and reference target. Downloads data directly from SILVA, '
+        'parses the taxonomy files, and outputs ready-to-use sequence and '
+        'taxonomy artifacts. REQUIRES STABLE INTERNET CONNECTION.'),
+    citations=[citations['Pruesse2007'], citations['Quast2013']]
+)
+
+
 plugin.methods.register_function(
     function=parse_silva_taxonomy,
     inputs={
@@ -465,9 +521,7 @@ plugin.methods.register_function(
                          'version number.',
         },
     parameter_descriptions={
-        'include_species_labels': 'Include species rank labels in taxonomy '
-                                  'output. Note: species-labels may not be '
-                                  'reliable in all cases.',
+        'include_species_labels': INCLUDE_SPECIES_LABELS_DESCRIPTION,
     },
     output_descriptions={
         'taxonomy': 'The resulting fixed-rank formatted SILVA taxonomy.'

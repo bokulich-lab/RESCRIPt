@@ -6,10 +6,11 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-from skbio.tree import TreeNode
 import re
 import pandas as pd
+from skbio.tree import TreeNode
 from collections import OrderedDict
+
 
 WHITESPACE_REGEX = re.compile(r'\s+')
 ALLOWED_CHARS = set(''.join(['0123456789',

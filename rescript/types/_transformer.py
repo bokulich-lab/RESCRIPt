@@ -50,6 +50,8 @@ def _4(data: pd.DataFrame) -> (SILVATaxidMapFormat):
 def _5(ff: SILVATaxidMapFormat) -> (pd.DataFrame):
     with ff.open() as fh:
         df = _read_dataframe(fh, header=0)
+        # normalize column names
+        df.columns = ['start', 'stop', 'path', 'organism_name', 'taxid']
         return df
 
 
