@@ -325,12 +325,16 @@ plugin.methods.register_function(
     inputs={
         'aligned_sequences': FeatureData[AlignedSequence]
         },
-    parameters={},
+    parameters={
+                'min_length': Int % Range(1, None)
+                },
     outputs=[('degapped_sequences', FeatureData[Sequence])],
     input_descriptions={
         'aligned_sequences': 'Aligned DNA Sequences to be degapped.'
         },
-    parameter_descriptions={},
+    parameter_descriptions={
+        'min_length': 'Minimum length of sequence to be returned after '
+                      'degapping.'},
     output_descriptions={
         'degapped_sequences': 'The resulting unaligned (degapped) DNA '
                               'sequences.'

@@ -53,3 +53,26 @@ class TestDegapSeq(TestPluginBase):
                     's6': ('G'),
                     's7': ('GG')}
         self.assertEqual(obs_seqs, exp_seqs)
+
+    def test_degap_sequences_min_length(self):
+        # should remove and sequences less than 3 bp in length
+        obs = degap_sequences(self.alignedseqs, 3)
+
+        obs_seqs = {seq.metadata['id']: str(seq)
+                    for seq in obs.view(DNAIterator)}
+        exp_seqs = {'s1': ('TAGGGAATCTTCCACAATGGGTGCAAACCTGATGGAGCAATGCCGCGT'
+                           'GAGTGAAGANAGGTCTTCGGATCGTAAAGCTCTGTTGTTAGAGAAGAA'
+                           'CACGTGCTAGG'),
+                    's2': ('AATTTTGGGGAATATTGCACAATGGGCGCAAGCCTGATGCAGCGACGC'
+                           'CGCGTGGGGGATGACGGCCTTCGGGTTGTAAACTCCTTTCGCCAGGGA'
+                           'CGAAGCGTTTTG'),
+                    's3': ('TGGGGAATATTGGACAATGGGCGAAAGCCTGATCCAGCCATGCCGCGT'
+                           'GTGTGAAGAAGGCCTTTTGGTTGTAAAGCACTTTAAGTGGGGAGGAAA'
+                           'AGCTTATGGTTAAAAAAA'),
+                    's4': ('TGGGGAATTTTGGACAATGGGGGCAACCCTGATCCAGCCATGCCGCGT'
+                           'GCGGGAAGANAGGCCTTCGGGTTGTAAACCGCTTTTGTTCGGGAAGAA'
+                           'ATCCTCTGGGCTAAAAAAA'),
+                    's5': ('AATGGGGAATATTGGACAATGGGCGAAAGCCTGATCCAGCCATGCCGC'
+                           'GTGTGTGAAGAAGGCCTTTTGGTTGTAAAGCACTTTAAGTGGGGAGGA'
+                           'AAAGCTTGTGGTTAA')}
+        self.assertEqual(obs_seqs, exp_seqs)
