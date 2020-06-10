@@ -15,13 +15,20 @@ from .dereplicate import dereplicate
 from .evaluate import evaluate_taxonomy
 from .screenseq import screen_sequences
 from .parse_silva_taxonomy import parse_silva_taxonomy
-from .cross_validate import cross_validate, evaluate_classifications
+from .cross_validate import (evaluate_cross_validate,
+                             evaluate_classifications,
+                             evaluate_fit_classifier,
+                             evaluate_vsearch_loo)
 from .filter_length import filter_seqs_length_by_taxon, filter_seqs_length
 from .orient import orient_seqs
 from q2_types.feature_data import FeatureData, Taxonomy, Sequence
 from q2_types.tree import Phylogeny, Rooted
 from q2_feature_classifier.classifier import (_parameter_descriptions,
                                               _classify_parameters)
+from q2_feature_classifier._taxonomic_classifier import TaxonomicClassifier
+from q2_feature_classifier._vsearch import (
+    parameters as vsearch_parameters,
+    parameter_descriptions as vsearch_parameter_descriptions)
 
 import rescript
 from rescript._utilities import _rank_handles
@@ -75,11 +82,129 @@ labels_description = (
 
 
 plugin.pipelines.register_function(
-    function=cross_validate,
+    function=evaluate_fit_classifier,
     inputs={'sequences': FeatureData[Sequence],
             'taxonomy': FeatureData[Taxonomy]},
     parameters={
-        'k': Int % Range(2, None) | Str % Choices(['disable']),
+        'random_state': Int % Range(0, None),
+        'reads_per_batch': _classify_parameters['reads_per_batch'],
+        'n_jobs': _classify_parameters['n_jobs'],
+        'confidence': _classify_parameters['confidence']},
+    outputs=[('classifier', TaxonomicClassifier),
+             ('evaluation', Visualization),
+             ('observed_taxonomy', FeatureData[Taxonomy])],
+    input_descriptions={
+        'sequences': 'Reference sequences to use for classifier '
+                     'training/testing.',
+        'taxonomy': 'Reference taxonomy to use for classifier '
+                    'training/testing.'},
+    parameter_descriptions={
+        'random_state': 'Seed used by the random number generator.',
+        'reads_per_batch': _parameter_descriptions['reads_per_batch'],
+        'n_jobs': _parameter_descriptions['n_jobs'],
+        'confidence': _parameter_descriptions['confidence']},
+    output_descriptions={
+        'classifier': 'Trained naive Bayes taxonomic classifier.',
+        'evaluation': 'Visualization of classification accuracy results.',
+        'observed_taxonomy': 'Observed taxonomic label for each input '
+                             'sequence, predicted by the trained classifier.'},
+    name=('Evaluate and train naive Bayes classifier on reference sequences.'),
+    description=(
+        'Train a naive Bayes classifier on a set of reference sequences, then '
+        'test performance accuracy on this same set of sequences. This '
+        'results in a "perfect" classifier that "knows" the correct identity '
+        'of each input sequence. Such a leaky classifier indicates the upper '
+        'limit of classification accuracy based on sequence information '
+        'alone, as misclassifications are an indication of unresolvable kmer '
+        'profiles. This test simulates the case where all query sequences '
+        'are present in a fully comprehensive reference database. To simulate '
+        'more realistic conditions, see `evaluate_cross_validate`. THE '
+        'CLASSIFIER OUTPUT BY THIS PIPELINE IS PRODUCTION-READY and can be '
+        're-used for classification of other sequences (provided the '
+        'reference data are viable), hence THIS PIPELINE IS USEFUL FOR '
+        'TRAINING FEATURE CLASSIFIERS AND THEN EVALUATING THEM ON-THE-FLY.'),
+    citations=[citations['bokulich2018optimizing']]
+)
+
+
+vsearch_parameters = {k: v for k, v in vsearch_parameters.items()
+                      if k not in ['strand', 'maxhits']}
+
+vsearch_parameter_descriptions = {
+    k: v for k, v in vsearch_parameter_descriptions.items()
+    if k not in ['strand', 'maxhits']}
+
+
+plugin.pipelines.register_function(
+    function=evaluate_vsearch_loo,
+    inputs={'sequences': FeatureData[Sequence],
+            'taxonomy': FeatureData[Taxonomy]},
+    parameters={**vsearch_parameters,
+                'search_exact': Bool,
+                'top_hits_only': Bool,
+                'weak_id': Float % Range(0.0, 1.0, inclusive_end=True)},
+    outputs=[('expected_taxonomy', FeatureData[Taxonomy]),
+             ('observed_taxonomy', FeatureData[Taxonomy]),
+             ('evaluation', Visualization)],
+    input_descriptions={
+        'sequences': 'Reference sequences to use for classification/testing.',
+        'taxonomy': 'Reference taxonomy to use for classification/testing.'},
+    parameter_descriptions={
+        **vsearch_parameter_descriptions,
+        'search_exact': 'Search for exact full-length matches to the query '
+                        'sequences. Only 100% exact matches are reported and '
+                        'this command is much faster than the default. If '
+                        'True, the perc_identity and query_cov settings are '
+                        'ignored. Note: query and reference reads must be '
+                        'trimmed to the exact same DNA locus (e.g., primer '
+                        'site) because only exact matches will be reported.',
+        'top_hits_only': 'Only the top hits between the query and reference '
+                         'sequence sets are reported. For each query, the top '
+                         'hit is the one presenting the highest percentage of '
+                         'identity. Multiple equally scored top hits will be '
+                         'used for consensus taxonomic assignment if '
+                         'maxaccepts is greater than 1.',
+        'weak_id': 'Show hits with percentage of identity of at least N, '
+                   'without terminating the search. A normal search stops as '
+                   'soon as enough hits are found (as defined by maxaccepts, '
+                   'maxrejects, and perc_identity). As weak_id reports weak '
+                   'hits that are not deduced from maxaccepts, high '
+                   'perc_identity values can be used, hence preserving both '
+                   'speed and sensitivity. Logically, weak_id must be smaller '
+                   'than the value indicated by perc_identity, otherwise this '
+                   'option will be ignored.'},
+    output_descriptions={
+        'expected_taxonomy': 'Expected taxonomic label for each input '
+                             'sequence. Taxonomic labels may be truncated due '
+                             'to LOO cross-validation if they are singletons.',
+        'observed_taxonomy': 'Observed taxonomic label for each input '
+                             'sequence, predicted by cross-validation.',
+        'evaluation': 'Visualization of classification accuracy results.'},
+    name=('Evaluate reference sequences via LOO cross-validation.'),
+    description=(
+        'Evaluate classification accuracy of reference sequences using '
+        'leave-one-out (LOO) cross-validation. Sequences are used as both '
+        'query and references in the `classify-consensus-vsearch` LCA '
+        'classification method used by q2-feature-classifier (see Bokulich et '
+        'al. 2018), using VSEARCH for database searching. LOO is used so that '
+        'sequences are only matched against non-self sequences. Singleton '
+        'taxonomies are thus truncated to the nearest common ancestor to '
+        'indicate the best possible classification using the LOO approach. '
+        'The observed classifications (results of LOO) are compared to the '
+        'expected taxonomies (truncated to reflect LOO optimal result) and '
+        'evaluation results (using the `evaluate_classifications` visualizer)'
+        'are returned.'),
+    citations=[citations['bokulich2018optimizing'],
+               citations['rognes2016vsearch']]
+)
+
+
+plugin.pipelines.register_function(
+    function=evaluate_cross_validate,
+    inputs={'sequences': FeatureData[Sequence],
+            'taxonomy': FeatureData[Taxonomy]},
+    parameters={
+        'k': Int % Range(2, None),
         'random_state': Int % Range(0, None),
         'reads_per_batch': _classify_parameters['reads_per_batch'],
         'n_jobs': _classify_parameters['n_jobs'],
@@ -92,20 +217,15 @@ plugin.pipelines.register_function(
         'taxonomy': 'Reference taxonomy to use for classifier '
                     'training/testing.'},
     parameter_descriptions={
-        'k': 'Number of stratified folds. Set to "disable" to disable k-fold '
-             'cross-validation. This results in a "perfect" classifier that '
-             'knows the correct identity of each input sequence. Such a leaky '
-             'classifier indicates the upper limit of classification accuracy '
-             'based on sequence information alone, as misclassifications are '
-             'an indication of unresolvable kmer profiles.',
+        'k': 'Number of stratified folds.',
         'random_state': 'Seed used by the random number generator.',
         'reads_per_batch': _parameter_descriptions['reads_per_batch'],
         'n_jobs': _parameter_descriptions['n_jobs'],
         'confidence': _parameter_descriptions['confidence']},
     output_descriptions={
         'expected_taxonomy': 'Expected taxonomic label for each input '
-                             'sequence. If k-fold CV is enabled, taxonomic '
-                             'labels may be truncated due to stratification.',
+                             'sequence. Taxonomic labels may be truncated due '
+                             'to k-fold CV and stratification.',
         'observed_taxonomy': 'Observed taxonomic label for each input '
                              'sequence, predicted by cross-validation.'},
     name=('Evaluate DNA sequence reference database via cross-validated '

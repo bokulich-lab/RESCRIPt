@@ -35,15 +35,17 @@ class TestPipelines(TestPluginBase):
             'FeatureData[Sequence]', self.get_data_path('derep-test.fasta'))
         self.seqs = import_data(
             'FeatureData[Sequence]', seqs.view(pd.Series).drop('C1b'))
+        self.stratified_taxonomy = self.taxa_series.copy().str.replace(
+            '; s__brevis', '').str.replace('; s__vaginalis', '').str.replace(
+                '; s__pseudocasei', '').sort_index()
 
-    def test_cross_validate_k3(self):
-        exp, obs = rescript.actions.cross_validate(self.seqs, self.taxa, k=3)
+    def test_evaluate_cross_validate_k3(self):
+        exp, obs = rescript.actions.evaluate_cross_validate(
+            self.seqs, self.taxa, k=3)
         # exp_exp (expected ground truth taxonomies)
         # This will equal the original taxonomy except singleton labels will
         # be truncated to reflect stratification.
-        exp_exp = self.taxa_series.copy().str.replace(
-            '; s__brevis', '').str.replace('; s__vaginalis', '').str.replace(
-                '; s__pseudocasei', '').sort_index()
+        exp_exp = self.stratified_taxonomy
         # exp_obs (expected observations)
         exp_obs = pd.Series({
             'A1': palvei,
@@ -66,12 +68,39 @@ class TestPipelines(TestPluginBase):
         pdt.assert_series_equal(
             exp_obs, obs.view(pd.Series).sort_index(), check_names=False)
 
-    def test_cross_validate_perfect_classifier(self):
-        # exp species should equal the input taxonomy when k='disable'
-        exp, obs = rescript.actions.cross_validate(
-            self.seqs, self.taxa, k='disable')
+    def test_evaluate_vsearch_loo(self):
+        exp, obs, evaluation, = rescript.actions.evaluate_vsearch_loo(
+            self.seqs, self.taxa, top_hits_only=True)
+        # exp_exp (expected ground truth taxonomies)
+        # This will equal the original taxonomy except singleton labels will
+        # be truncated to reflect stratification.
+        exp_exp = self.stratified_taxonomy
+        # exp_obs (expected observations)
+        exp_obs = pd.Series({
+            'A1': palvei,
+            'A2': palvei,
+            'A3': paeni,
+            'A4': paeni,
+            'A5': paeni,
+            'B1': lcasei,
+            'B1a': lcasei,
+            'B1b': lacto + '; s__vaginalis',
+            'B2': lacto,
+            'B3': lacto,
+            'C1': pacidilacti,
+            'C1a': pedio,
+            'C1c': pedio,
+            'C1d': pedio,
+            'C2': pacidilacti}).sort_index()
         pdt.assert_series_equal(
-            exp.view(pd.Series).sort_index(), self.taxa_series.sort_index())
+            exp_exp, exp.view(pd.Series).sort_index(), check_names=False)
+        pdt.assert_series_equal(
+            exp_obs, obs.view(pd.Series).sort_index(), check_names=False)
+
+    def test_evaluate_fit_classifier(self):
+        # exp species should equal the input taxonomy when k='disable'
+        classifier, evaluation, obs = rescript.actions.evaluate_fit_classifier(
+            self.seqs, self.taxa)
         # obs species will equal best possible predictive accuracy.
         exp_obs = pd.Series({
             'A1': palvei,
