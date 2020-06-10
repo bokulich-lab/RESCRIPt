@@ -12,7 +12,7 @@ from qiime2.plugin.testing import TestPluginBase
 from q2_types.feature_data import (AlignedDNAFASTAFormat, AlignedDNAIterator,
                                    DNAIterator)
 
-from rescript.degap import degap_sequences
+from rescript.degap import degap_seqs
 
 
 import_data = qiime2.Artifact.import_data
@@ -28,10 +28,10 @@ class TestDegapSeq(TestPluginBase):
                                 input_fp, mode='r').view(
                                 AlignedDNAIterator)
 
-    def test_degap_sequences(self):
+    def test_degap_seqs(self):
         #  remove all '-' and '.' chars.
         #  seq 's8' should not be returned as it is all gaps.
-        obs = degap_sequences(self.alignedseqs)
+        obs = degap_seqs(self.alignedseqs)
 
         obs_seqs = {seq.metadata['id']: str(seq)
                     for seq in obs.view(DNAIterator)}
@@ -56,7 +56,7 @@ class TestDegapSeq(TestPluginBase):
 
     def test_degap_sequences_min_length(self):
         # should remove and sequences less than 3 bp in length
-        obs = degap_sequences(self.alignedseqs, 3)
+        obs = degap_seqs(self.alignedseqs, 3)
 
         obs_seqs = {seq.metadata['id']: str(seq)
                     for seq in obs.view(DNAIterator)}

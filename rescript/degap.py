@@ -9,9 +9,9 @@
 from q2_types.feature_data import (DNAFASTAFormat, AlignedDNAIterator)
 
 
-def degap_sequences(aligned_sequences:
-                    AlignedDNAIterator,
-                    min_length: int = 1) -> DNAFASTAFormat:
+def degap_seqs(aligned_sequences:
+               AlignedDNAIterator,
+               min_length: int = 1) -> DNAFASTAFormat:
     result = DNAFASTAFormat()
     with result.open() as out_fasta:
         for seq in aligned_sequences:

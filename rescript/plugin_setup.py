@@ -14,7 +14,7 @@ from .merge import merge_taxa
 from .dereplicate import dereplicate
 from .evaluate import evaluate_taxonomy
 from .screenseq import screen_sequences
-from .degap import degap_sequences
+from .degap import degap_seqs
 from .parse_silva_taxonomy import parse_silva_taxonomy
 from .get_data import get_silva_data
 from .cross_validate import cross_validate, evaluate_classifications
@@ -321,7 +321,7 @@ plugin.methods.register_function(
 
 
 plugin.methods.register_function(
-    function=degap_sequences,
+    function=degap_seqs,
     inputs={
         'aligned_sequences': FeatureData[AlignedSequence]
         },
