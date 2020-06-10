@@ -328,24 +328,18 @@ plugin.methods.register_function(
     parameters={},
     outputs=[('degapped_sequences', FeatureData[Sequence])],
     input_descriptions={
-        'aligned_sequences': 'Aligned DNA Sequences to be \'degapped\', i.e. '
-                             'removal of indel characters. That is, the '
-                             'alignment will be returned as unalgined DNA '
-                             'Sequences.'
+        'aligned_sequences': 'Aligned DNA Sequences to be degapped.'
         },
     parameter_descriptions={},
     output_descriptions={
-        'degapped_sequences': 'The resulting \'degapped \', i.e. unaligned, '
-                              'DNA sequences.'
+        'degapped_sequences': 'The resulting unaligned (degapped) DNA '
+                              'sequences.'
         },
-    name='Removes all indel characters, i.e. \'-\' (gaps) and \'.\' '
-         '(missing data) from a DNA sequence alignment.',
-    description=(
-        'Occasionally DNA sequence data is only available as an alignment, '
-        'which may limit its down-stream uses, e.g. making a taxonomy feature '
-        'classifier. This method simplifies the process by removing indel '
-        'characters i.e. \'-\' (gaps) and \'.\' (missing data) from the '
-        'alignment. Essentially, \'unaligning\' the sequences.')
+    name='Remove gaps from DNA sequence alignments.',
+    description=('This method converts aligned DNA sequences to unaligned DNA '
+                 'sequences by removing gaps ("-") and missing data (".") '
+                 'characters from the sequences. Essentially, \'unaligning\' '
+                 'the sequences.')
 )
 
 

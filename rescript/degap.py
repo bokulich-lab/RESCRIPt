@@ -15,5 +15,8 @@ def degap_sequences(aligned_sequences:
     with result.open() as out_fasta:
         for seq in aligned_sequences:
             dg_seq = seq.degap()
-            dg_seq.write(out_fasta)
+            #  If seq is all gaps, then dg_seq will be an empty string
+            #  and we'll not write it out.
+            if len(str(dg_seq)) >= 1:
+                dg_seq.write(out_fasta)
     return result

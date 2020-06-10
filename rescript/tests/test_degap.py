@@ -29,6 +29,8 @@ class TestDegapSeq(TestPluginBase):
                                 AlignedDNAIterator)
 
     def test_degap_sequences(self):
+        #  remove all '-' and '.' chars.
+        #  seq 's8' should not be returned as it is all gaps.
         obs = degap_sequences(self.alignedseqs)
 
         obs_seqs = {seq.metadata['id']: str(seq)
@@ -47,5 +49,7 @@ class TestDegapSeq(TestPluginBase):
                            'ATCCTCTGGGCTAAAAAAA'),
                     's5': ('AATGGGGAATATTGGACAATGGGCGAAAGCCTGATCCAGCCATGCCGC'
                            'GTGTGTGAAGAAGGCCTTTTGGTTGTAAAGCACTTTAAGTGGGGAGGA'
-                           'AAAGCTTGTGGTTAA')}
+                           'AAAGCTTGTGGTTAA'),
+                    's6': ('G'),
+                    's7': ('GG')}
         self.assertEqual(obs_seqs, exp_seqs)
