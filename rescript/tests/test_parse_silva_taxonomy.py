@@ -31,8 +31,7 @@ class TestParseSilvaTaxonomy(TestPluginBase):
         # taxonomy mapping file 1
         tm_path = pkg_resources.resource_filename('rescript.types.tests',
                                                   'data/silva_taxamap.tsv')
-        tm = qiime2.Artifact.import_data(
-                        'FeatureData[SILVATaxidMap]', tm_path)
+        tm = qiime2.Artifact.import_data('FeatureData[SILVATaxidMap]', tm_path)
         self.taxmap = tm.view(pd.DataFrame)
         # Note: below, the tax ranks and tree files below need to be
         # consistant, i.e., share 100% of the taxids for later tests to work!
@@ -43,23 +42,21 @@ class TestParseSilvaTaxonomy(TestPluginBase):
         # silva taxonomy ranks file:
         tr_path = pkg_resources.resource_filename('rescript.types.tests',
                                                   'data/silva_taxa.tsv')
-        tr = qiime2.Artifact.import_data(
-                            'FeatureData[SILVATaxonomy]', tr_path)
+        tr = qiime2.Artifact.import_data('FeatureData[SILVATaxonomy]', tr_path)
         self.taxranks = tr.view(pd.DataFrame)
         # silva taxonomy tree file 1
         tt = qiime2.Artifact.import_data(
-                            'Phylogeny[Rooted]',
-                            self.get_data_path('taxid_tree.tre'))
+            'Phylogeny[Rooted]', self.get_data_path('taxid_tree.tre'))
         self.taxtree = tt.view(TreeNode)
         # taxonomy mapping file 2
         tm2 = qiime2.Artifact.import_data(
-                              'FeatureData[SILVATaxidMap]',
-                              self.get_data_path('taxmap_test_match_tree.txt'))
+            'FeatureData[SILVATaxidMap]',
+            self.get_data_path('taxmap_test_match_tree.txt'))
         self.taxmap2 = tm2.view(pd.DataFrame)
         # taxonomy tree file with missing taxid:
         tt2 = qiime2.Artifact.import_data(
-                            'Phylogeny[Rooted]', self.get_data_path(
-                             'taxid_tree_missing_id.tre'))
+            'Phylogeny[Rooted]',
+            self.get_data_path('taxid_tree_missing_id.tre'))
         self.taxtree2 = tt2.view(TreeNode)
 
     def test_keep_allowed_chars(self):

@@ -91,6 +91,13 @@ class TestSILVATypesAndFormats(RescriptTypesTestPluginBase):
         format.validate('min')
         format.validate('max')
 
+    def test_silva_taxidmap_format_validate_positive_version132(self):
+        filepath = self.get_data_path('silva_taxamap_v132.tsv')
+        format = SILVATaxidMapFormat(filepath, mode='r')
+        # These should both just succeed
+        format.validate('min')
+        format.validate('max')
+
     def test_silva_taxidmap_format_validate_negative_bad_header(self):
         filepath = self.get_data_path('silva_taxa.tsv')
         format = SILVATaxidMapFormat(filepath, mode='r')
