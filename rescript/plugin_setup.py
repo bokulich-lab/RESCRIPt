@@ -14,6 +14,7 @@ from .merge import merge_taxa
 from .dereplicate import dereplicate
 from .evaluate import evaluate_taxonomy
 from .screenseq import screen_sequences
+from .degap import degap_seqs
 from .parse_silva_taxonomy import parse_silva_taxonomy
 from .get_data import get_silva_data
 from .cross_validate import (evaluate_cross_validate,
@@ -22,7 +23,8 @@ from .cross_validate import (evaluate_cross_validate,
                              evaluate_vsearch_loo)
 from .filter_length import filter_seqs_length_by_taxon, filter_seqs_length
 from .orient import orient_seqs
-from q2_types.feature_data import FeatureData, Taxonomy, Sequence
+from q2_types.feature_data import (FeatureData, Taxonomy, Sequence,
+                                   AlignedSequence)
 from q2_types.tree import Phylogeny, Rooted
 from q2_feature_classifier.classifier import (_parameter_descriptions,
                                               _classify_parameters)
@@ -435,6 +437,33 @@ plugin.methods.register_function(
         'contain homopolymers equal to or longer than the specified length. '
         'If the input consists of RNA sequences, they are reverse transcribed '
         'to DNA before filtering.')
+)
+
+
+plugin.methods.register_function(
+    function=degap_seqs,
+    inputs={
+        'aligned_sequences': FeatureData[AlignedSequence]
+        },
+    parameters={
+                'min_length': Int % Range(1, None)
+                },
+    outputs=[('degapped_sequences', FeatureData[Sequence])],
+    input_descriptions={
+        'aligned_sequences': 'Aligned DNA Sequences to be degapped.'
+        },
+    parameter_descriptions={
+        'min_length': 'Minimum length of sequence to be returned after '
+                      'degapping.'},
+    output_descriptions={
+        'degapped_sequences': 'The resulting unaligned (degapped) DNA '
+                              'sequences.'
+        },
+    name='Remove gaps from DNA sequence alignments.',
+    description=('This method converts aligned DNA sequences to unaligned DNA '
+                 'sequences by removing gaps ("-") and missing data (".") '
+                 'characters from the sequences. Essentially, \'unaligning\' '
+                 'the sequences.')
 )
 
 
