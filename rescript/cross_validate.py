@@ -33,7 +33,7 @@ def evaluate_fit_classifier(ctx,
     '''
     # Validate inputs
     start = timeit.default_timer()
-    _cross_validate_validate_inputs(taxonomy, sequences)
+    _validate_cross_validate_inputs(taxonomy, sequences)
     new_time = _check_time(start, 'Validation')
 
     fit = ctx.get_action('feature_classifier', 'fit_classifier_naive_bayes')
@@ -73,7 +73,7 @@ def evaluate_cross_validate(ctx,
     '''
     # Validate inputs
     start = timeit.default_timer()
-    taxa = _cross_validate_validate_inputs(taxonomy, sequences)
+    taxa = _validate_cross_validate_inputs(taxonomy, sequences)
     new_time = _check_time(start, 'Validation')
 
     fit = ctx.get_action('feature_classifier', 'fit_classifier_naive_bayes')
@@ -127,7 +127,7 @@ def evaluate_vsearch_loo(ctx,
                          weak_id=0.,
                          threads=1):
     _eval = ctx.get_action('rescript', 'evaluate_classifications')
-    taxa = _cross_validate_validate_inputs(taxonomy, sequences)
+    taxa = _validate_cross_validate_inputs(taxonomy, sequences)
 
     # classify seqs with vsearch + q2-feature-classifier LCA, using LOO CV
     # Leave-one-out is applied via the `--self` parameter
@@ -177,7 +177,7 @@ def _check_time(old_time, name='Time'):
 
 
 # input validation for cross-validation functions
-def _cross_validate_validate_inputs(taxonomy, sequences):
+def _validate_cross_validate_inputs(taxonomy, sequences):
     taxa = taxonomy.view(pd.Series)
     # taxonomies must have even ranks (this is used for confidence estimation
     # with the current NB classifier; we could relax this if we implement other
