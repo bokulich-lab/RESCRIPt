@@ -8,6 +8,9 @@
 
 import importlib
 
-__version__ = '2020.6.0.dev0'
+from ._version import get_versions
+__version__ = get_versions()['version']
+del get_versions
+
 
 importlib.import_module('rescript.types')
