@@ -116,6 +116,8 @@ def evaluate_cross_validate(ctx,
     return expected_taxonomies, observed_taxonomies
 
 
+# NOTE: This is an experimental method. Use at your own risk. It appears to be
+# much slower than the other cross-validate methods.
 def evaluate_vsearch_loo(ctx,
                          sequences,
                          taxonomy,
@@ -128,9 +130,11 @@ def evaluate_vsearch_loo(ctx,
                          maxrejects='all',
                          weak_id=0.,
                          threads=1):
+    start = timeit.default_timer()
     _eval = ctx.get_action('rescript', 'evaluate_classifications')
     taxa, seq_ids = _validate_cross_validate_inputs(taxonomy, sequences)
     taxa = taxa.loc[seq_ids]
+    new_time = _check_time(start, 'Validation')
 
     # classify seqs with vsearch + q2-feature-classifier LCA, using LOO CV
     # Leave-one-out is applied via the `--self` parameter
@@ -156,6 +160,7 @@ def evaluate_vsearch_loo(ctx,
         unassignable_label=_get_default_unassignable_label())
     observed_taxonomy = q2.Artifact.import_data(
         'FeatureData[Taxonomy]', consensus)
+    new_time = _check_time(new_time, 'Classification')
 
     # relabel singleton taxonomies to get best possible LOO classification
     duplicated_taxa = taxa.duplicated(keep=False)
@@ -167,9 +172,12 @@ def evaluate_vsearch_loo(ctx,
     expected_taxonomy = pd.concat([duplicated_taxa, relabeled_singletons])
     expected_taxonomy = q2.Artifact.import_data(
         'FeatureData[Taxonomy]', expected_taxonomy)
+    new_time = _check_time(new_time, 'Stratify Taxonomy')
 
     # Evaluate classifications
     evaluation, = _eval([expected_taxonomy], [observed_taxonomy])
+    _check_time(new_time, 'Evaluation')
+    _check_time(start, 'Total Runtime')
     return expected_taxonomy, observed_taxonomy, evaluation
 
 

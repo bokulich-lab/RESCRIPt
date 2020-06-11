@@ -68,35 +68,6 @@ class TestPipelines(TestPluginBase):
         pdt.assert_series_equal(
             exp_obs, obs.view(pd.Series).sort_index(), check_names=False)
 
-    def test_evaluate_vsearch_loo(self):
-        exp, obs, evaluation, = rescript.actions.evaluate_vsearch_loo(
-            self.seqs, self.taxa, top_hits_only=True)
-        # exp_exp (expected ground truth taxonomies)
-        # This will equal the original taxonomy except singleton labels will
-        # be truncated to reflect stratification.
-        exp_exp = self.stratified_taxonomy
-        # exp_obs (expected observations)
-        exp_obs = pd.Series({
-            'A1': palvei,
-            'A2': palvei,
-            'A3': paeni,
-            'A4': paeni,
-            'A5': paeni,
-            'B1': lcasei,
-            'B1a': lcasei,
-            'B1b': lacto + '; s__vaginalis',
-            'B2': lacto,
-            'B3': lacto,
-            'C1': pacidilacti,
-            'C1a': pedio,
-            'C1c': pedio,
-            'C1d': pedio,
-            'C2': pacidilacti}).sort_index()
-        pdt.assert_series_equal(
-            exp_exp, exp.view(pd.Series).sort_index(), check_names=False)
-        pdt.assert_series_equal(
-            exp_obs, obs.view(pd.Series).sort_index(), check_names=False)
-
     def test_evaluate_fit_classifier(self):
         # exp species should equal the input taxonomy when k='disable'
         classifier, evaluation, obs = rescript.actions.evaluate_fit_classifier(

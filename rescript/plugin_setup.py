@@ -19,8 +19,7 @@ from .parse_silva_taxonomy import parse_silva_taxonomy
 from .get_data import get_silva_data
 from .cross_validate import (evaluate_cross_validate,
                              evaluate_classifications,
-                             evaluate_fit_classifier,
-                             evaluate_vsearch_loo)
+                             evaluate_fit_classifier)
 from .filter_length import filter_seqs_length_by_taxon, filter_seqs_length
 from .orient import orient_seqs
 from q2_types.feature_data import (FeatureData, Taxonomy, Sequence,
@@ -29,9 +28,6 @@ from q2_types.tree import Phylogeny, Rooted
 from q2_feature_classifier.classifier import (_parameter_descriptions,
                                               _classify_parameters)
 from q2_feature_classifier._taxonomic_classifier import TaxonomicClassifier
-from q2_feature_classifier._vsearch import (
-    parameters as vsearch_parameters,
-    parameter_descriptions as vsearch_parameter_descriptions)
 
 import rescript
 from rescript._utilities import _rank_handles
@@ -127,78 +123,6 @@ plugin.pipelines.register_function(
         'reference data are viable), hence THIS PIPELINE IS USEFUL FOR '
         'TRAINING FEATURE CLASSIFIERS AND THEN EVALUATING THEM ON-THE-FLY.'),
     citations=[citations['bokulich2018optimizing']]
-)
-
-
-vsearch_parameters = {k: v for k, v in vsearch_parameters.items()
-                      if k not in ['strand', 'maxhits']}
-
-vsearch_parameter_descriptions = {
-    k: v for k, v in vsearch_parameter_descriptions.items()
-    if k not in ['strand', 'maxhits']}
-
-
-plugin.pipelines.register_function(
-    function=evaluate_vsearch_loo,
-    inputs={'sequences': FeatureData[Sequence],
-            'taxonomy': FeatureData[Taxonomy]},
-    parameters={**vsearch_parameters,
-                'search_exact': Bool,
-                'top_hits_only': Bool,
-                'weak_id': Float % Range(0.0, 1.0, inclusive_end=True)},
-    outputs=[('expected_taxonomy', FeatureData[Taxonomy]),
-             ('observed_taxonomy', FeatureData[Taxonomy]),
-             ('evaluation', Visualization)],
-    input_descriptions={
-        'sequences': 'Reference sequences to use for classification/testing.',
-        'taxonomy': 'Reference taxonomy to use for classification/testing.'},
-    parameter_descriptions={
-        **vsearch_parameter_descriptions,
-        'search_exact': 'Search for exact full-length matches to the query '
-                        'sequences. Only 100% exact matches are reported and '
-                        'this command is much faster than the default. If '
-                        'True, the perc_identity and query_cov settings are '
-                        'ignored. Note: query and reference reads must be '
-                        'trimmed to the exact same DNA locus (e.g., primer '
-                        'site) because only exact matches will be reported.',
-        'top_hits_only': 'Only the top hits between the query and reference '
-                         'sequence sets are reported. For each query, the top '
-                         'hit is the one presenting the highest percentage of '
-                         'identity. Multiple equally scored top hits will be '
-                         'used for consensus taxonomic assignment if '
-                         'maxaccepts is greater than 1.',
-        'weak_id': 'Show hits with percentage of identity of at least N, '
-                   'without terminating the search. A normal search stops as '
-                   'soon as enough hits are found (as defined by maxaccepts, '
-                   'maxrejects, and perc_identity). As weak_id reports weak '
-                   'hits that are not deduced from maxaccepts, high '
-                   'perc_identity values can be used, hence preserving both '
-                   'speed and sensitivity. Logically, weak_id must be smaller '
-                   'than the value indicated by perc_identity, otherwise this '
-                   'option will be ignored.'},
-    output_descriptions={
-        'expected_taxonomy': 'Expected taxonomic label for each input '
-                             'sequence. Taxonomic labels may be truncated due '
-                             'to LOO cross-validation if they are singletons.',
-        'observed_taxonomy': 'Observed taxonomic label for each input '
-                             'sequence, predicted by cross-validation.',
-        'evaluation': 'Visualization of classification accuracy results.'},
-    name=('Evaluate reference sequences via LOO cross-validation.'),
-    description=(
-        'Evaluate classification accuracy of reference sequences using '
-        'leave-one-out (LOO) cross-validation. Sequences are used as both '
-        'query and references in the `classify-consensus-vsearch` LCA '
-        'classification method used by q2-feature-classifier (see Bokulich et '
-        'al. 2018), using VSEARCH for database searching. LOO is used so that '
-        'sequences are only matched against non-self sequences. Singleton '
-        'taxonomies are thus truncated to the nearest common ancestor to '
-        'indicate the best possible classification using the LOO approach. '
-        'The observed classifications (results of LOO) are compared to the '
-        'expected taxonomies (truncated to reflect LOO optimal result) and '
-        'evaluation results (using the `evaluate_classifications` visualizer)'
-        'are returned.'),
-    citations=[citations['bokulich2018optimizing'],
-               citations['rognes2016vsearch']]
 )
 
 
