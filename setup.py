@@ -8,9 +8,13 @@
 
 from setuptools import setup, find_packages
 
+import versioneer
+
+
 setup(
     name="rescript",
-    version='2020.6.0.dev0',
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
     packages=find_packages(),
     author="Nicholas Bokulich",
     author_email="nbokulich@gmail.com",

@@ -11,7 +11,6 @@ from ._format import (SILVATaxonomyFormat, SILVATaxonomyDirectoryFormat,
                       RNAFASTAFormat, RNASequencesDirectoryFormat)
 from ._type import SILVATaxonomy, SILVATaxidMap, RNASequence
 
-__version__ = '2020.6'
 
 __all__ = ['SILVATaxonomyFormat', 'SILVATaxonomyDirectoryFormat',
            'SILVATaxidMapFormat', 'SILVATaxidMapDirectoryFormat',
