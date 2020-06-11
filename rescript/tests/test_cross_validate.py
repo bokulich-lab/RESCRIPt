@@ -165,13 +165,19 @@ class TestPipelines(TestPluginBase):
             rescript.actions.evaluate_classifications(
                 [self.taxa], [self.taxa, self.taxa])
 
-    def test_evaluate_classifications_mismatch_features(self):
+    def test_evaluate_classifications_expected_id_superset_valid(self):
         taxa = qiime2.Artifact.import_data(
             'FeatureData[Taxonomy]', self.taxa.view(pd.Series).drop('A1'))
+        rescript.actions.evaluate_classifications([self.taxa], [taxa])
+        self.assertTrue(True)
+
+    def test_evaluate_classifications_observed_id_superset_invalid(self):
+        taxa = self.taxa.view(pd.Series)
+        taxa['new_garbage'] = 'this;is;most;unexpected'
+        taxa = qiime2.Artifact.import_data('FeatureData[Taxonomy]', taxa)
         with self.assertRaisesRegex(
                 ValueError, "Indices of pair 1 do not match"):
-            rescript.actions.evaluate_classifications(
-                [self.taxa], [taxa])
+            rescript.actions.evaluate_classifications([self.taxa], [taxa])
 
 
 class TestTaxaUtilities(TestPluginBase):

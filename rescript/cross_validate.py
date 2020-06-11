@@ -33,7 +33,9 @@ def evaluate_fit_classifier(ctx,
     '''
     # Validate inputs
     start = timeit.default_timer()
-    _validate_cross_validate_inputs(taxonomy, sequences)
+    taxa, seq_ids = _validate_cross_validate_inputs(taxonomy, sequences)
+    taxa = taxa.loc[seq_ids]
+    taxonomy = q2.Artifact.import_data('FeatureData[Taxonomy]', taxa)
     new_time = _check_time(start, 'Validation')
 
     fit = ctx.get_action('feature_classifier', 'fit_classifier_naive_bayes')
@@ -73,7 +75,7 @@ def evaluate_cross_validate(ctx,
     '''
     # Validate inputs
     start = timeit.default_timer()
-    taxa = _validate_cross_validate_inputs(taxonomy, sequences)
+    taxa, seq_ids = _validate_cross_validate_inputs(taxonomy, sequences)
     new_time = _check_time(start, 'Validation')
 
     fit = ctx.get_action('feature_classifier', 'fit_classifier_naive_bayes')
@@ -127,7 +129,8 @@ def evaluate_vsearch_loo(ctx,
                          weak_id=0.,
                          threads=1):
     _eval = ctx.get_action('rescript', 'evaluate_classifications')
-    taxa = _validate_cross_validate_inputs(taxonomy, sequences)
+    taxa, seq_ids = _validate_cross_validate_inputs(taxonomy, sequences)
+    taxa = taxa.loc[seq_ids]
 
     # classify seqs with vsearch + q2-feature-classifier LCA, using LOO CV
     # Leave-one-out is applied via the `--self` parameter
@@ -184,8 +187,8 @@ def _validate_cross_validate_inputs(taxonomy, sequences):
     # methods later on for CV classification).
     _validate_even_rank_taxonomy(taxa)
     seq_ids = {i.metadata['id'] for i in sequences.view(DNAIterator)}
-    _validate_indices_match(taxa.index, seq_ids)
-    return taxa
+    _validate_index_is_superset(set(taxa.index), seq_ids)
+    return taxa, seq_ids
 
 
 def _split_fasta(sequences, train_ids, test_ids):
@@ -228,17 +231,17 @@ def evaluate_classifications(ctx,
     for n, (t1, t2) in enumerate(zip(
             expected_taxonomies, observed_taxonomies), 1):
         try:
-            _validate_indices_match(t1.index, t2.index)
+            _validate_index_is_superset(t1.index, t2.index)
         except ValueError:
             raise ValueError(
-                'Expected and Observed Taxonomies do not match. Taxonomy row '
-                'indices must match in each pair of taxonomies. Indices of '
-                'pair {0} do not match.'.format(n))
+                'Expected and Observed Taxonomies do not match. Expected '
+                'taxonomy must be a superset of observed taxonomies. Indices '
+                'of pair {0} do not match.'.format(n))
 
     results = []
     for t1, t2, name in zip(expected_taxonomies, observed_taxonomies, labels):
         # Align Indices
-        expected_taxonomy, observed_taxonomy = t1.align(t2)
+        expected_taxonomy, observed_taxonomy = t1.align(t2, join='inner')
         # Evaluate classification accuracy
         precision_recall = _calculate_per_rank_precision_recall(
             expected_taxonomy, observed_taxonomy)
@@ -375,3 +378,16 @@ def _validate_indices_match(idx1, idx2):
     if len(diff) > 0:
         raise ValueError('Input features must match. The following features '
                          'are missing from one input: ' + ', '.join(diff))
+
+
+def _validate_index_is_superset(idx1, idx2):
+    '''
+    match indices of two pd.Index objects.
+    idx1: pd.Index or array-like
+    idx2: pd.Index or array-like
+    '''
+    diff = idx2.difference(idx1)
+    if len(diff) > 0:
+        raise ValueError('The taxonomy IDs must be a superset of the sequence '
+                         'IDs. The following feature IDs are missing from the '
+                         'sequences: ' + ', '.join(diff))
