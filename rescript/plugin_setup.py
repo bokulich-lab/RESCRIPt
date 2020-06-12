@@ -13,7 +13,7 @@ from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int,
 from .merge import merge_taxa
 from .dereplicate import dereplicate
 from .evaluate import evaluate_taxonomy
-from .screenseq import screen_sequences
+from .screenseq import cull_seqs
 from .degap import degap_seqs
 from .parse_silva_taxonomy import parse_silva_taxonomy
 from .get_data import get_silva_data
@@ -284,7 +284,7 @@ plugin.pipelines.register_function(
 )
 
 plugin.methods.register_function(
-    function=screen_sequences,
+    function=cull_seqs,
     inputs={
         'sequences': FeatureData[Sequence | RNASequence]
         },

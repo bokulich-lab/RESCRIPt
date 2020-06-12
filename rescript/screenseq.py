@@ -22,8 +22,8 @@ def _filter_homopolymer(seq, homopolymer_length):
     return any(homopolymers)
 
 
-def screen_sequences(sequences: DNAIterator, num_degenerates: int = 5,
-                     homopolymer_length: int = 8) -> DNAFASTAFormat:
+def cull_seqs(sequences: DNAIterator, num_degenerates: int = 5,
+              homopolymer_length: int = 8) -> DNAFASTAFormat:
     result = DNAFASTAFormat()
     with result.open() as out_fasta:
         for seq in sequences:
