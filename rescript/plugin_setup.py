@@ -48,6 +48,12 @@ plugin = Plugin(
 )
 
 
+SILVA_LICENSE_NOTE = (
+    'NOTE: THIS ACTION ACQUIRES DATA FROM THE SILVA DATABASE. SEE '
+    'https://www.arb-silva.de/silva-license-information/ FOR MORE INFORMATION '
+    'and be aware that earlier versions may be released under a different '
+    'license.')
+
 VOLATILITY_PLOT_XAXIS_INTERPRETATION = (
     'The x-axis in these plots represents the taxonomic '
     'levels present in the input taxonomies so are labeled numerically '
@@ -514,7 +520,8 @@ plugin.pipelines.register_function(
         'Download, parse, and import SILVA database files, given a version '
         'number and reference target. Downloads data directly from SILVA, '
         'parses the taxonomy files, and outputs ready-to-use sequence and '
-        'taxonomy artifacts. REQUIRES STABLE INTERNET CONNECTION.'),
+        'taxonomy artifacts. REQUIRES STABLE INTERNET CONNECTION. ' +
+        SILVA_LICENSE_NOTE),
     citations=[citations['Pruesse2007'], citations['Quast2013']]
 )
 
@@ -563,7 +570,7 @@ plugin.methods.register_function(
         'The generated ranks (and the rank handles used to label these '
         'ranks in the resulting taxonomy) are: domain (d__), phylum (p__), '
         'class (c__), order (o__), family (f__), genus (g__), and species '
-        '(s__).'
+        '(s__). ' + SILVA_LICENSE_NOTE
         ),
     citations=[citations['Pruesse2007'],
                citations['Quast2013']]
