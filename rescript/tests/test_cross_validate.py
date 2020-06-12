@@ -35,15 +35,17 @@ class TestPipelines(TestPluginBase):
             'FeatureData[Sequence]', self.get_data_path('derep-test.fasta'))
         self.seqs = import_data(
             'FeatureData[Sequence]', seqs.view(pd.Series).drop('C1b'))
+        self.stratified_taxonomy = self.taxa_series.copy().str.replace(
+            '; s__brevis', '').str.replace('; s__vaginalis', '').str.replace(
+                '; s__pseudocasei', '').sort_index()
 
-    def test_cross_validate_k3(self):
-        exp, obs = rescript.actions.cross_validate(self.seqs, self.taxa, k=3)
+    def test_evaluate_cross_validate_k3(self):
+        exp, obs = rescript.actions.evaluate_cross_validate(
+            self.seqs, self.taxa, k=3)
         # exp_exp (expected ground truth taxonomies)
         # This will equal the original taxonomy except singleton labels will
         # be truncated to reflect stratification.
-        exp_exp = self.taxa_series.copy().str.replace(
-            '; s__brevis', '').str.replace('; s__vaginalis', '').str.replace(
-                '; s__pseudocasei', '').sort_index()
+        exp_exp = self.stratified_taxonomy
         # exp_obs (expected observations)
         exp_obs = pd.Series({
             'A1': palvei,
@@ -66,12 +68,10 @@ class TestPipelines(TestPluginBase):
         pdt.assert_series_equal(
             exp_obs, obs.view(pd.Series).sort_index(), check_names=False)
 
-    def test_cross_validate_perfect_classifier(self):
+    def test_evaluate_fit_classifier(self):
         # exp species should equal the input taxonomy when k='disable'
-        exp, obs = rescript.actions.cross_validate(
-            self.seqs, self.taxa, k='disable')
-        pdt.assert_series_equal(
-            exp.view(pd.Series).sort_index(), self.taxa_series.sort_index())
+        classifier, evaluation, obs = rescript.actions.evaluate_fit_classifier(
+            self.seqs, self.taxa)
         # obs species will equal best possible predictive accuracy.
         exp_obs = pd.Series({
             'A1': palvei,
@@ -136,13 +136,19 @@ class TestPipelines(TestPluginBase):
             rescript.actions.evaluate_classifications(
                 [self.taxa], [self.taxa, self.taxa])
 
-    def test_evaluate_classifications_mismatch_features(self):
+    def test_evaluate_classifications_expected_id_superset_valid(self):
         taxa = qiime2.Artifact.import_data(
             'FeatureData[Taxonomy]', self.taxa.view(pd.Series).drop('A1'))
+        rescript.actions.evaluate_classifications([self.taxa], [taxa])
+        self.assertTrue(True)
+
+    def test_evaluate_classifications_observed_id_superset_invalid(self):
+        taxa = self.taxa.view(pd.Series)
+        taxa['new_garbage'] = 'this;is;most;unexpected'
+        taxa = qiime2.Artifact.import_data('FeatureData[Taxonomy]', taxa)
         with self.assertRaisesRegex(
                 ValueError, "Indices of pair 1 do not match"):
-            rescript.actions.evaluate_classifications(
-                [self.taxa], [taxa])
+            rescript.actions.evaluate_classifications([self.taxa], [taxa])
 
 
 class TestTaxaUtilities(TestPluginBase):

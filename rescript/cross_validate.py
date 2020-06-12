@@ -10,54 +10,77 @@ import pandas as pd
 import qiime2 as q2
 import timeit
 from sklearn.model_selection import StratifiedKFold
+from q2_feature_classifier._consensus_assignment import (
+    _consensus_assignments, _get_default_unassignable_label)
 
 from q2_types.feature_data import DNAFASTAFormat, DNAIterator
 
 from .evaluate import _taxonomic_depth, _process_labels
 
 
-def cross_validate(ctx,
-                   sequences,
-                   taxonomy,
-                   k=3,
-                   random_state=0,
-                   reads_per_batch=0,
-                   n_jobs=1,
-                   confidence=0.7):
+def evaluate_fit_classifier(ctx,
+                            sequences,
+                            taxonomy,
+                            random_state=0,
+                            reads_per_batch=0,
+                            n_jobs=1,
+                            confidence=0.7):
     '''
     taxonomy: pd.Series of taxonomy labels
     sequences: pd.Series of sequences
     k: number of kfold cv splits to perform.
     random_state: random state for cv.
     '''
-    start = timeit.default_timer()
     # Validate inputs
-    taxa = taxonomy.view(pd.Series)
-    # taxonomies must have even ranks (this is used for confidence estimation
-    # with the current NB classifier; we could relax this if we implement other
-    # methods later on for CV classification).
-    _validate_even_rank_taxonomy(taxa)
-    seq_ids = {i.metadata['id'] for i in sequences.view(DNAIterator)}
-    _validate_indices_match(taxa.index, seq_ids)
-    tk2 = timeit.default_timer()
-    print('Validation: {0:.2f}s'.format(tk2 - start))
+    start = timeit.default_timer()
+    taxa, seq_ids = _validate_cross_validate_inputs(taxonomy, sequences)
+    taxa = taxa.loc[seq_ids]
+    taxonomy = q2.Artifact.import_data('FeatureData[Taxonomy]', taxa)
+    new_time = _check_time(start, 'Validation')
+
+    fit = ctx.get_action('feature_classifier', 'fit_classifier_naive_bayes')
+    classify = ctx.get_action('feature_classifier', 'classify_sklearn')
+    _eval = ctx.get_action('rescript', 'evaluate_classifications')
+
+    # Deploy perfect classifier! (no CV, lots of data leakage)
+    classifier, = fit(reference_reads=sequences,
+                      reference_taxonomy=taxonomy)
+    new_time = _check_time(new_time, 'Training')
+    observed_taxonomy, = classify(reads=sequences,
+                                  classifier=classifier,
+                                  reads_per_batch=reads_per_batch,
+                                  n_jobs=n_jobs,
+                                  confidence=confidence,
+                                  read_orientation='same')
+    new_time = _check_time(new_time, 'Classification')
+    evaluation, = _eval([taxonomy], [observed_taxonomy])
+    _check_time(new_time, 'Evaluation')
+    _check_time(start, 'Total Runtime')
+    return classifier, evaluation, observed_taxonomy
+
+
+def evaluate_cross_validate(ctx,
+                            sequences,
+                            taxonomy,
+                            k=3,
+                            random_state=0,
+                            reads_per_batch=0,
+                            n_jobs=1,
+                            confidence=0.7):
+    '''
+    taxonomy: pd.Series of taxonomy labels
+    sequences: pd.Series of sequences
+    k: number of kfold cv splits to perform.
+    random_state: random state for cv.
+    '''
+    # Validate inputs
+    start = timeit.default_timer()
+    taxa, seq_ids = _validate_cross_validate_inputs(taxonomy, sequences)
+    new_time = _check_time(start, 'Validation')
 
     fit = ctx.get_action('feature_classifier', 'fit_classifier_naive_bayes')
     classify = ctx.get_action('feature_classifier', 'classify_sklearn')
 
-    # Deploy perfect classifier! (no CV, lots of data leakage)
-    if k == 'disable':
-        classifier, = fit(reference_reads=sequences,
-                          reference_taxonomy=taxonomy)
-        observed_taxonomy, = classify(reads=sequences,
-                                      classifier=classifier,
-                                      reads_per_batch=reads_per_batch,
-                                      n_jobs=n_jobs,
-                                      confidence=confidence,
-                                      read_orientation='same')
-        return taxonomy, observed_taxonomy
-
-    # Otherwise carry on with CV
     # split taxonomy into training and test sets
     train_test_data = _generate_train_test_data(taxa, k, random_state)
     # now we perform CV classification
@@ -68,13 +91,11 @@ def cross_validate(ctx,
         test_ids = test_taxa.index
         train_seqs, test_seqs = _split_fasta(sequences, train_ids, test_ids)
         ref_taxa = q2.Artifact.import_data('FeatureData[Taxonomy]', train_taxa)
-        tk0 = timeit.default_timer()
-        print('Fold {0} split: {1:.2f}s'.format(n, tk0 - tk2))
+        new_time = _check_time(new_time, 'Fold {0} split'.format(n))
         # TODO: incorporate different methods? taxonomic weights? params?
         classifier, = fit(reference_reads=train_seqs,
                           reference_taxonomy=ref_taxa)
-        tk1 = timeit.default_timer()
-        print('Fold {0} fit: {1:.2f}s'.format(n, tk1 - tk0))
+        new_time = _check_time(new_time, 'Fold {0} fit'.format(n))
         observed_taxonomy, = classify(reads=test_seqs,
                                       classifier=classifier,
                                       reads_per_batch=reads_per_batch,
@@ -84,17 +105,98 @@ def cross_validate(ctx,
         # compile observed + expected taxonomies for evaluation outside of loop
         expected_taxonomies.append(test_taxa)
         observed_taxonomies.append(observed_taxonomy.view(pd.Series))
-        tk2 = timeit.default_timer()
-        print('Fold {0} classify: {1:.2f}s'.format(n, tk2 - tk1))
+        new_time = _check_time(new_time, 'Fold {0} classify'.format(n))
 
     # Merge expected/observed taxonomies
     expected_taxonomies = q2.Artifact.import_data(
         'FeatureData[Taxonomy]', pd.concat(expected_taxonomies))
     observed_taxonomies = q2.Artifact.import_data(
         'FeatureData[Taxonomy]', pd.concat(observed_taxonomies))
-    finish = timeit.default_timer()
-    print('Total Runtime: {0:.2f}s'.format(finish - start))
+    _check_time(start, 'Total Runtime')
     return expected_taxonomies, observed_taxonomies
+
+
+# NOTE: This is an experimental method. Use at your own risk. It appears to be
+# much slower than the other cross-validate methods.
+def evaluate_vsearch_loo(ctx,
+                         sequences,
+                         taxonomy,
+                         maxaccepts=10,
+                         perc_identity=0.8,
+                         query_cov=0.8,
+                         min_consensus=0.51,
+                         search_exact=False,
+                         top_hits_only=False,
+                         maxrejects='all',
+                         weak_id=0.,
+                         threads=1):
+    start = timeit.default_timer()
+    _eval = ctx.get_action('rescript', 'evaluate_classifications')
+    taxa, seq_ids = _validate_cross_validate_inputs(taxonomy, sequences)
+    taxa = taxa.loc[seq_ids]
+    new_time = _check_time(start, 'Validation')
+
+    # classify seqs with vsearch + q2-feature-classifier LCA, using LOO CV
+    # Leave-one-out is applied via the `--self` parameter
+    sequences = sequences.view(DNAFASTAFormat)
+    seqs_fp = str(sequences)
+    if maxaccepts == 'all':
+        maxaccepts = 0
+    if maxrejects == 'all':
+        maxrejects = 0
+    cmd = ['vsearch', '--usearch_global', seqs_fp, '--id', str(perc_identity),
+           '--query_cov', str(query_cov), '--strand', 'plus', '--maxaccepts',
+           str(maxaccepts), '--maxrejects', str(maxrejects), '--db', seqs_fp,
+           '--threads', str(threads), '--self', '--output_no_hits']
+    if search_exact:
+        cmd[1] = '--search_exact'
+    if top_hits_only:
+        cmd.append('--top_hits_only')
+    if weak_id > 0 and weak_id < perc_identity:
+        cmd.extend(['--weak_id', str(weak_id)])
+    cmd.append('--blast6out')
+    consensus = _consensus_assignments(
+        cmd, taxa, min_consensus=min_consensus,
+        unassignable_label=_get_default_unassignable_label())
+    observed_taxonomy = q2.Artifact.import_data(
+        'FeatureData[Taxonomy]', consensus)
+    new_time = _check_time(new_time, 'Classification')
+
+    # relabel singleton taxonomies to get best possible LOO classification
+    duplicated_taxa = taxa.duplicated(keep=False)
+    singleton_taxa = taxa[-duplicated_taxa]
+    duplicated_taxa = taxa[duplicated_taxa]
+    valid_labels = _get_valid_taxonomic_labels(duplicated_taxa)
+    relabeled_singletons = singleton_taxa.apply(
+        _relabel_stratified_taxonomy, args=([valid_labels]))
+    expected_taxonomy = pd.concat([duplicated_taxa, relabeled_singletons])
+    expected_taxonomy = q2.Artifact.import_data(
+        'FeatureData[Taxonomy]', expected_taxonomy)
+    new_time = _check_time(new_time, 'Stratify Taxonomy')
+
+    # Evaluate classifications
+    evaluation, = _eval([expected_taxonomy], [observed_taxonomy])
+    _check_time(new_time, 'Evaluation')
+    _check_time(start, 'Total Runtime')
+    return expected_taxonomy, observed_taxonomy, evaluation
+
+
+def _check_time(old_time, name='Time'):
+    new_time = timeit.default_timer()
+    print('{0}: {1:.2f}s'.format(name, new_time - old_time))
+    return new_time
+
+
+# input validation for cross-validation functions
+def _validate_cross_validate_inputs(taxonomy, sequences):
+    taxa = taxonomy.view(pd.Series)
+    # taxonomies must have even ranks (this is used for confidence estimation
+    # with the current NB classifier; we could relax this if we implement other
+    # methods later on for CV classification).
+    _validate_even_rank_taxonomy(taxa)
+    seq_ids = {i.metadata['id'] for i in sequences.view(DNAIterator)}
+    _validate_index_is_superset(set(taxa.index), seq_ids)
+    return taxa, seq_ids
 
 
 def _split_fasta(sequences, train_ids, test_ids):
@@ -137,17 +239,17 @@ def evaluate_classifications(ctx,
     for n, (t1, t2) in enumerate(zip(
             expected_taxonomies, observed_taxonomies), 1):
         try:
-            _validate_indices_match(t1.index, t2.index)
+            _validate_index_is_superset(t1.index, t2.index)
         except ValueError:
             raise ValueError(
-                'Expected and Observed Taxonomies do not match. Taxonomy row '
-                'indices must match in each pair of taxonomies. Indices of '
-                'pair {0} do not match.'.format(n))
+                'Expected and Observed Taxonomies do not match. Expected '
+                'taxonomy must be a superset of observed taxonomies. Indices '
+                'of pair {0} do not match.'.format(n))
 
     results = []
     for t1, t2, name in zip(expected_taxonomies, observed_taxonomies, labels):
         # Align Indices
-        expected_taxonomy, observed_taxonomy = t1.align(t2)
+        expected_taxonomy, observed_taxonomy = t1.align(t2, join='inner')
         # Evaluate classification accuracy
         precision_recall = _calculate_per_rank_precision_recall(
             expected_taxonomy, observed_taxonomy)
@@ -176,15 +278,20 @@ def _generate_train_test_data(taxonomy, k, random_state):
         train_taxa = taxonomy.iloc[train]
         test_taxa = taxonomy.iloc[test]
         # Compile set of valid stratified taxonomy labels:
-        train_taxonomies = {
-            ';'.join(t.split(';')[:level]) for t in train_taxa.unique()
-            for level in range(1, len(t.split(';'))+1)}
+        train_taxonomies = _get_valid_taxonomic_labels(train_taxa)
         # relabel test taxonomy expected labels using stratified set
         # If a taxonomy in the test set doesn't exist in the training set, trim
         # it until it does
         test_taxa = test_taxa.apply(
             lambda x: _relabel_stratified_taxonomy(x, train_taxonomies))
         yield train_taxa, test_taxa
+
+
+def _get_valid_taxonomic_labels(taxonomy):
+    valid_labels = {
+        ';'.join(t.split(';')[:level]) for t in taxonomy.unique()
+        for level in range(1, len(t.split(';'))+1)}
+    return valid_labels
 
 
 def _relabel_stratified_taxonomy(taxonomy, valid_taxonomies):
@@ -279,3 +386,16 @@ def _validate_indices_match(idx1, idx2):
     if len(diff) > 0:
         raise ValueError('Input features must match. The following features '
                          'are missing from one input: ' + ', '.join(diff))
+
+
+def _validate_index_is_superset(idx1, idx2):
+    '''
+    match indices of two pd.Index objects.
+    idx1: pd.Index or array-like
+    idx2: pd.Index or array-like
+    '''
+    diff = idx2.difference(idx1)
+    if len(diff) > 0:
+        raise ValueError('The taxonomy IDs must be a superset of the sequence '
+                         'IDs. The following feature IDs are missing from the '
+                         'sequences: ' + ', '.join(diff))
