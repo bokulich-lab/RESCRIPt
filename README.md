@@ -5,7 +5,7 @@
 
 REference Sequence annotation and CuRatIon Pipeline
 
-**Note:** This is a beta release. Usage, and other details are forthcoming.
+**Note:** This is a beta release. Usage, and other details are forthcoming. See citation information below.
 
 RESCRIPt is a python 3 package to support a variety of operations for managing and curating reference sequence databases, DNA/RNA sequence data, and taxonomic data.
 
@@ -28,6 +28,12 @@ Finally install from source:
 ```
 pip install git+https://github.com/bokulich-lab/RESCRIPt.git
 ```
+
+## Citation
+
+A proper software announcement is forthcoming. In the meantime, if you use RESCRIPt in your research, please cite the Zenodo record:
+
+Nicholas Bokulich, Mike Robeson, & Matthew Dillon. (2020, June 12). bokulich-lab/RESCRIPt: 2020.6.0 (Version 2020.6.0). Zenodo. http://doi.org/10.5281/zenodo.3891932
 
 ## License
 
