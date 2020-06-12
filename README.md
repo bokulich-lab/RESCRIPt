@@ -4,9 +4,29 @@
 
 REference Sequence annotation and CuRatIon Pipeline
 
-**Note:** This is a beta release. Installation, usage, and other details are forthcoming.
+**Note:** This is a beta release. Usage, and other details are forthcoming.
 
 RESCRIPt is a python 3 package to support a variety of operations for managing and curating reference sequence databases, DNA/RNA sequence data, and taxonomic data.
+
+## Install from source
+
+RESCRIPt will be installable as conda package in the near future. In the meantime, we provide a source installation.
+
+First create a conda environment and install relevant dependencies:
+
+```
+conda create -y -n rescript
+conda activate rescript
+conda install \
+  -c conda-forge -c bioconda -c qiime2 -c defaults \
+  qiime2 q2cli q2templates q2-types q2-longitudinal q2-feature-classifier
+```
+
+Finally install from source:
+
+```
+pip install git+https://github.com/bokulich-lab/RESCRIPt.git
+```
 
 ## License
 
