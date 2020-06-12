@@ -4,6 +4,10 @@
 
 REference Sequence annotation and CuRatIon Pipeline
 
+**Note:** This is a beta release. Installation, usage, and other details are forthcoming.
+
+RESCRIPt is a python 3 package to support a variety of operations for managing and curating reference sequence databases, DNA/RNA sequence data, and taxonomic data.
+
 ## License
 
 RESCRIPt is released under a BSD-3-Clause license. See LICENSE for more details.
