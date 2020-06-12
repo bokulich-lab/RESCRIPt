@@ -1,6 +1,7 @@
 # RESCRIPt
 
-![lint-build-test](https://github.com/bokulich-lab/RESCRIPt/workflows/lint-build-test/badge.svg)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3891932.svg)](https://doi.org/10.5281/zenodo.3891932)
+ ![lint-build-test](https://github.com/bokulich-lab/RESCRIPt/workflows/lint-build-test/badge.svg)
 
 REference Sequence annotation and CuRatIon Pipeline
 
