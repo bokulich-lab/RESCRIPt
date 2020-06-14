@@ -30,6 +30,12 @@ class TestDerep(TestPluginBase):
             'FeatureData[Sequence]', self.get_data_path('derep-test.fasta'))
         self.taxa = import_data(
             'FeatureData[Taxonomy]', self.get_data_path('derep-taxa.tsv'))
+        self.seqsnumericids = import_data(
+            'FeatureData[Sequence]', self.get_data_path(
+                'derep-test-numericIDs.fasta'))
+        self.taxanumericids = import_data(
+            'FeatureData[Taxonomy]', self.get_data_path(
+                'derep-taxa-numericIDs.tsv'))
 
     def test_dereplicate_uniq(self):
         seqs, taxa, = self.dereplicate(
@@ -225,6 +231,19 @@ class TestDerep(TestPluginBase):
                                exp_taxa.sort_index(), check_names=False)
         pdt.assert_index_equal(seqs.view(pd.Series).sort_index().index,
                                exp_taxa.sort_index().index, check_names=False)
+
+    # the above tests check actual derep functionality; this test just makes
+    # sure that the same tests/modes above operate on numeric seq IDs, using
+    # the same test data above (with numeric IDs).
+    # See https://github.com/bokulich-lab/RESCRIPt/issues/49
+    def test_dereplicate_numericIDs(self):
+        self.dereplicate(self.seqsnumericids, self.taxanumericids, mode='uniq')
+        self.assertTrue(True)
+        self.dereplicate(self.seqsnumericids, self.taxanumericids, mode='lca')
+        self.assertTrue(True)
+        self.dereplicate(self.seqsnumericids, self.taxanumericids,
+                         mode='majority')
+        self.assertTrue(True)
 
     # Now test with backfilling. These parameters were chosen to set up a
     # variety of backfill levels.

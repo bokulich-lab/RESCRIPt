@@ -105,7 +105,7 @@ def _vsearch_cluster_size(sequences_fp, perc_identity, out_fasta_fp, out_uc_fp,
 
 
 def _parse_uc(uc_fp):
-    uc = pd.read_csv(uc_fp, sep='\t', header=None)
+    uc = pd.read_csv(uc_fp, sep='\t', header=None, dtype=object)
     # grab hit and centroid IDs
     uc = uc[uc[0].isin(['H', 'S'])][[8, 9]]
     # centroid entries have no centroid ID; so list their own seq ID
