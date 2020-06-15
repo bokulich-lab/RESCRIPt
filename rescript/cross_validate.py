@@ -21,7 +21,6 @@ from .evaluate import _taxonomic_depth, _process_labels
 def evaluate_fit_classifier(ctx,
                             sequences,
                             taxonomy,
-                            random_state=0,
                             reads_per_batch=0,
                             n_jobs=1,
                             confidence=0.7):
@@ -29,7 +28,6 @@ def evaluate_fit_classifier(ctx,
     taxonomy: pd.Series of taxonomy labels
     sequences: pd.Series of sequences
     k: number of kfold cv splits to perform.
-    random_state: random state for cv.
     '''
     # Validate inputs
     start = timeit.default_timer()
