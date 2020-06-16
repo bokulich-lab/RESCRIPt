@@ -1,6 +1,6 @@
 # RESCRIPt
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3891932.svg)](https://doi.org/10.5281/zenodo.3891932)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3891931.svg)](https://doi.org/10.5281/zenodo.3891931)
  ![lint-build-test](https://github.com/bokulich-lab/RESCRIPt/workflows/lint-build-test/badge.svg)
 
 REference Sequence annotation and CuRatIon Pipeline
@@ -20,7 +20,7 @@ conda create -y -n rescript
 conda activate rescript
 conda install \
   -c conda-forge -c bioconda -c qiime2 -c defaults \
-  qiime2 q2cli q2templates q2-types q2-longitudinal q2-feature-classifier
+  qiime2 q2cli q2templates q2-types q2-longitudinal q2-feature-classifier "pandas>=0.25.3"
 ```
 
 Finally install from source:
@@ -29,11 +29,17 @@ Finally install from source:
 pip install git+https://github.com/bokulich-lab/RESCRIPt.git
 ```
 
+To view a help menu for using rescript via the QIIME 2 CLI:
+```
+qiime dev refresh-cache
+qiime --help
+```
+
 ## Citation
 
 A proper software announcement is forthcoming. In the meantime, if you use RESCRIPt in your research, please cite the Zenodo record:
 
-Nicholas Bokulich, Mike Robeson, & Matthew Dillon. (2020, June 12). bokulich-lab/RESCRIPt: 2020.6.0 (Version 2020.6.0). Zenodo. http://doi.org/10.5281/zenodo.3891932
+Nicholas Bokulich, Mike Robeson, & Matthew Dillon. bokulich-lab/RESCRIPt. Zenodo. http://doi.org/10.5281/zenodo.3891931
 
 ## License
 

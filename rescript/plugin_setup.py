@@ -91,7 +91,6 @@ plugin.pipelines.register_function(
     inputs={'sequences': FeatureData[Sequence],
             'taxonomy': FeatureData[Taxonomy]},
     parameters={
-        'random_state': Int % Range(0, None),
         'reads_per_batch': _classify_parameters['reads_per_batch'],
         'n_jobs': _classify_parameters['n_jobs'],
         'confidence': _classify_parameters['confidence']},
@@ -104,7 +103,6 @@ plugin.pipelines.register_function(
         'taxonomy': 'Reference taxonomy to use for classifier '
                     'training/testing.'},
     parameter_descriptions={
-        'random_state': 'Seed used by the random number generator.',
         'reads_per_batch': _parameter_descriptions['reads_per_batch'],
         'n_jobs': _parameter_descriptions['n_jobs'],
         'confidence': _parameter_descriptions['confidence']},
