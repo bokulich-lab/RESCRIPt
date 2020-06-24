@@ -19,6 +19,7 @@ requirements:
 
   run:
     - python {{ python }}
+    - xmltodict
     - pandas >=0.25.3
     - scikit-learn
     - scikit-bio
