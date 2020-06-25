@@ -303,7 +303,7 @@ def _relabel_stratified_taxonomy(taxonomy, valid_taxonomies):
         if ';'.join(t[:level]) in valid_taxonomies:
             return ';'.join(t[:level]).strip()
     else:
-        raise RuntimeError('unknown kingdom in query set')
+        raise RuntimeError('unknown kingdom in query set: ' + taxonomy)
 
 
 def _calculate_per_rank_precision_recall(expected_taxonomies,
