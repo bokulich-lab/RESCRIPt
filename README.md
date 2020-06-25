@@ -13,7 +13,7 @@ RESCRIPt is a python 3 package to support a variety of operations for managing a
 
 RESCRIPt will be installable as conda package in the near future. In the meantime, we provide a source installation.
 
-First create a conda environment and install relevant dependencies:
+First create a conda environment and install relevant dependencies (you can skip this step and install RESCRIPt in a conda environment containing QIIME 2 2020.2+, which should contain the necessary dependencies/versions):
 
 ```
 conda create -y -n rescript
@@ -34,6 +34,15 @@ To view a help menu for using rescript via the QIIME 2 CLI:
 qiime dev refresh-cache
 qiime --help
 ```
+
+## Using RESCRIPt
+
+A tutorial demonstrating some of the basic functionality of RESCRIPt, via the q2CLI (QIIME 2 command-line interface) is available [here](https://forum.qiime2.org/t/rescript-sequence-reference-database-management-tutorial/15494).
+
+
+## Getting Help
+Problem? Suggestion? Technical errors and user support requests can be filed on the [QIIME 2 Forum](https://forum.qiime2.org/).
+
 
 ## Citation
 
