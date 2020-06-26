@@ -6,8 +6,6 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-import time
-
 from qiime2 import Metadata
 from qiime2.plugin.testing import TestPluginBase
 from qiime2.plugins import rescript
@@ -24,7 +22,6 @@ class TestNCBI(TestPluginBase):
         md = Metadata(df)
         get_ncbi_data = rescript.methods.get_ncbi_data
         acc_seq, acc_tax = get_ncbi_data(accession_ids=md)
-        time.sleep(1)  # to avoid a 429
         que_seq, que_tax = get_ncbi_data(query='M59083.2 OR AJ234039.1')
 
         acc_seq = {s.metadata['id']: str(s) for s in acc_seq.view(DNAIterator)}
