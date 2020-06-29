@@ -74,8 +74,9 @@ def _evaluate_taxonomy(taxonomy, rank_handle_regex):
     summary = summarize_taxonomic_depth(
         taxonomy, rank_handle_regex=rank_handle_regex)
     # Measure taxonomic entropy at each level
+    max_depth = summary.index.max()
     entropy = _taxonomic_entropy(
-        taxonomy, rank_handle_regex=rank_handle_regex)
+        taxonomy, rank_handle_regex=rank_handle_regex, max_depth=max_depth)
     entropy = entropy.merge(summary, left_index=True, right_index=True)
     entropy.index.name = 'Level'
     return entropy
@@ -86,7 +87,7 @@ def summarize_taxonomic_depth(taxonomy, rank_handle_regex):
     depths = _taxonomic_depth(taxonomy, rank_handle_regex=rank_handle_regex)
     # count number + proportion of taxonomies per depth
     depths = depths.value_counts()
-    total = remaining = depths.sum()
+    total = remaining = len(taxonomy)
     proportions = depths / total
     depths = pd.concat([depths, proportions], axis=1)
     depths.columns = ['Number of Features Terminating at Depth',
@@ -97,7 +98,7 @@ def summarize_taxonomic_depth(taxonomy, rank_handle_regex):
     depths_idx = depths.index
     classified = []
     unclassified = []
-    for d in range(1, depths_idx.max() + 1):
+    for d in range(0, depths_idx.max() + 1):
         if d not in depths_idx:
             depths.loc[d] = [0, 0]
         classified.append(remaining)
@@ -111,21 +112,26 @@ def summarize_taxonomic_depth(taxonomy, rank_handle_regex):
     depths['Number of Features Unclassified at Depth'] = unclassified
     depths['Proportion of Features Unclassified at Depth'] = unclassified_prop
     depths.index.name = 'Level'
-    return depths
+    # drop depth 0 on return (indicating presence of empty taxonomies)
+    # these unclassifications are counted, but we don't want to plot at
+    # level 0 since it is confusing — level 1 is the real root.
+    return depths.drop(0)
 
 
-def _taxonomic_entropy(taxonomy, rank_handle_regex):
+def _taxonomic_entropy(taxonomy, rank_handle_regex, max_depth):
     # convert each taxonomy to a list
-    taxa_lists = [_taxon_to_list(t, rank_handle=rank_handle_regex)
-                  for t in taxonomy.values]
+    taxa_lists = [[t for t in _taxon_to_list(v, rank_handle=rank_handle_regex)
+                   if t not in [None, '']]
+                  for v in taxonomy.values]
     # taxonomic labels should accumulate at each rank (e.g., to avoid
     # counting identical species names as duplicates when genus is unique)
-    taxa_lists = [[';'.join(t[:i]) for i in range(1, len(t) + 1)]
+    taxa_lists = [[';'.join(t[:i]) for i in range(1, max_depth + 1)]
                   for t in taxa_lists]
     # coalesce taxonomies at each rank
     ranks = [i for i in zip_longest(*taxa_lists)]
     # Count unique values at each rank, excluding 'None'
-    unique_counts = [[v for k, v in Counter(r).items() if k not in [None, '']]
+    # use Counter instead of set to pass counts to entropy
+    unique_counts = [[v for k, v in Counter(r).items()]
                      for r in ranks]
     # measure entropy at each rank, excluding 'None'
     entropy = {n: [len(r), scipy.stats.entropy(r)]
@@ -135,5 +141,5 @@ def _taxonomic_entropy(taxonomy, rank_handle_regex):
 
 
 def _taxonomic_depth(taxonomy, rank_handle_regex):
-    return taxonomy.apply(lambda x: len(set(_taxon_to_list(
-        x, rank_handle=rank_handle_regex)) - {None, ''}))
+    return taxonomy.apply(lambda x: len([i for i in _taxon_to_list(
+        x, rank_handle=rank_handle_regex) if i not in [None, '']]))
