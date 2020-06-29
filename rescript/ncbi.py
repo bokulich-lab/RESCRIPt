@@ -7,6 +7,7 @@
 # ----------------------------------------------------------------------------
 
 import time
+import warnings
 
 import requests
 from xmltodict import parse
@@ -18,9 +19,13 @@ from qiime2 import Metadata
 
 def get_ncbi_data(
         query: str = None, accession_ids: Metadata = None,
-        entrez_delay: float = 0.334) -> (DNAIterator, DataFrame):
+        entrez_delay: float = 0.334, levels: list = None) \
+                -> (DNAIterator, DataFrame):
     if query is None and accession_ids is None:
         raise ValueError('Query or accession_ids must be supplied')
+    if levels is None:
+        levels = ['kingdom', 'phylum', 'class', 'order', 'family', 'genus',
+                  'species']
 
     if query:
         seqs, taxids = get_nuc_for_query(query, entrez_delay)
@@ -36,7 +41,7 @@ def get_ncbi_data(
         else:
             seqs, taxids = get_nuc_for_accs(accs, entrez_delay)
 
-    taxa = get_taxonomies(taxids, entrez_delay)
+    taxa = get_taxonomies(taxids, levels, entrez_delay)
 
     seqs = DNAIterator(DNA(v, metadata={'id': k}) for k, v in seqs.items())
     taxa = DataFrame(taxa, index=['Taxon']).T
@@ -114,13 +119,11 @@ def get_nuc_for_query(query, entrez_delay=0.):
     return seqs, taxids
 
 
-def get_taxonomies(taxids, entrez_delay=0.):
+def get_taxonomies(taxids, levels=None, entrez_delay=0.):
     params = dict(db='taxonomy')
     ids = list(map(str, taxids.values()))
     records = _get(params, ids, entrez_delay)
     taxa = {}
-    levels = ['kingdom', 'phylum', 'class', 'order', 'family', 'genus',
-              'species']
     for rec in records:
         taxonomy = {}
         for level in rec['LineageEx']['Taxon']:
@@ -136,10 +139,19 @@ def get_taxonomies(taxids, entrez_delay=0.):
             taxonomy['genus'] = genus
         taxonomy['species'] = species
         taxa[rec['TaxId']] = taxonomy
+    missing_accs = []
+    missing_taxids = {}
     tax_strings = {}
     for acc, taxid in taxids.items():
-        taxonomy = taxa[taxid]
-        ts = '; '.join([level[0] + '__' + taxonomy.get(level, '')
-                        for level in levels])
-        tax_strings[acc] = ts
+        if taxid in taxa:
+            taxonomy = taxa[taxid]
+            ts = '; '.join([taxonomy.get(level, '') for level in levels])
+            tax_strings[acc] = ts
+        else:
+            missing_accs.append(acc)
+            missing_taxids.add(taxid)
+    if missing_accs:
+        warnings.warn('The following accessions did not have valid taxids: ' +
+                      ', '.join(missing_accs) + '. The bad taxids were: ' +
+                      ', '.join(missing_taxids), UserWarning)
     return tax_strings

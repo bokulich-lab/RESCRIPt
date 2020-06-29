@@ -172,7 +172,7 @@ def parse_silva_taxonomy(taxonomy_tree: TreeNode,
                          taxonomy_map: pd.DataFrame,
                          taxonomy_ranks: pd.DataFrame,
                          include_species_labels: bool = False) -> pd.Series:
-    # Traverse the taxnomy hierarchy tree (taxonomy_tree) to obtain the
+    # Traverse the taxonomy hierarchy tree (taxonomy_tree) to obtain the
     # taxids. These will be used to look up the taxonomy and rank information
     # from the taxonomy_ranks file. Finally the taxonomy information is
     # mapped to each Accesioned sequence via the taxonomy_map. An option

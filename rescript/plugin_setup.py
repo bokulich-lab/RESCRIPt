@@ -641,7 +641,8 @@ plugin.methods.register_function(
     parameters={
         'query': Str,
         'accession_ids': Metadata,
-        'entrez_delay': Float},
+        'entrez_delay': Float,
+        'levels': List[Str]},
     outputs=[('sequences', FeatureData[Sequence]),
              ('taxonomy', FeatureData[Taxonomy])],
     input_descriptions={},
@@ -650,7 +651,9 @@ plugin.methods.register_function(
         'accession_ids': 'List of accession ids for sequences in the NCBI '
                          'Nucleotide database.',
         'entrez_delay': 'Delay between queries (in seconds) to stay inside '
-                        'the Entrez Guidelines'},
+                        'the Entrez Guidelines',
+        'levels': 'List of taxonomic levels for building a taxonomy from the '
+                  'NCBI Taxonomy database'},
     output_descriptions={
         'sequences': 'Sequences from the NCBI Nucleotide database',
         'taxonomy': 'Taxonomies from the NCBI Taxonomy database'},
