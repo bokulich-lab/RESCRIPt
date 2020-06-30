@@ -15,17 +15,32 @@ from pandas import DataFrame
 from q2_types.feature_data import DNAIterator
 from skbio import DNA
 from qiime2 import Metadata
+from collections import OrderedDict
+
+_default_ranks = [
+    'kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species'
+]
+_default_allowed_ranks = [
+    'domain', 'superkingdom', 'kingdom', 'subkingdom', 'superphylum', 'phylum',
+    'subphylum', 'infraphylum', 'superclass', 'class', 'subclass',
+    'infraclass', 'superorder', 'order', 'suborder', 'superfamily', 'family',
+    'subfamily', 'genus', 'species'
+]
 
 
 def get_ncbi_data(
         query: str = None, accession_ids: Metadata = None,
-        entrez_delay: float = 0.334, levels: list = None) \
-                -> (DNAIterator, DataFrame):
+        ranks: list = None, allowed_ranks: list = None,
+        disable_rank_propagation: bool = False,
+        entrez_delay: float = 0.334) -> (DNAIterator, DataFrame):
     if query is None and accession_ids is None:
         raise ValueError('Query or accession_ids must be supplied')
-    if levels is None:
-        levels = ['kingdom', 'phylum', 'class', 'order', 'family', 'genus',
-                  'species']
+    if ranks is None:
+        ranks = _default_ranks
+    if allowed_ranks is None:
+        allowed_ranks = _default_allowed_ranks
+    if not disable_rank_propagation and not (set(ranks) <= set(allowed_ranks)):
+        raise ValueError('Ranks must be a subset of allowed ranks')
 
     if query:
         seqs, taxids = get_nuc_for_query(query, entrez_delay)
@@ -41,7 +56,8 @@ def get_ncbi_data(
         else:
             seqs, taxids = get_nuc_for_accs(accs, entrez_delay)
 
-    taxa = get_taxonomies(taxids, levels, entrez_delay)
+    taxa = get_taxonomies(
+        taxids, ranks, allowed_ranks, disable_rank_propagation, entrez_delay)
 
     seqs = DNAIterator(DNA(v, metadata={'id': k}) for k, v in seqs.items())
     taxa = DataFrame(taxa, index=['Taxon']).T
@@ -119,33 +135,51 @@ def get_nuc_for_query(query, entrez_delay=0.):
     return seqs, taxids
 
 
-def get_taxonomies(taxids, levels=None, entrez_delay=0.):
+def get_taxonomies(taxids, ranks=None, allowed_ranks=None,
+                   disable_rank_propagation=False, entrez_delay=0.):
+    # download the taxonomies
     params = dict(db='taxonomy')
     ids = list(map(str, taxids.values()))
     records = _get(params, ids, entrez_delay)
     taxa = {}
+
+    # parse the taxonomies
+    if disable_rank_propagation:
+        allowed_ranks = ranks
     for rec in records:
-        taxonomy = {}
-        for level in rec['LineageEx']['Taxon']:
-            if level['Rank'] in levels:
-                taxonomy[level['Rank']] = level['ScientificName']
-        taxonomy['kingdom'] = rec['Division']
+        taxonomy = OrderedDict([('NCBI_Division', rec['Division'])])
+        taxonomy.update((r, None) for r in allowed_ranks)
+        for rank in rec['LineageEx']['Taxon']:
+            if rank['Rank'] in allowed_ranks:
+                taxonomy[rank['Rank']] = rank['ScientificName']
         species = rec['ScientificName']
-        if 'genus' in taxonomy:
-            if species.startswith(taxonomy['genus'] + ' '):
-                species = species[len(taxonomy['genus']) + 1:]
-        elif species.count(' ') == 1:
-            genus, species = species.split(' ')
-            taxonomy['genus'] = genus
-        taxonomy['species'] = species
+        if 'genus' in allowed_ranks:
+            if taxonomy['genus']:
+                if species.startswith(taxonomy['genus'] + ' '):
+                    species = species[len(taxonomy['genus']) + 1:]
+            elif ' ' in species:
+                genus, species = species.split(' ', 1)
+                taxonomy['genus'] = genus
+        if 'species' in allowed_ranks:
+            taxonomy['species'] = species
+        last_label = taxonomy['NCBI_Division']
+        for rank in taxonomy:
+            if taxonomy[rank] is None:
+                if disable_rank_propagation:
+                    taxonomy[rank] = ''
+                else:
+                    taxonomy[rank] = last_label
+            last_label = taxonomy[rank]
         taxa[rec['TaxId']] = taxonomy
+
+    # return the taxonomies
     missing_accs = []
     missing_taxids = {}
     tax_strings = {}
     for acc, taxid in taxids.items():
         if taxid in taxa:
             taxonomy = taxa[taxid]
-            ts = '; '.join([taxonomy.get(level, '') for level in levels])
+            ts = '; '.join([r[0] + '__' + taxonomy[r] for r in ranks])
             tax_strings[acc] = ts
         else:
             missing_accs.append(acc)

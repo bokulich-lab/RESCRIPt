@@ -641,8 +641,10 @@ plugin.methods.register_function(
     parameters={
         'query': Str,
         'accession_ids': Metadata,
-        'entrez_delay': Float,
-        'levels': List[Str]},
+        'ranks': List[Str],
+        'allowed_ranks': List[Str],
+        'disable_rank_propagation': Bool,
+        'entrez_delay': Float},
     outputs=[('sequences', FeatureData[Sequence]),
              ('taxonomy', FeatureData[Taxonomy])],
     input_descriptions={},
@@ -650,10 +652,14 @@ plugin.methods.register_function(
         'query': 'Query on the NCBI Nucleotide database',
         'accession_ids': 'List of accession ids for sequences in the NCBI '
                          'Nucleotide database.',
+        'ranks': 'List of taxonomic ranks for building a taxonomy from the '
+                 'NCBI Taxonomy database. Must be a subset of allowed ranks ',
+        'allowed_ranks': 'List of trustworthy taxonomic ranks for rank '
+                         'propagation. Ignored if disable rank propagation is '
+                         'True ',
+        'disable_rank_propagation': 'Disable rank propagation',
         'entrez_delay': 'Delay between queries (in seconds) to stay inside '
-                        'the Entrez Guidelines',
-        'levels': 'List of taxonomic levels for building a taxonomy from the '
-                  'NCBI Taxonomy database'},
+                        'the Entrez Guidelines'},
     output_descriptions={
         'sequences': 'Sequences from the NCBI Nucleotide database',
         'taxonomy': 'Taxonomies from the NCBI Taxonomy database'},
