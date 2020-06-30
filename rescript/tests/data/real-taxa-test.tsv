@@ -1,0 +1,10 @@
+Feature ID	Taxon
+228057	k__Bacteria; p__Proteobacteria; c__Alphaproteobacteria; o__Rickettsiales; f__Pelagibacteraceae; g__; s__
+4424929	k__Bacteria; p__Bacteroidetes; c__[Saprospirae]; o__[Saprospirales]; f__Chitinophagaceae; g__; s__
+4328851	k__Bacteria; p__; c__; o__; f__; g__; s__
+AB600437.1.1389	d__Archaea; p__Aenigmarchaeota; c__Aenigmarchaeia; o__Aenigmarchaeales; f__Aenigmarchaeales; g__Candidatus_Aenigmarchaeum; s__uncultured_archaeon
+HQ774489.1.1456	D_0__Bacteria;D_1__Proteobacteria;D_2__Gammaproteobacteria;D_3__Enterobacteriales;D_4__Enterobacteriaceae;D_5__Klebsiella;D_6__uncultured organism
+AB478667.1.1521	D_0__Bacteria;D_1__Proteobacteria;D_2__Gammaproteobacteria;D_3__Chromatiales;D_4__Chromatiaceae;D_5__Chromatium;D_6__uncultured Chromatiaceae bacterium
+SH1140444.08FU_UDB018513_refs	k__Fungi;p__Basidiomycota;c__Agaricomycetes;o__Thelephorales;f__Thelephoraceae;g__Thelephora;s__Thelephora_alnii
+SH1224192.08FU_KT732156_reps	k__Viridiplantae;p__Anthophyta;c__Monocotyledonae;o__Alismatales;f__Araceae;g__Bucephalandra;s__unidentified
+SH3239536.08FU_UDB0655728_reps_singleton	k__unidentified;p__unidentified;c__unidentified;o__unidentified;f__unidentified;g__unidentified;s__unidentified

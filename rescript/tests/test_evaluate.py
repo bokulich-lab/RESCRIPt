@@ -95,21 +95,127 @@ class TestEvaluateTaxonomy(TestPluginBase):
                 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 1, 7: 1},
             'Proportion of Features Unclassified at Depth': {
                 1: 0.0, 2: 0.0, 3: 0.0, 4: 0.0, 5: 0.0, 6: 0.0625, 7: 0.0625}})
+        print(obs.to_dict())
         pdt.assert_frame_equal(obs.sort_index(),
                                exp.sort_index(), check_names=False)
 
     def test_taxonomic_entropy(self):
-        obs_ent = evaluate._taxonomic_entropy(self.taxa.view(pd.Series), "")
+        obs_ent = evaluate._taxonomic_entropy(self.taxa.view(pd.Series), "", 7)
         exp_ent = pd.DataFrame(
             {'Unique Labels': {
-                1: 1.0, 2: 1.0, 3: 1.0, 4: 2.0, 5: 2.0, 6: 3.0, 7: 8.0},
+                1: 1.0, 2: 1.0, 3: 1.0, 4: 2.0, 5: 2.0, 6: 4.0, 7: 9.0},
              'Taxonomic Entropy': {
                 1: 0.0,
                 2: 0.0,
                 3: 0.0,
                 4: 0.6210863745552451,
                 5: 0.6210863745552451,
-                6: 1.0986122886681096,
-                7: 1.9913464134109882}})
+                6: 1.263740679332812,
+                7: 2.1006789212792603}})
+        print(obs_ent)
         pdt.assert_frame_equal(obs_ent.sort_index(),
                                exp_ent.sort_index(), check_names=False)
+
+
+# this test class ensures that _evaluate_taxonomy works with real reference
+# database taxonomies. Add to this list as we validate additional reference
+# databases / taxonomy styles.
+# Currently validated taxonomies:
+# greengenes
+# SILVA
+# UNITE
+class TestEvaluateRealLiveTaxonomies(TestPluginBase):
+    package = 'rescript.tests'
+
+    def setUp(self):
+        super().setUp()
+
+        self.taxa = import_data(
+            'FeatureData[Taxonomy]',
+            self.get_data_path('real-taxa-test.tsv')).view(pd.Series)
+
+    def test_evaluate_taxonomy_real_live_taxonomies_no_rank_handle(self):
+        exp = pd.DataFrame({
+            'Unique Labels': {
+                1: 6.0, 2: 8.0, 3: 8.0, 4: 9.0, 5: 9.0, 6: 9.0, 7: 9.0},
+            'Taxonomic Entropy': {1: 1.6769877743224173, 2: 2.0431918705451206,
+                                  3: 2.0431918705451206, 4: 2.1972245773362196,
+                                  5: 2.1972245773362196, 6: 2.1972245773362196,
+                                  7: 2.1972245773362196},
+            'Number of Features Terminating at Depth': {
+                1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 9},
+            'Proportion of Features Terminating at Depth': {
+                1: 0.0, 2: 0.0, 3: 0.0, 4: 0.0, 5: 0.0, 6: 0.0, 7: 1.0},
+            'Number of Features Classified at Depth': {
+                1: 9, 2: 9, 3: 9, 4: 9, 5: 9, 6: 9, 7: 9},
+            'Proportion of Features Classified at Depth': {
+                1: 1.0, 2: 1.0, 3: 1.0, 4: 1.0, 5: 1.0, 6: 1.0, 7: 1.0},
+            'Number of Features Unclassified at Depth': {
+                1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0},
+            'Proportion of Features Unclassified at Depth': {
+                1: 0.0, 2: 0.0, 3: 0.0, 4: 0.0, 5: 0.0, 6: 0.0, 7: 0.0}})
+
+        obs = evaluate._evaluate_taxonomy(self.taxa, rank_handle_regex=None)
+        pdt.assert_frame_equal(obs, exp, check_names=False)
+
+    def test_evaluate_taxonomy_real_live_taxonomies_ggsilva_rank_handle(self):
+        exp = pd.DataFrame({
+            'Unique Labels': {
+                1: 6.0, 2: 8.0, 3: 8.0, 4: 9.0, 5: 9.0, 6: 9.0, 7: 9.0},
+            'Taxonomic Entropy': {1: 1.6769877743224173, 2: 2.0431918705451206,
+                                  3: 2.0431918705451206, 4: 2.1972245773362196,
+                                  5: 2.1972245773362196, 6: 2.1972245773362196,
+                                  7: 2.1972245773362196},
+            'Number of Features Terminating at Depth': {
+                1: 1, 2: 0, 3: 0, 4: 0, 5: 2, 6: 0, 7: 6},
+            'Proportion of Features Terminating at Depth': {
+                1: 0.1111111111111111, 2: 0.0, 3: 0.0, 4: 0.0,
+                5: 0.2222222222222222, 6: 0.0, 7: 0.6666666666666666},
+            'Number of Features Classified at Depth': {
+                1: 9, 2: 8, 3: 8, 4: 8, 5: 8, 6: 6, 7: 6},
+            'Proportion of Features Classified at Depth': {
+                1: 1.0, 2: 0.8888888888888888, 3: 0.8888888888888888,
+                4: 0.8888888888888888, 5: 0.8888888888888888,
+                6: 0.6666666666666666, 7: 0.6666666666666666},
+            'Number of Features Unclassified at Depth': {
+                1: 0, 2: 1, 3: 1, 4: 1, 5: 1, 6: 3, 7: 3},
+            'Proportion of Features Unclassified at Depth': {
+                1: 0.0, 2: 0.1111111111111111, 3: 0.1111111111111111,
+                4: 0.1111111111111111, 5: 0.1111111111111111,
+                6: 0.3333333333333333, 7: 0.3333333333333333}})
+
+        obs = evaluate._evaluate_taxonomy(
+            self.taxa, rank_handle_regex='^[dkpcofgs]__')
+        pdt.assert_frame_equal(obs, exp, check_names=False)
+
+    def test_evaluate_taxonomy_real_live_taxonomies_unite_rank_handle(self):
+        exp = pd.DataFrame({
+            'Unique Labels': {
+                1: 6.0, 2: 8.0, 3: 8.0, 4: 9.0, 5: 9.0, 6: 9.0, 7: 9.0},
+            'Taxonomic Entropy': {1: 1.6769877743224173, 2: 2.0431918705451206,
+                                  3: 2.0431918705451206, 4: 2.1972245773362196,
+                                  5: 2.1972245773362196, 6: 2.1972245773362196,
+                                  7: 2.1972245773362196},
+            'Number of Features Terminating at Depth': {
+                1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 1, 7: 7},
+            'Proportion of Features Terminating at Depth': {
+                1: 0.0, 2: 0.0, 3: 0.0, 4: 0.0, 5: 0.0, 6: 0.1111111111111111,
+                7: 0.7777777777777778},
+            'Number of Features Classified at Depth': {
+                1: 8, 2: 8, 3: 8, 4: 8, 5: 8, 6: 8, 7: 7},
+            'Proportion of Features Classified at Depth': {
+                1: 0.8888888888888888, 2: 0.8888888888888888,
+                3: 0.8888888888888888, 4: 0.8888888888888888,
+                5: 0.8888888888888888, 6: 0.8888888888888888,
+                7: 0.7777777777777778},
+            'Number of Features Unclassified at Depth': {
+                1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 2},
+            'Proportion of Features Unclassified at Depth': {
+                1: 0.1111111111111111, 2: 0.1111111111111111,
+                3: 0.1111111111111111, 4: 0.1111111111111111,
+                5: 0.1111111111111111, 6: 0.1111111111111111,
+                7: 0.2222222222222222}})
+
+        obs = evaluate._evaluate_taxonomy(
+            self.taxa, rank_handle_regex='^[dkpcofgs]__unidentified')
+        pdt.assert_frame_equal(obs, exp, check_names=False)
