@@ -78,6 +78,7 @@ def evaluate_cross_validate(ctx,
 
     fit = ctx.get_action('feature_classifier', 'fit_classifier_naive_bayes')
     classify = ctx.get_action('feature_classifier', 'classify_sklearn')
+    _eval = ctx.get_action('rescript', 'evaluate_classifications')
 
     # split taxonomy into training and test sets
     train_test_data = _generate_train_test_data(taxa, k, random_state)
@@ -110,8 +111,10 @@ def evaluate_cross_validate(ctx,
         'FeatureData[Taxonomy]', pd.concat(expected_taxonomies))
     observed_taxonomies = q2.Artifact.import_data(
         'FeatureData[Taxonomy]', pd.concat(observed_taxonomies))
+    evaluation, = _eval([expected_taxonomies], [observed_taxonomies])
+    _check_time(new_time, 'Evaluation')
     _check_time(start, 'Total Runtime')
-    return expected_taxonomies, observed_taxonomies
+    return expected_taxonomies, observed_taxonomies, evaluation
 
 
 # NOTE: This is an experimental method. Use at your own risk. It appears to be
