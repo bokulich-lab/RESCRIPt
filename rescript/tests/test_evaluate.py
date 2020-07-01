@@ -10,7 +10,9 @@ from qiime2.plugin.testing import TestPluginBase
 from qiime2.plugins import rescript
 import qiime2
 import pandas as pd
+import numpy as np
 import pandas.util.testing as pdt
+from q2_types.feature_data import DNAIterator
 
 from rescript import evaluate
 
@@ -95,7 +97,6 @@ class TestEvaluateTaxonomy(TestPluginBase):
                 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 1, 7: 1},
             'Proportion of Features Unclassified at Depth': {
                 1: 0.0, 2: 0.0, 3: 0.0, 4: 0.0, 5: 0.0, 6: 0.0625, 7: 0.0625}})
-        print(obs.to_dict())
         pdt.assert_frame_equal(obs.sort_index(),
                                exp.sort_index(), check_names=False)
 
@@ -112,7 +113,6 @@ class TestEvaluateTaxonomy(TestPluginBase):
                 5: 0.6210863745552451,
                 6: 1.263740679332812,
                 7: 2.1006789212792603}})
-        print(obs_ent)
         pdt.assert_frame_equal(obs_ent.sort_index(),
                                exp_ent.sort_index(), check_names=False)
 
@@ -219,3 +219,65 @@ class TestEvaluateRealLiveTaxonomies(TestPluginBase):
         obs = evaluate._evaluate_taxonomy(
             self.taxa, rank_handle_regex='^[dkpcofgs]__unidentified')
         pdt.assert_frame_equal(obs, exp, check_names=False)
+
+
+class TestEvaluateSeqs(TestPluginBase):
+    package = 'rescript.tests'
+
+    def setUp(self):
+        super().setUp()
+
+        self.seqs = import_data('FeatureData[Sequence]',
+                                self.get_data_path('derep-test.fasta'))
+
+    # this just tests that the action runs, other tests test proper function
+    def test_evaluate_seqs_visualizer(self):
+        rescript.actions.evaluate_seqs([self.seqs])
+
+    def test_evaluate_seqs(self):
+        obs, lens = evaluate._evaluate_seqs(
+            [self.seqs.view(DNAIterator)], ["name"])
+        exp = pd.DataFrame({
+            'name': {'Length min': 264.0, 'Length 1%': 264.0,
+                     'Length 25%': 284.25, 'Length median': 291.0,
+                     'Length 75%': 291.0, 'Length 99%': 291.0,
+                     'Length max': 291.0, 'N uniques': 6.0,
+                     'Sequence Entropy': 1.63}})
+        pdt.assert_frame_equal(obs.sort_index(), exp.sort_index(),
+                               check_names=False)
+        np.testing.assert_array_equal(lens, np.array([[291] * 12 + [264] * 4]))
+
+    def test_evaluate_seqs_low_entropy_multiple_sets(self):
+        s1 = ['ACTGATCGTGATGCTGATCGATGCTGATCGATCG',
+              'GTGTGTGAGTTATCGTGACGTGTAGCTGACGTAG',
+              'ACGTGTACTGTGACTGATGCTGACTGTGGTATAT',
+              'ACGAGTCTGAC',
+              'ACGTGTACGTGTAGCTGTAGC',
+              'CGTTGATGCTGTGATGCTACTGTGACTGATGCGTAGCGTAC']
+        s2 = ['ACTGATCGTGATGCTGATCGATGCTGATCGATCG',
+              'AAAAAAAAAAAAAAAAAAAAAAA',
+              'AAAAAAAAAAAAAAAAAAAAAAAAAAAA']
+        s3 = ['AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+              'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+              'AAAAAAAAAAAAAAAAAAAAAAAAAAAA']
+        obs, lens = evaluate._evaluate_seqs([s1, s2, s3], ['s1', 's2', 's3'])
+        exp = pd.DataFrame({
+            's1': {'Length min': 11.0, 'Length 1%': 11.5, 'Length 25%': 24.25,
+                   'Length median': 34.0, 'Length 75%': 34.0,
+                   'Length 99%': 40.65, 'Length max': 41.0, 'N uniques': 6.0,
+                   'Sequence Entropy': 1.79},
+            's2': {'Length min': 23.0, 'Length 1%': 23.1, 'Length 25%': 25.5,
+                   'Length median': 28.0, 'Length 75%': 31.0,
+                   'Length 99%': 33.88, 'Length max': 34.0, 'N uniques': 3.0,
+                   'Sequence Entropy': 1.1},
+            's3': {'Length min': 28.0, 'Length 1%': 28.12, 'Length 25%': 31.0,
+                   'Length median': 34.0, 'Length 75%': 34.0,
+                   'Length 99%': 34.0, 'Length max': 34.0, 'N uniques': 2.0,
+                   'Sequence Entropy': 0.64}})
+        exp_lens = [np.array([34, 34, 34, 11, 21, 41]),
+                    np.array([34, 23, 28]),
+                    np.array([34, 34, 28])]
+        pdt.assert_frame_equal(obs.sort_index(), exp.sort_index(),
+                               check_names=False)
+        for a1, a2 in zip(lens, exp_lens):
+            np.testing.assert_array_equal(a1, a2)
