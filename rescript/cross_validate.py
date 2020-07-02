@@ -25,8 +25,8 @@ def evaluate_fit_classifier(ctx,
                             n_jobs=1,
                             confidence=0.7):
     '''
-    taxonomy: pd.Series of taxonomy labels
-    sequences: pd.Series of sequences
+    taxonomy: FeatureData[Taxonomy] artifact of taxonomy labels
+    sequences: FeatureData[Sequence] artifact of sequences
     k: number of kfold cv splits to perform.
     '''
     # Validate inputs
@@ -66,8 +66,8 @@ def evaluate_cross_validate(ctx,
                             n_jobs=1,
                             confidence=0.7):
     '''
-    taxonomy: pd.Series of taxonomy labels
-    sequences: pd.Series of sequences
+    taxonomy: FeatureData[Taxonomy] artifact of taxonomy labels
+    sequences: FeatureData[Sequence] artifact of sequences
     k: number of kfold cv splits to perform.
     random_state: random state for cv.
     '''
