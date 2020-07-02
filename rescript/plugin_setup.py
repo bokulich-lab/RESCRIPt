@@ -12,7 +12,7 @@ from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int,
                            Float, Visualization, Bool, TypeMap)
 from .merge import merge_taxa
 from .dereplicate import dereplicate
-from .evaluate import evaluate_taxonomy
+from .evaluate import evaluate_taxonomy, evaluate_seqs
 from .screenseq import cull_seqs
 from .degap import degap_seqs
 from .parse_silva_taxonomy import parse_silva_taxonomy
@@ -79,10 +79,10 @@ rank_handle_extra_note = (
     'new_rank_handle parameter to replace the rank handles.')
 
 labels_description = (
-    'List of labels to use for labeling taxonomic results in the resulting '
-    'visualization. Taxonomies are labeled with labels in the order that each '
-    'is input. If there are fewer labels than taxonomies (or no labels), '
-    'unnamed taxonomies are labeled numerically in sequential order. Extra '
+    'List of labels to use for labeling evaluation results in the resulting '
+    'visualization. Inputs are labeled with labels in the order that each '
+    'is input. If there are fewer labels than inputs (or no labels), '
+    'unnamed inputs are labeled numerically in sequential order. Extra '
     'labels are ignored.')
 
 
@@ -330,6 +330,44 @@ plugin.pipelines.register_function(
         VOLATILITY_PLOT_XAXIS_INTERPRETATION),
     citations=[citations['bokulich2017q2']]
 )
+
+
+palettes = ['Set1', 'Set2', 'Set3', 'Pastel1', 'Pastel2', 'Paired',
+            'Accent', 'Dark2', 'tab10', 'tab20', 'tab20b', 'tab20c',
+            'viridis', 'plasma', 'inferno', 'magma', 'cividis', 'terrain',
+            'rainbow', 'PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGy', 'RdBu',
+            'RdYlBu', 'RdYlGn', 'Spectral', 'coolwarm', 'bwr', 'seismic']
+
+plugin.visualizers.register_function(
+    function=evaluate_seqs,
+    inputs={'sequences': List[FeatureData[Sequence]]},
+    parameters={'labels': List[Str],
+                'kmer_lengths': List[Int % Range(1, None)],
+                'subsample_kmers': Float % Range(0, 1, inclusive_start=False,
+                                                 inclusive_end=True),
+                'palette': Str % Choices(palettes)},
+    input_descriptions={
+        'sequences': 'One or more sets of sequences to evaluate.'},
+    parameter_descriptions={
+        'labels': labels_description,
+        'kmer_lengths': 'Sequence kmer lengths to optionally use for entropy '
+                        'calculation. Warning: kmer entropy calculations may '
+                        'be time-consuming for large sequence sets.',
+        'subsample_kmers': 'Optionally subsample sequences prior to kmer '
+                           'entropy measurement. A fraction of the input '
+                           'sequences will be randomly subsampled at the '
+                           'specified value.',
+        'palette': 'Color palette to use for plotting evaluation results.'
+    },
+    name='Compute summary statistics on sequence artifact(s).',
+    description=(
+        'Compute summary statistics on sequence artifact(s) and visualize. '
+        'Summary statistics include the number of unique sequences, sequence '
+        'entropy, kmer entropy, and sequence length distributions. This '
+        'action is useful for both reference taxonomies and classification '
+        'results.')
+)
+
 
 plugin.methods.register_function(
     function=cull_seqs,

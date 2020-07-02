@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block title %}RESCRIPt : {{ running_title }}{% endblock %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+
+<div class="text-center">
+
+  <div class="row">
+    <div class="col-lg-12">
+      <a href="evaluate_seqs.pdf">
+        <img src="evaluate_seqs.png">
+        <br>
+        <p>Download as PDF</p>
+      </a>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-lg-12">
+      <a href="evaluate_seqs_results.tsv">
+        <p>Download data as tsv</p>
+      </a>
+      <div class="panel-body">
+        {{ results }}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
