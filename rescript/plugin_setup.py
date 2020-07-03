@@ -141,7 +141,8 @@ plugin.pipelines.register_function(
         'n_jobs': _classify_parameters['n_jobs'],
         'confidence': _classify_parameters['confidence']},
     outputs=[('expected_taxonomy', FeatureData[Taxonomy]),
-             ('observed_taxonomy', FeatureData[Taxonomy])],
+             ('observed_taxonomy', FeatureData[Taxonomy]),
+             ('evaluation', Visualization)],
     input_descriptions={
         'sequences': 'Reference sequences to use for classifier '
                      'training/testing.',
@@ -158,7 +159,8 @@ plugin.pipelines.register_function(
                              'sequence. Taxonomic labels may be truncated due '
                              'to k-fold CV and stratification.',
         'observed_taxonomy': 'Observed taxonomic label for each input '
-                             'sequence, predicted by cross-validation.'},
+                             'sequence, predicted by cross-validation.',
+        'evaluation': 'Visualization of cross-validated accuracy results.'},
     name=('Evaluate DNA sequence reference database via cross-validated '
           'taxonomic classification.'),
     description=(
