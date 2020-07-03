@@ -9,6 +9,7 @@
 import pandas as pd
 import qiime2 as q2
 import timeit
+from warnings import filterwarnings
 from sklearn.model_selection import StratifiedKFold
 from q2_feature_classifier._consensus_assignment import (
     _consensus_assignments, _get_default_unassignable_label)
@@ -71,6 +72,13 @@ def evaluate_cross_validate(ctx,
     k: number of kfold cv splits to perform.
     random_state: random state for cv.
     '''
+    # silence impertinent sklearn warnings:
+    # 1. classifier version (the classifier is not saved or reused)
+    # 2. class sizes (this is handled by taxonomic stratification/relabeling)
+    msg = 'The TaxonomicClassifier.*cannot be used with other versions'
+    filterwarnings("ignore", message=msg, category=UserWarning)
+    filterwarnings(
+        "ignore", message='The least populated class', category=UserWarning)
     # Validate inputs
     start = timeit.default_timer()
     taxa, seq_ids = _validate_cross_validate_inputs(taxonomy, sequences)
