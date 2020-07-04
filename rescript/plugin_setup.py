@@ -36,7 +36,7 @@ from rescript.types._format import (
     SILVATaxidMapDirectoryFormat, RNAFASTAFormat, RNASequencesDirectoryFormat)
 from rescript.types._type import SILVATaxonomy, SILVATaxidMap, RNASequence
 from rescript.types.methods import reverse_transcribe
-from rescript.ncbi import get_ncbi_data
+from rescript.ncbi import get_ncbi_data, _default_ranks, _allowed_ranks
 
 
 citations = Citations.load('citations.bib', package='rescript')
@@ -641,9 +641,8 @@ plugin.methods.register_function(
     parameters={
         'query': Str,
         'accession_ids': Metadata,
-        'ranks': List[Str],
-        'allowed_ranks': List[Str],
-        'disable_rank_propagation': Bool,
+        'ranks': List[Str % Choices(_allowed_ranks)],
+        'rank_propagation': Bool,
         'entrez_delay': Float},
     outputs=[('sequences', FeatureData[Sequence]),
              ('taxonomy', FeatureData[Taxonomy])],
@@ -653,11 +652,9 @@ plugin.methods.register_function(
         'accession_ids': 'List of accession ids for sequences in the NCBI '
                          'Nucleotide database.',
         'ranks': 'List of taxonomic ranks for building a taxonomy from the '
-                 'NCBI Taxonomy database. Must be a subset of allowed ranks ',
-        'allowed_ranks': 'List of trustworthy taxonomic ranks for rank '
-                         'propagation. Ignored if disable rank propagation is '
-                         'True ',
-        'disable_rank_propagation': 'Disable rank propagation',
+                 "NCBI Taxonomy database. [default: '" +
+                 "', '".join(_default_ranks) + "']",
+        'rank_propagation': 'Propagate known ranks to missing ranks if true',
         'entrez_delay': 'Delay between queries (in seconds) to stay inside '
                         'the Entrez Guidelines'},
     output_descriptions={

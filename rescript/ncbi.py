@@ -20,27 +20,24 @@ from collections import OrderedDict
 _default_ranks = [
     'kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species'
 ]
-_default_allowed_ranks = [
+_allowed_ranks = [
     'domain', 'superkingdom', 'kingdom', 'subkingdom', 'superphylum', 'phylum',
     'subphylum', 'infraphylum', 'superclass', 'class', 'subclass',
-    'infraclass', 'superorder', 'order', 'suborder', 'superfamily', 'family',
-    'subfamily', 'genus', 'species'
+    'infraclass', 'cohort', 'superorder', 'order', 'suborder', 'infraorder',
+    'parvorder', 'superfamily', 'family', 'subfamily', 'tribe', 'subtribe',
+    'genus', 'subgenus', 'species group', 'species subgroup', 'species',
+    'subspecies', 'forma'
 ]
 
 
 def get_ncbi_data(
         query: str = None, accession_ids: Metadata = None,
-        ranks: list = None, allowed_ranks: list = None,
-        disable_rank_propagation: bool = False,
+        ranks: list = None, rank_propagation: bool = True,
         entrez_delay: float = 0.334) -> (DNAIterator, DataFrame):
     if query is None and accession_ids is None:
         raise ValueError('Query or accession_ids must be supplied')
     if ranks is None:
         ranks = _default_ranks
-    if allowed_ranks is None:
-        allowed_ranks = _default_allowed_ranks
-    if not disable_rank_propagation and not (set(ranks) <= set(allowed_ranks)):
-        raise ValueError('Ranks must be a subset of allowed ranks')
 
     if query:
         seqs, taxids = get_nuc_for_query(query, entrez_delay)
@@ -57,7 +54,7 @@ def get_ncbi_data(
             seqs, taxids = get_nuc_for_accs(accs, entrez_delay)
 
     taxa = get_taxonomies(
-        taxids, ranks, allowed_ranks, disable_rank_propagation, entrez_delay)
+        taxids, ranks, rank_propagation, entrez_delay)
 
     seqs = DNAIterator(DNA(v, metadata={'id': k}) for k, v in seqs.items())
     taxa = DataFrame(taxa, index=['Taxon']).T
@@ -75,6 +72,14 @@ def _get(params, ids=None, entrez_delay=0.):
         r = requests.post(epost, data=data)
         r.raise_for_status()
         webenv = parse(r.content)['ePostResult']
+        if 'ERROR' in webenv:
+            if isinstance(webenv['ERROR'], list):
+                for error in webenv['ERROR']:
+                    warnings.warn(error, UserWarning)
+            else:
+                warnings.warn(webenv['ERROR'], UserWarning)
+        if 'WebEnv' not in webenv:
+            raise ValueError('No data for given ids')
         params['WebEnv'] = webenv['WebEnv']
         params['query_key'] = webenv['QueryKey']
         expected_num_records = len(ids)
@@ -84,6 +89,8 @@ def _get(params, ids=None, entrez_delay=0.):
         r = requests.get(esearch, params=params)
         r.raise_for_status()
         webenv = parse(r.content)['eSearchResult']
+        if 'WebEnv' not in webenv:
+            raise ValueError('No sequences for given query')
         params = dict(
             db='nuccore', rettype='fasta', retmode='xml',
             WebEnv=webenv['WebEnv'], query_key=webenv['QueryKey']
@@ -91,21 +98,25 @@ def _get(params, ids=None, entrez_delay=0.):
         expected_num_records = int(webenv['Count'])
 
     efetch = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi'
-    # Need to better handle the case of invalid ids
-    # Need to better handle intermittent fault where we
-    #  don't get the whole data set back
     data = []
     while len(data) < expected_num_records:
         params['retstart'] = len(data)
         time.sleep(entrez_delay)
         r = requests.get(efetch, params=params)
-        r.raise_for_status()
+        if r.status_code != requests.codes.ok:
+            content = parse(r.content)
+            content = list(content.values()).pop()
+            warnings.warn('Download did not finish smoothly. The following '
+                          'error was received:\n' + content['ERROR'],
+                          UserWarning)
+            break
         chunk = parse(r.content)
         chunk = list(chunk.values()).pop()
         chunk = list(chunk.values()).pop()
-        if expected_num_records == 1:
-            return [chunk]
-        data.extend(chunk)
+        if isinstance(chunk, list):
+            data.extend(chunk)
+        else:
+            data.append(chunk)
     return data
 
 
@@ -135,8 +146,8 @@ def get_nuc_for_query(query, entrez_delay=0.):
     return seqs, taxids
 
 
-def get_taxonomies(taxids, ranks=None, allowed_ranks=None,
-                   disable_rank_propagation=False, entrez_delay=0.):
+def get_taxonomies(
+        taxids, ranks=None, rank_propagation=False, entrez_delay=0.):
     # download the taxonomies
     params = dict(db='taxonomy')
     ids = list(map(str, taxids.values()))
@@ -144,32 +155,46 @@ def get_taxonomies(taxids, ranks=None, allowed_ranks=None,
     taxa = {}
 
     # parse the taxonomies
-    if disable_rank_propagation:
-        allowed_ranks = ranks
     for rec in records:
-        taxonomy = OrderedDict([('NCBI_Division', rec['Division'])])
-        taxonomy.update((r, None) for r in allowed_ranks)
-        for rank in rec['LineageEx']['Taxon']:
-            if rank['Rank'] in allowed_ranks:
-                taxonomy[rank['Rank']] = rank['ScientificName']
-        species = rec['ScientificName']
-        if 'genus' in allowed_ranks:
+        if rank_propagation:
+            taxonomy = OrderedDict([('NCBI_Division', rec['Division'])])
+            taxonomy.update((r, None) for r in _allowed_ranks)
+            for rank in rec['LineageEx']['Taxon']:
+                if rank['Rank'] in _allowed_ranks:
+                    taxonomy[rank['Rank']] = rank['ScientificName']
+            species = rec['ScientificName']
             if taxonomy['genus']:
                 if species.startswith(taxonomy['genus'] + ' '):
                     species = species[len(taxonomy['genus']) + 1:]
             elif ' ' in species:
                 genus, species = species.split(' ', 1)
                 taxonomy['genus'] = genus
-        if 'species' in allowed_ranks:
             taxonomy['species'] = species
-        last_label = taxonomy['NCBI_Division']
-        for rank in taxonomy:
-            if taxonomy[rank] is None:
-                if disable_rank_propagation:
-                    taxonomy[rank] = ''
-                else:
+            last_label = taxonomy['NCBI_Division']
+            for rank in taxonomy:
+                if taxonomy[rank] is None:
                     taxonomy[rank] = last_label
-            last_label = taxonomy[rank]
+                last_label = taxonomy[rank]
+        else:
+            taxonomy = {r: '' for r in ranks}
+            if 'domain' in ranks:
+                taxonomy['domain'] = rec['Division']
+            elif 'kingdom' in ranks:
+                taxonomy['kingdom'] = rec['Division']
+            for rank in rec['LineageEx']['Taxon']:
+                taxonomy[rank['Rank']] = rank['ScientificName']
+            species = rec['ScientificName']
+            # if we care about genus and genus is in the species label and
+            # we don't already know genus, split it out
+            if 'genus' in ranks:
+                if taxonomy['genus']:
+                    if species.startswith(taxonomy['genus'] + ' '):
+                        species = species[len(taxonomy['genus']) + 1:]
+                elif ' ' in species:
+                    genus, species = species.split(' ', 1)
+                    taxonomy['genus'] = genus
+            taxonomy['species'] = species
+
         taxa[rec['TaxId']] = taxonomy
 
     # return the taxonomies
