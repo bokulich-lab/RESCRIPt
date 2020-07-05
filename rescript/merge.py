@@ -8,8 +8,15 @@
 
 
 import pandas as pd
-from ._utilities import (_find_lca_in_series, _rank_length, _taxon_to_list,
-                         _find_top_score, _rank_handles)
+from ._utilities import (_rank_length, _taxon_to_list, _find_top_score,
+                         _rank_handles, _find_lca, _find_super_lca,
+                         _find_lca_majority)
+
+
+MODE_ERROR_SCORE = (
+    'mode "score" can only operate on dataframes with taxonomy classification '
+    'scores in the second column. Use "qiime metadata tabulate" to visually '
+    'confirm the structure of your data before using this command.')
 
 
 def merge_taxa(data: pd.DataFrame,
@@ -22,43 +29,39 @@ def merge_taxa(data: pd.DataFrame,
             lambda x: _taxon_to_list(x, rank_handle=rank_handle_regex))
 
     # consensus and other dataset-specific data are meaningless after LCA
-    # so we will just drop them.
-    if mode == 'lca':
+    # or majority so we will just drop them and apply functions across rows.
+    if mode in ['lca', 'super', 'majority']:
         data = [d[['Taxon']] for d in data]
+        data = pd.concat(data, axis=1, sort=True).fillna('')
+        if mode == 'lca':
+            func = _find_lca
+        elif mode == 'super':
+            func = _find_super_lca
+        elif mode == 'majority':
+            func = _find_lca_majority
+        result = data.apply(lambda x: func([t for t in x if t != '']), axis=1)
+        result = result.to_frame(name='Taxon')
 
-    # We want to copy scores to a uniformly labeled column so that we can merge
-    # merge into a unified column, while still preserving original score names
-    # (e.g., if merging confidence and consensus scores).
-    if mode == 'score':
-        for d in data:
-            try:
-                d['score'] = pd.to_numeric(d.iloc[:, 1])
-            # if single-column frame is encountered, raise error
-            except IndexError:
-                raise IndexError('mode "score" can only operate on dataframes '
-                                 'with taxonomy classification scores in the '
-                                 'second column. Use "qiime metadata '
-                                 'tabulate" to visually confirm the structure '
-                                 'of your data before using this command.')
-    data = iter(data)
-    result = next(data)
-    for d in data:
-        fill_value = ''
-        overwrite = False
-        # choose longest taxonomy
+    # len and score modes are computed pairwise to preserve other taxon info
+    else:
         if mode == 'len':
-            func = _rank_length
-        # or do LCA merging
-        elif mode == 'lca':
-            func = _find_lca_in_series
-        # or choose taxonomy with highest confidence score
-        elif mode == 'score':
-            func = _find_top_score
-            fill_value = 0
-            overwrite = True
-        # merge data using selected function
-        result = result.T.combine(
-            d.T, func, fill_value=fill_value, overwrite=overwrite).T
+            func, fill_value, overwrite = _rank_length, '', False
+        # We want to copy scores to a uniformly labeled column so that we can
+        # merge into a unified column, while still preserving original score
+        # names (e.g., if merging confidence and consensus scores).
+        if mode == 'score':
+            func, fill_value, overwrite = _find_top_score, 0, True
+            for d in data:
+                try:
+                    d['score'] = pd.to_numeric(d.iloc[:, 1])
+                # if single-column frame is encountered, raise error
+                except IndexError:
+                    raise IndexError(MODE_ERROR_SCORE)
+        data = iter(data)
+        result = next(data)
+        for d in data:
+            result = result.T.combine(
+                d.T, func, fill_value=fill_value, overwrite=overwrite).T
 
     # Insert new rank handles if selected
     if new_rank_handle is not None:
@@ -67,5 +70,8 @@ def merge_taxa(data: pd.DataFrame,
             lambda x: ';'.join([''.join(t) for t in zip(new_rank_handle, x)]))
     else:
         result['Taxon'] = result['Taxon'].apply(lambda x: ';'.join(x))
+
+    # gotta please the type validator gods
+    result.index.name = 'Feature ID'
 
     return result

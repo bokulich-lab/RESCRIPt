@@ -201,7 +201,7 @@ plugin.methods.register_function(
     function=merge_taxa,
     inputs={'data': List[FeatureData[Taxonomy]]},
     parameters={
-        'mode': Str % Choices(['len', 'lca', 'score']),
+        'mode': Str % Choices(['len', 'lca', 'score', 'super', 'majority']),
         'rank_handle_regex': Str,
         'new_rank_handle': Str % Choices(list(_rank_handles.keys()))},
     outputs=[('merged_data', FeatureData[Taxonomy])],
@@ -215,7 +215,12 @@ plugin.methods.register_function(
                 'taxonomy with the highest score (e.g., confidence or '
                 'consensus score). Note that "score" assumes that this score '
                 'is always contained as the second column in a feature '
-                'taxonomy dataframe.',
+                'taxonomy dataframe. "majority" finds the LCA consensus while '
+                'giving preference to majority labels. "super" finds the LCA '
+                'consensus while giving preference to majority labels and '
+                'collapsing substrings into superstrings (e.g., '
+                '"g__Lactobacillus" would be collapsed with '
+                '"g__Lactobacillus_group_A").',
         'rank_handle_regex': rank_handle_description + rank_handle_extra_note,
         'new_rank_handle': (
             'Specifies the set of rank handles to prepend to taxonomic labels '
