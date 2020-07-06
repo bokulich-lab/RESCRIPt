@@ -292,3 +292,144 @@ class TestMergeTaxa(TestPluginBase):
         new = new.view(pd.DataFrame).apply(
             lambda x: pd.to_numeric(x, errors='ignore'))
         pdt.assert_frame_equal(new, exp, check_names=False)
+
+    # compare vs. LCA tests above to see super(set) mode function; the longer
+    # taxonomy is selected if it is a superset of the other, otherwise LCA
+    def test_merge_taxa_super_lca(self):
+        one_col, = self.merge_taxa([self.s1, self.s2, self.s3], 'super', '')
+        exp = pd.DataFrame({'Taxon': {
+            '2562091': 'k__Bacteria;p__Actinobacteria;c__Acidimicrobiia;'
+                       'o__Acidimicrobiales;f__Microthrixaceae;g__;s__',
+            '2562097': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Bacillales;'
+                       'f__Bacillaceae;g__Bacillus;s__',
+            '370253': 'k__Bacteria;p__Firmicutes;c__Clostridia;'
+                      'o__Clostridiales;f__Ruminococcaceae;'
+                      'g__Faecalibacterium;s__prausnitzii',
+            '4361279': 'k__Bacteria;p__Proteobacteria;'
+                       'c__Betaproteobacteria;o__Burkholderiales;'
+                       'f__Oxalobacteraceae;g__;s__',
+            '4369464': 'k__Bacteria;p__Proteobacteria;'
+                       'c__Alphaproteobacteria;o__Rhizobiales;'
+                       'f__Rhizobiaceae;g__Rhizobium;s__leguminosarum',
+            'unique': 'k__Bacteria;p__;c__;o__;f__;g__;s__blah',
+            'unique1': 'k__Bacteria;p__;c__;o__;f__;g__;s__blah',
+            'unique2': 'k__Bacteria;p__;c__;o__;f__;g__;s__blah'}})
+        pdt.assert_frame_equal(
+            one_col.view(pd.DataFrame), exp, check_names=False)
+        multi_col, = self.merge_taxa([self.m1, self.m2, self.m3], 'super', '')
+        pdt.assert_frame_equal(
+            multi_col.view(pd.DataFrame), exp, check_names=False)
+
+    # compare vs. LCA tests above to see super(set) mode function; the longer
+    # taxonomy is selected if it is a superset of the other, otherwise LCA
+    def test_merge_taxa_super_lca_rank_handle(self):
+        result, = self.merge_taxa(
+            [self.s1, self.s2, self.s3], 'super')
+        exp = pd.DataFrame({'Taxon': {
+            '2562091': 'Bacteria;Actinobacteria;Acidimicrobiia;'
+                       'Acidimicrobiales;Microthrixaceae;;',
+            '2562097': 'Bacteria;Firmicutes;Bacilli;Bacillales;'
+                       'Bacillaceae;Bacillus;',
+            '370253': 'Bacteria;Firmicutes;Clostridia;Clostridiales;'
+                      'Ruminococcaceae;Faecalibacterium;prausnitzii',
+            '4361279': 'Bacteria;Proteobacteria;'
+                       'Betaproteobacteria;Burkholderiales;Oxalobacteraceae;;',
+            '4369464': 'Bacteria;Proteobacteria;Alphaproteobacteria;'
+                       'Rhizobiales;Rhizobiaceae;Rhizobium;leguminosarum',
+            'unique': 'Bacteria;;;;;;blah',
+            'unique1': 'Bacteria;;;;;;blah',
+            'unique2': 'Bacteria;;;;;;blah'}})
+        pdt.assert_frame_equal(
+            result.view(pd.DataFrame), exp, check_names=False)
+        multi_col, = self.merge_taxa([self.m1, self.m2, self.m3], 'super')
+        pdt.assert_frame_equal(
+            multi_col.view(pd.DataFrame), exp, check_names=False)
+
+    # majority is super without superstring collapsing
+    def test_merge_taxa_super_lca_majority(self):
+        one_col, = self.merge_taxa([self.s1, self.s2, self.s3], 'majority', '')
+        exp = pd.DataFrame({'Taxon': {
+            '2562091': 'k__Bacteria;p__Actinobacteria;c__Acidimicrobiia;'
+                       'o__Acidimicrobiales',
+            '2562097': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Bacillales;'
+                       'f__Bacillaceae;g__Bacillus;s__',
+            '370253': 'k__Bacteria;p__Firmicutes;c__Clostridia;'
+                      'o__Clostridiales',
+            '4361279': 'k__Bacteria;p__Proteobacteria;'
+                       'c__Betaproteobacteria;o__Burkholderiales;'
+                       'f__Oxalobacteraceae;g__;s__',
+            '4369464': 'k__Bacteria',
+            'unique': 'k__Bacteria;p__;c__;o__;f__;g__;s__blah',
+            'unique1': 'k__Bacteria;p__;c__;o__;f__;g__;s__blah',
+            'unique2': 'k__Bacteria;p__;c__;o__;f__;g__;s__blah'}})
+        pdt.assert_frame_equal(
+            one_col.view(pd.DataFrame), exp, check_names=False)
+        multi_col, = self.merge_taxa(
+            [self.m1, self.m2, self.m3], 'majority', '')
+        pdt.assert_frame_equal(
+            multi_col.view(pd.DataFrame), exp, check_names=False)
+
+    # note that majority with rank handle behaves the same as super LCA above
+    # (same expected outputs) since the super/substrings in the test data
+    # consist of empty ranks vs. rank handles.
+    def test_merge_taxa_majority_rank_handle(self):
+        result, = self.merge_taxa(
+            [self.s1, self.s2, self.s3], 'majority')
+        exp = pd.DataFrame({'Taxon': {
+            '2562091': 'Bacteria;Actinobacteria;Acidimicrobiia;'
+                       'Acidimicrobiales;Microthrixaceae;;',
+            '2562097': 'Bacteria;Firmicutes;Bacilli;Bacillales;'
+                       'Bacillaceae;Bacillus;',
+            '370253': 'Bacteria;Firmicutes;Clostridia;Clostridiales;'
+                      'Ruminococcaceae;Faecalibacterium;prausnitzii',
+            '4361279': 'Bacteria;Proteobacteria;'
+                       'Betaproteobacteria;Burkholderiales;Oxalobacteraceae;;',
+            '4369464': 'Bacteria;Proteobacteria;Alphaproteobacteria;'
+                       'Rhizobiales;Rhizobiaceae;Rhizobium;leguminosarum',
+            'unique': 'Bacteria;;;;;;blah',
+            'unique1': 'Bacteria;;;;;;blah',
+            'unique2': 'Bacteria;;;;;;blah'}})
+        pdt.assert_frame_equal(
+            result.view(pd.DataFrame), exp, check_names=False)
+        multi_col, = self.merge_taxa([self.m1, self.m2, self.m3], 'majority')
+        pdt.assert_frame_equal(
+            multi_col.view(pd.DataFrame), exp, check_names=False)
+
+    # make a more challenging test for majority with label redundancy and
+    # no clear majority
+    def test_merge_taxa_majority_rank_handle_true_majority(self):
+        s4 = pd.DataFrame({
+            'Taxon': {
+                # ensure majority works (genus level) and at species level
+                # LCA works on 3-way disagreement (no majority)
+                '370253': 'k__Bacteria; p__Firmicutes; c__Clostridia; '
+                          'o__Clostridiales; f__Ruminococcaceae; '
+                          'g__Faecalibacterium; s__not_prausnitzii',
+                # ensure that empty ranks are ignored by LCA majority
+                '2562097': 'k__Bacteria; p__Firmicutes; c__Bacilli; '
+                           'o__Bacillales; f__Bacillaceae; g__Bacillus',
+                # majority rules
+                '2562091': 'k__Bacteria; p__Actinobacteria; c__Acidimicrobiia;'
+                           ' o__Acidimicrobiales; f__Microthrixaceae; g__; '
+                           's__'}})
+        s4.index.name = 'Feature ID'
+        s4 = import_data('FeatureData[Taxonomy]', pd.DataFrame(s4))
+        result, = self.merge_taxa(
+            [self.s1, self.s2, self.s3, s4], 'majority', '')
+        exp = pd.DataFrame({'Taxon': {
+            '2562091': 'k__Bacteria;p__Actinobacteria;c__Acidimicrobiia;'
+                       'o__Acidimicrobiales;f__Microthrixaceae;g__;s__',
+            '2562097': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Bacillales;'
+                       'f__Bacillaceae;g__Bacillus;s__',
+            '370253': 'k__Bacteria;p__Firmicutes;c__Clostridia;'
+                      'o__Clostridiales;f__Ruminococcaceae;'
+                      'g__Faecalibacterium',
+            '4361279': 'k__Bacteria;p__Proteobacteria;'
+                       'c__Betaproteobacteria;o__Burkholderiales;'
+                       'f__Oxalobacteraceae;g__;s__',
+            '4369464': 'k__Bacteria',
+            'unique': 'k__Bacteria;p__;c__;o__;f__;g__;s__blah',
+            'unique1': 'k__Bacteria;p__;c__;o__;f__;g__;s__blah',
+            'unique2': 'k__Bacteria;p__;c__;o__;f__;g__;s__blah'}})
+        pdt.assert_frame_equal(
+            result.view(pd.DataFrame), exp, check_names=False)
