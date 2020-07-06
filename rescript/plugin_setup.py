@@ -218,9 +218,11 @@ plugin.methods.register_function(
                 'taxonomy dataframe. "majority" finds the LCA consensus while '
                 'giving preference to majority labels. "super" finds the LCA '
                 'consensus while giving preference to majority labels and '
-                'collapsing substrings into superstrings (e.g., '
-                '"g__Lactobacillus" would be collapsed with '
-                '"g__Lactobacillus_group_A").',
+                'collapsing substrings into superstrings. For example, when a '
+                'more specific taxonomy does not contradict a less specific '
+                'taxonomy, the more specific is chosen. That is, '
+                '"g__Faecalibacterium; s__prausnitzii", will be preferred '
+                'over "g__Faecalibacterium; s__"',
         'rank_handle_regex': rank_handle_description + rank_handle_extra_note,
         'new_rank_handle': (
             'Specifies the set of rank handles to prepend to taxonomic labels '
