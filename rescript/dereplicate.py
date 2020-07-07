@@ -13,7 +13,8 @@ import shutil
 
 from q2_types.feature_data import DNAFASTAFormat
 
-from ._utilities import run_command, _find_lca, _majority, _rank_handles
+from ._utilities import (run_command, _find_lca, _majority, _rank_handles,
+                         _find_super_lca)
 
 
 def dereplicate(sequences: DNAFASTAFormat,
@@ -139,7 +140,11 @@ def _dereplicate_taxa(taxa, raw_seqs, derep_seqs, uc, mode):
         if mode == 'lca':
             derep_taxa = derep_taxa.apply(lambda x: ';'.join(
                 _find_lca([y.split(';') for y in x]))).to_frame()
-            # find majority taxon within each cluster
+        # find majority superset LCA within each cluster
+        elif mode == 'super':
+            derep_taxa = derep_taxa.apply(lambda x: ';'.join(
+                _find_super_lca([y.split(';') for y in x]))).to_frame()
+        # find majority taxon within each cluster
         elif mode == 'majority':
             derep_taxa = derep_taxa.apply(lambda x: _majority(x)).to_frame()
         # LCA and majority do nothing with the seqs
