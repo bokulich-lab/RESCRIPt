@@ -272,7 +272,7 @@ plugin.methods.register_function(
     inputs={'sequences': FeatureData[Sequence],
             'taxa': FeatureData[Taxonomy]},
     parameters={
-        'mode': Str % Choices(['uniq', 'lca', 'majority']),
+        'mode': Str % Choices(['uniq', 'lca', 'majority', 'super']),
         'threads': VSEARCH_PARAMS['threads'],
         'perc_identity': VSEARCH_PARAMS['perc_identity'],
         'derep_prefix': Bool,
@@ -289,7 +289,13 @@ plugin.methods.register_function(
                 'ancestor among all taxa sharing a sequence. "majority" will '
                 'find the most common taxonomic label associated with that '
                 'sequence; note that in the event of a tie, "majority" will '
-                'pick the winner arbitrarily.',
+                'pick the winner arbitrarily. "super" finds the LCA '
+                'consensus while giving preference to majority labels and '
+                'collapsing substrings into superstrings. For example, when a '
+                'more specific taxonomy does not contradict a less specific '
+                'taxonomy, the more specific is chosen. That is, '
+                '"g__Faecalibacterium; s__prausnitzii", will be preferred '
+                'over "g__Faecalibacterium; s__"',
         'threads': VSEARCH_PARAM_DESCRIPTIONS['threads'],
         'perc_identity': VSEARCH_PARAM_DESCRIPTIONS['perc_identity'],
         'derep_prefix': 'Merge sequences with identical prefixes. If a '
