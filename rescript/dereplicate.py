@@ -141,7 +141,7 @@ def _dereplicate_taxa(taxa, raw_seqs, derep_seqs, uc, mode):
             derep_taxa = derep_taxa.apply(lambda x: ';'.join(
                 _find_lca([y.split(';') for y in x]))).to_frame()
         # find majority superset LCA within each cluster
-        if mode == 'super':
+        elif mode == 'super':
             derep_taxa = derep_taxa.apply(lambda x: ';'.join(
                 _find_super_lca([y.split(';') for y in x]))).to_frame()
         # find majority taxon within each cluster

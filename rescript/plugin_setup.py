@@ -85,6 +85,13 @@ labels_description = (
     'unnamed inputs are labeled numerically in sequential order. Extra '
     'labels are ignored.')
 
+super_lca_desc = (
+    '"super" finds the LCA consensus while giving preference to '
+    'majority labels and collapsing substrings into superstrings. '
+    'For example, when a more specific taxonomy does not '
+    'contradict a less specific taxonomy, the more specific is '
+    'chosen. That is, "g__Faecalibacterium; s__prausnitzii", '
+    'will be preferred over "g__Faecalibacterium; s__"')
 
 plugin.pipelines.register_function(
     function=evaluate_fit_classifier,
@@ -218,13 +225,7 @@ plugin.methods.register_function(
                 'consensus score). Note that "score" assumes that this score '
                 'is always contained as the second column in a feature '
                 'taxonomy dataframe. "majority" finds the LCA consensus while '
-                'giving preference to majority labels. "super" finds the LCA '
-                'consensus while giving preference to majority labels and '
-                'collapsing substrings into superstrings. For example, when a '
-                'more specific taxonomy does not contradict a less specific '
-                'taxonomy, the more specific is chosen. That is, '
-                '"g__Faecalibacterium; s__prausnitzii", will be preferred '
-                'over "g__Faecalibacterium; s__"',
+                'giving preference to majority labels. ' + super_lca_desc,
         'rank_handle_regex': rank_handle_description + rank_handle_extra_note,
         'new_rank_handle': (
             'Specifies the set of rank handles to prepend to taxonomic labels '
@@ -289,13 +290,7 @@ plugin.methods.register_function(
                 'ancestor among all taxa sharing a sequence. "majority" will '
                 'find the most common taxonomic label associated with that '
                 'sequence; note that in the event of a tie, "majority" will '
-                'pick the winner arbitrarily. "super" finds the LCA '
-                'consensus while giving preference to majority labels and '
-                'collapsing substrings into superstrings. For example, when a '
-                'more specific taxonomy does not contradict a less specific '
-                'taxonomy, the more specific is chosen. That is, '
-                '"g__Faecalibacterium; s__prausnitzii", will be preferred '
-                'over "g__Faecalibacterium; s__"',
+                'pick the winner arbitrarily. ' + super_lca_desc,
         'threads': VSEARCH_PARAM_DESCRIPTIONS['threads'],
         'perc_identity': VSEARCH_PARAM_DESCRIPTIONS['perc_identity'],
         'derep_prefix': 'Merge sequences with identical prefixes. If a '
