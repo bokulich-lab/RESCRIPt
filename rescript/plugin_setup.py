@@ -9,7 +9,7 @@
 import importlib
 
 from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int,
-                           Float, Visualization, Bool, TypeMap)
+                           Float, Visualization, Bool, TypeMap, Metadata)
 from .merge import merge_taxa
 from .dereplicate import dereplicate
 from .evaluate import evaluate_taxonomy, evaluate_seqs
@@ -36,6 +36,7 @@ from rescript.types._format import (
     SILVATaxidMapDirectoryFormat, RNAFASTAFormat, RNASequencesDirectoryFormat)
 from rescript.types._type import SILVATaxonomy, SILVATaxidMap, RNASequence
 from rescript.types.methods import reverse_transcribe
+from rescript.ncbi import get_ncbi_data, _default_ranks, _allowed_ranks
 
 
 citations = Citations.load('citations.bib', package='rescript')
@@ -679,6 +680,40 @@ plugin.methods.register_function(
         'dna_sequences': 'Reverse-transcribed DNA sequences.'},
     name='Reverse transcribe RNA to DNA sequences.',
     description=('Reverse transcribe RNA to DNA sequences.')
+)
+
+
+plugin.methods.register_function(
+    function=get_ncbi_data,
+    inputs={},
+    parameters={
+        'query': Str,
+        'accession_ids': Metadata,
+        'ranks': List[Str % Choices(_allowed_ranks)],
+        'rank_propagation': Bool,
+        'entrez_delay': Float},
+    outputs=[('sequences', FeatureData[Sequence]),
+             ('taxonomy', FeatureData[Taxonomy])],
+    input_descriptions={},
+    parameter_descriptions={
+        'query': 'Query on the NCBI Nucleotide database',
+        'accession_ids': 'List of accession ids for sequences in the NCBI '
+                         'Nucleotide database.',
+        'ranks': 'List of taxonomic ranks for building a taxonomy from the '
+                 "NCBI Taxonomy database. [default: '" +
+                 "', '".join(_default_ranks) + "']",
+        'rank_propagation': 'Propagate known ranks to missing ranks if true',
+        'entrez_delay': 'Delay between queries (in seconds) to stay inside '
+                        'the Entrez Guidelines'},
+    output_descriptions={
+        'sequences': 'Sequences from the NCBI Nucleotide database',
+        'taxonomy': 'Taxonomies from the NCBI Taxonomy database'},
+    name='Download, parse, and import NCBI sequences and taxonomies',
+    description=(
+        'Download and import sequences from the NCBI Nucleotide '
+        'database and download, parse, and import the corresponding '
+        'taxonomies from the NCBI Taxonomy database.'),
+    citations=[citations['ncbi2018database'], citations['benson2012genbank']]
 )
 
 

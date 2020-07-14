@@ -20,7 +20,7 @@ conda create -y -n rescript
 conda activate rescript
 conda install \
   -c conda-forge -c bioconda -c qiime2 -c defaults \
-  qiime2 q2cli q2templates q2-types q2-longitudinal q2-feature-classifier "pandas>=0.25.3"
+  qiime2 q2cli q2templates q2-types q2-longitudinal q2-feature-classifier "pandas>=0.25.3" xmltodict
 ```
 
 Finally install from source:
