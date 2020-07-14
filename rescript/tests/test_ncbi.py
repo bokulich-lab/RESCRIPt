@@ -52,21 +52,13 @@ class TestNCBI(TestPluginBase):
         df = DataFrame(index=['M59083.2', 'not_an_accession', 'AJ234039.1'])
         df.index.name = 'id'
         md = Metadata(df)
-
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            acc_seq, acc_tax = self.get_ncbi_data(accession_ids=md)
-            self.assertGreaterEqual(len(w), 2)
+            with self.assertRaises(RuntimeError):
+                acc_seq, acc_tax = self.get_ncbi_data(accession_ids=md)
+            self.assertGreaterEqual(len(w), 1)
             num_user_warnings = sum(_w.category is UserWarning for _w in w)
-            self.assertGreaterEqual(num_user_warnings, 2)
-
-        acc_seq = {s.metadata['id']: str(s) for s in acc_seq.view(DNAIterator)}
-        seqs = {s.metadata['id']: str(s) for s in self.seqs.view(DNAIterator)}
-        self.assertEqual(acc_seq, seqs)
-
-        acc_tax = acc_tax.view(DataFrame).to_dict()
-        taxa = self.taxa.view(DataFrame).to_dict()
-        self.assertEqual(acc_tax, taxa)
+            self.assertGreaterEqual(num_user_warnings, 1)
 
     def test_get_ncbi_data_rank_propagation_nonstandard_ranks(self):
         df = DataFrame(index=['M59083.2', 'AJ234039.1'])
@@ -95,3 +87,44 @@ class TestNCBI(TestPluginBase):
         que_tax = que_tax.view(DataFrame).to_dict()
         taxa = self.taxa.view(DataFrame).to_dict()
         self.assertEqual(que_tax, taxa)
+
+    def test_get_ncbi_data_query_mushroom_one(self):
+        seq, tax = self.get_ncbi_data(query='MT345279.1')
+
+        tax = tax.view(DataFrame)
+        self.assertEqual(
+            tax['Taxon']['MT345279.1'],
+            'k__Fungi; p__Basidiomycota; c__Agaricomycetes; o__Boletales; '
+            'f__Boletaceae; g__Boletus; s__edulis'
+        )
+
+    def test_get_ncbi_data_query_mushroom_two(self):
+        seq, tax = self.get_ncbi_data(
+            query='MT345279.1',
+            ranks=['domain', 'phylum', 'subphylum', 'superfamily', 'family',
+                   'subfamily', 'genus', 'species', 'subspecies']
+        )
+
+        tax = tax.view(DataFrame)
+        self.assertEqual(
+            tax['Taxon']['MT345279.1'],
+            'd__Plants and Fungi; p__Basidiomycota; ps__Agaricomycotina; '
+            'sf__Boletineae; f__Boletaceae; fs__Boletoideae; g__Boletus; '
+            's__edulis; ssb__edulis'
+        )
+
+    def test_get_ncbi_data_query_mushroom_three(self):
+        seq, tax = self.get_ncbi_data(
+            query='MT345279.1',
+            ranks=['domain', 'phylum', 'subphylum', 'superfamily', 'family',
+                   'subfamily', 'genus', 'species', 'subspecies'],
+            rank_propagation=False
+        )
+
+        tax = tax.view(DataFrame)
+        self.assertEqual(
+            tax['Taxon']['MT345279.1'],
+            'd__Plants and Fungi; p__Basidiomycota; ps__Agaricomycotina; '
+            'sf__; f__Boletaceae; fs__Boletoideae; g__Boletus; '
+            's__edulis; ssb__'
+        )

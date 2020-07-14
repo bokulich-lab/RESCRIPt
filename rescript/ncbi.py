@@ -20,14 +20,39 @@ from collections import OrderedDict
 _default_ranks = [
     'kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species'
 ]
-_allowed_ranks = [
-    'domain', 'superkingdom', 'kingdom', 'subkingdom', 'superphylum', 'phylum',
-    'subphylum', 'infraphylum', 'superclass', 'class', 'subclass',
-    'infraclass', 'cohort', 'superorder', 'order', 'suborder', 'infraorder',
-    'parvorder', 'superfamily', 'family', 'subfamily', 'tribe', 'subtribe',
-    'genus', 'subgenus', 'species group', 'species subgroup', 'species',
-    'subspecies', 'forma'
-]
+
+_allowed_ranks = OrderedDict([
+    ('domain', 'd__'),
+    ('superkingdom', 'sk__'),
+    ('kingdom', 'k__'),
+    ('subkingdom', 'ks__'),
+    ('superphylum', 'sp__'),
+    ('phylum', 'p__'),
+    ('subphylum', 'ps__'),
+    ('infraphylum', 'pi__'),
+    ('superclass', 'sc__'),
+    ('class', 'c__'),
+    ('subclass', 'cs__'),
+    ('infraclass', 'ci__'),
+    ('cohort', 'co__'),
+    ('superorder', 'so__'),
+    ('order', 'o__'),
+    ('suborder', 'os__'),
+    ('infraorder', 'oi__'),
+    ('parvorder', 'op__'),
+    ('superfamily', 'sf__'),
+    ('family', 'f__'),
+    ('subfamily', 'fs__'),
+    ('tribe', 't__'),
+    ('subtribe', 'ts__'),
+    ('genus', 'g__'),
+    ('subgenus', 'gs__'),
+    ('species group', 'ss__'),
+    ('species subgroup', 'sgs__'),
+    ('species', 's__'),
+    ('subspecies', 'ssb__'),
+    ('forma', 'f__')
+])
 
 
 def get_ncbi_data(
@@ -106,10 +131,29 @@ def _get(params, ids=None, entrez_delay=0.):
         if r.status_code != requests.codes.ok:
             content = parse(r.content)
             content = list(content.values()).pop()
-            warnings.warn('Download did not finish smoothly. The following '
-                          'error was received:\n' + content['ERROR'],
-                          UserWarning)
-            break
+            error = 'Download did not finish.\n'
+            if len(data) < expected_num_records:
+                error += ('\n' + str(expected_num_records) + ' records were '
+                          'expected but only ' + str(len(data)) +
+                          ' were received.\n')
+                if ids:
+                    ungotten = []
+                    for _id in ids:
+                        ungotten_id = True
+                        for datum in data:
+                            if _id in str(datum):
+                                ungotten_id = False
+                                break
+                        if ungotten_id:
+                            ungotten.append(_id)
+                    if len(ungotten) > 10:
+                        error += '\nThe first 10 missing records were '
+                    else:
+                        error += '\nThe missing records were '
+                    error += ', '.join(ungotten[:10]) + '.\n'
+            error += ('\nThe following error was '
+                      'received:\n' + content['ERROR'])
+            raise RuntimeError(error)
         chunk = parse(r.content)
         chunk = list(chunk.values()).pop()
         chunk = list(chunk.values()).pop()
@@ -204,7 +248,7 @@ def get_taxonomies(
     for acc, taxid in taxids.items():
         if taxid in taxa:
             taxonomy = taxa[taxid]
-            ts = '; '.join([r[0] + '__' + taxonomy[r] for r in ranks])
+            ts = '; '.join([_allowed_ranks[r] + taxonomy[r] for r in ranks])
             tax_strings[acc] = ts
         else:
             missing_accs.append(acc)

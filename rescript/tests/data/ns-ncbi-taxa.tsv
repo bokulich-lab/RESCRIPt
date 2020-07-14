@@ -1,3 +1,3 @@
 Feature ID	Taxon
-AJ234039.1	s__Bacteria; s__Actinobacteria; s__Actinobacteria; s__Actinomycetales; s__Actinomycetaceae; s__Actinomyces; s__bowdenii
-M59083.2	s__Bacteria; s__Firmicutes; s__Clostridia; s__Clostridiales; s__Lachnospiraceae; s__Acetitomaculum; s__ruminis
+AJ234039.1	ks__Bacteria; ps__Actinobacteria; cs__Actinobacteria; os__Actinomycetales; fs__Actinomycetaceae; gs__Actinomyces; ssb__bowdenii
+M59083.2	ks__Bacteria; ps__Firmicutes; cs__Clostridia; os__Clostridiales; fs__Lachnospiraceae; gs__Acetitomaculum; ssb__ruminis
