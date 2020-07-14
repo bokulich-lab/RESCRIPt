@@ -48,7 +48,7 @@ Problem? Suggestion? Technical errors and user support requests can be filed on 
 
 A proper software announcement is forthcoming. In the meantime, if you use RESCRIPt in your research, please cite the Zenodo record:
 
-Nicholas Bokulich, Mike Robeson, & Matthew Dillon. bokulich-lab/RESCRIPt. Zenodo. http://doi.org/10.5281/zenodo.3891931
+Nicholas Bokulich, Mike Robeson, Ben Kaehler, & Matthew Dillon. bokulich-lab/RESCRIPt. Zenodo. http://doi.org/10.5281/zenodo.3891931
 
 ## License
 
