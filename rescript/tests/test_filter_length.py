@@ -9,6 +9,7 @@
 
 import pandas as pd
 import qiime2
+import pandas.util.testing as pdt
 from qiime2.plugin.testing import TestPluginBase
 from q2_types.feature_data import DNAIterator
 from qiime2.plugins import rescript
@@ -129,8 +130,7 @@ class TestFilterByTaxonomy(TestPluginBase):
         missing_taxa = import_data(
             'FeatureData[Taxonomy]',
             self.taxa.view(pd.Series).drop(['C1', 'C2']))
-        with self.assertRaisesRegex(
-                ValueError, "sequences are missing.*C1, C2"):
+        with self.assertRaisesRegex(ValueError, "IDs are missing.*C1, C2"):
             rescript.actions.filter_seqs_length_by_taxon(
                 sequences=self.seqs, taxonomy=missing_taxa,
                 labels=['Bacteria'], min_lens=[1200])
@@ -299,3 +299,83 @@ class TestFilterGlobally(TestPluginBase):
         failed_ids = {seq.metadata['id'] for seq in failed.view(DNAIterator)}
         exp_failed_ids = set()
         self.assertEqual(failed_ids, exp_failed_ids)
+
+
+class TestFilterTaxa(TestPluginBase):
+    package = 'rescript.tests'
+
+    def setUp(self):
+        super().setUp()
+        self.taxa = import_data(
+            'FeatureData[Taxonomy]', self.get_data_path('derep-taxa.tsv'))
+
+    def test_filter_taxa_invalid(self):
+        with self.assertRaisesRegex(ValueError, "No filtering criteria"):
+            filtered, = rescript.actions.filter_taxa(self.taxa)
+
+    def test_filter_taxa_by_ids(self):
+        ids = pd.Index(['A1', 'B1'], name='Feature ID')
+        ids_to_keep = qiime2.Metadata(pd.DataFrame(index=ids))
+        exp_taxa = pd.Series(
+            ['k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; '
+             'f__Paenibacillaceae; g__Paenibacillus; s__chondroitinus',
+             'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales; '
+             'f__Lactobacillaceae; g__Lactobacillus; s__brevis'],
+            index=ids, name='Taxon')
+        filtered, = rescript.actions.filter_taxa(
+            self.taxa, ids_to_keep=ids_to_keep)
+        pdt.assert_series_equal(filtered.view(pd.Series), exp_taxa)
+
+    def test_filter_taxa_by_ids_invalid_ids(self):
+        ids = pd.DataFrame(
+            index=pd.Index(['A1', 'B1', 'D5'], name='Feature ID'))
+        ids_to_keep = qiime2.Metadata(ids)
+        with self.assertRaisesRegex(ValueError, "IDs are missing.*D5"):
+            filtered, = rescript.actions.filter_taxa(
+                self.taxa, ids_to_keep=ids_to_keep)
+
+    def test_filter_taxa_by_include(self):
+        ids = pd.Index(['C1', 'C2'], name='Feature ID')
+        exp_taxa = pd.Series(
+            ['k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales; '
+             'f__Lactobacillaceae; g__Pediococcus; s__damnosus'] * 2,
+            index=ids, name='Taxon')
+        filtered, = rescript.actions.filter_taxa(
+            self.taxa, include=['damnosus'])
+        pdt.assert_series_equal(filtered.view(pd.Series), exp_taxa)
+
+    # note I slip in a little trick here to test order of operations
+    # the include statement is run but effectively useless, as exclusion is
+    # subsequently done at the order level
+    def test_filter_taxa_by_exclude(self):
+        ids = pd.Index(['A1', 'A2'], name='Feature ID')
+        exp_taxa = pd.Series(
+            ['k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; '
+             'f__Paenibacillaceae; g__Paenibacillus; s__chondroitinus'] * 2,
+            index=ids, name='Taxon')
+        filtered, = rescript.actions.filter_taxa(
+            self.taxa, include=['brevis', 'Paenibacillus'],
+            exclude=['Lactobacillales', 'alvei'])
+        pdt.assert_series_equal(filtered.view(pd.Series), exp_taxa)
+
+    # but now look here: we exclude taxa, like above, but explicitly add them
+    # back with ids_to_keep
+    def test_filter_taxa_by_complex_query(self):
+        ids = pd.Index(['A1'], name='Feature ID')
+        ids_to_keep = qiime2.Metadata(pd.DataFrame(index=ids))
+        exp_taxa = pd.Series(
+            ['k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; '
+             'f__Paenibacillaceae; g__Paenibacillus; s__chondroitinus',
+             'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales; '
+             'f__Lactobacillaceae; g__Lactobacillus; s__brevis'],
+            index=ids.union({'B1'}), name='Taxon')
+        exp_taxa.index.name = 'Feature ID'
+        filtered, = rescript.actions.filter_taxa(
+            self.taxa, ids_to_keep=ids_to_keep, include=['brevis'],
+            exclude=['o__Bacillales'])
+        pdt.assert_series_equal(filtered.view(pd.Series), exp_taxa)
+
+    def test_filter_taxa_fail_all_filtered_out(self):
+        with self.assertRaisesRegex(ValueError, "All features were filtered"):
+            filtered, = rescript.actions.filter_taxa(
+                self.taxa, exclude=['Bacteria'])
