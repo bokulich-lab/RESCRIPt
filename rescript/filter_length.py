@@ -110,12 +110,10 @@ def filter_taxa(taxonomy: pd.Series, ids_to_keep: qiime2.Metadata = None,
         _index_is_superset(set(ids_to_keep), ids)
 
     if include:
-        include = '|'.join(include)
-        ids = ids[taxonomy.str.contains(include.replace(',', '|'))]
+        ids = ids[taxonomy.str.contains('|'.join(include))]
 
     if exclude:
-        exclude = '|'.join(exclude)
-        bad = taxonomy.index[taxonomy.str.contains(exclude.replace(',', '|'))]
+        bad = taxonomy.index[taxonomy.str.contains('|'.join(exclude))]
         ids = ids.difference(bad)
 
     # if not using exclude or include, we only want explicit ids_to_keep
