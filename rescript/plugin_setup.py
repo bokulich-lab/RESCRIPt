@@ -20,7 +20,8 @@ from .get_data import get_silva_data
 from .cross_validate import (evaluate_cross_validate,
                              evaluate_classifications,
                              evaluate_fit_classifier)
-from .filter_length import filter_seqs_length_by_taxon, filter_seqs_length
+from .filter_length import (filter_seqs_length_by_taxon, filter_seqs_length,
+                            filter_taxa)
 from .orient import orient_seqs
 from q2_types.feature_data import (FeatureData, Taxonomy, Sequence,
                                    AlignedSequence)
@@ -714,6 +715,32 @@ plugin.methods.register_function(
         'database and download, parse, and import the corresponding '
         'taxonomies from the NCBI Taxonomy database.'),
     citations=[citations['ncbi2018database'], citations['benson2012genbank']]
+)
+
+
+plugin.methods.register_function(
+    function=filter_taxa,
+    inputs={'taxonomy': FeatureData[Taxonomy]},
+    parameters={
+        'ids_to_keep': Metadata,
+        'include': List[Str],
+        'exclude': List[Str]},
+    outputs=[('filtered_taxonomy', FeatureData[Taxonomy])],
+    input_descriptions={'taxonomy': 'Taxonomy to filter.'},
+    parameter_descriptions={
+        'ids_to_keep': 'List of IDs to keep (as Metadata). Selecting these '
+                       'IDs occurs after inclusion and exclusion filtering.',
+        'include': 'List of search terms. Taxa containing one or more of '
+                   'these terms will be retained. Inclusion filtering occurs '
+                   'prior to exclusion filtering and selecting `ids_to_keep`.',
+        'exclude': 'List of search terms. Taxa containing one or more of '
+                   'these terms will be excluded. Exclusion filtering occurs '
+                   'after inclusion filtering and prior to selecting '
+                   '`ids_to_keep`.'},
+    output_descriptions={
+        'filtered_taxonomy': 'The filtered taxonomy.'},
+    name='Filter taxonomy by list of IDs or search criteria.',
+    description=('Filter taxonomy by list of IDs or search criteria.'),
 )
 
 

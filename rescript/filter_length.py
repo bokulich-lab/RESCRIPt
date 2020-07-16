@@ -6,6 +6,7 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
+import qiime2
 import pandas as pd
 from q2_types.feature_data import DNAFASTAFormat, DNAIterator
 
@@ -96,6 +97,45 @@ def filter_seqs_length_by_taxon(sequences: DNAFASTAFormat,
     return result, failures
 
 
+def filter_taxa(taxonomy: pd.Series, ids_to_keep: qiime2.Metadata = None,
+                include: str = None, exclude: str = None) -> pd.Series:
+    if include is exclude is ids_to_keep is None:
+        raise ValueError('No filtering criteria were applied!')
+
+    ids = taxonomy.index
+    print('Input features: ' + str(len(ids)))
+    # some initial validation
+    if ids_to_keep:
+        ids_to_keep = ids_to_keep.ids
+        _index_is_superset(set(ids_to_keep), ids)
+
+    if include:
+        ids = ids[taxonomy.str.contains('|'.join(include))]
+
+    if exclude:
+        bad = taxonomy.index[taxonomy.str.contains('|'.join(exclude))]
+        ids = ids.difference(bad)
+
+    # if not using exclude or include, we only want explicit ids_to_keep
+    if include is exclude is None:
+        ids = ids_to_keep
+    # otherwise add back ids_to_keep for explicit inclusion after filtering
+    elif ids_to_keep:
+        ids = ids.union(ids_to_keep)
+
+    filtered_ids = len(ids)
+    print('Output features: ' + str(filtered_ids))
+
+    if filtered_ids == 0:
+        raise ValueError("All features were filtered, resulting in an "
+                         "empty collection of taxonomies.")
+
+    taxonomy = taxonomy.reindex(ids)
+    taxonomy.index.name = 'Feature ID'
+
+    return taxonomy
+
+
 def _seq_length_within_range(sequence, taxahits, mins, maxs, global_min,
                              global_max):
     '''
@@ -155,5 +195,5 @@ def _index_is_superset(index1, index2):
     '''
     diff = index1.difference(index2)
     if len(diff) > 0:
-        raise ValueError('The following sequences are missing from '
+        raise ValueError('The following IDs are missing from '
                          'the taxonomy: ' + ', '.join(sorted(diff)))
