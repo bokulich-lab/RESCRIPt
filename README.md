@@ -37,7 +37,9 @@ qiime --help
 
 ## Using RESCRIPt
 
-A tutorial demonstrating some of the basic functionality of RESCRIPt, via the q2CLI (QIIME 2 command-line interface) is available [here](https://forum.qiime2.org/t/rescript-sequence-reference-database-management-tutorial/15494).
+These tutorials demonstrate some of the basic functionality of RESCRIPt, via the q2CLI (QIIME 2 command-line interface):
+[General Overview and working with SILVA data](https://forum.qiime2.org/t/rescript-sequence-reference-database-management-tutorial/15494)
+[Getting sequences and taxonomy with get-ncbi-data](https://forum.qiime2.org/t/using-rescript-to-compile-an-sequence-databases-and-taxonomy-classifiers-from-ncbi-genbank/15947)
 
 
 ## Getting Help
@@ -57,3 +59,5 @@ RESCRIPt is released under a BSD-3-Clause license. See LICENSE for more details.
 However, other resources accessible via RESCRIPt are released under different licenses, as detailed below.
 
 **The SILVA database** versions are released under different licenses. Refer to the [current SILVA release license information](https://www.arb-silva.de/silva-license-information/) for more details.
+
+**If using NCBI Genbank data** (e.g., with `get-ncbi-data`): See the [NCBI disclaimer and copyright notice](https://www.ncbi.nlm.nih.gov/home/about/policies/)
