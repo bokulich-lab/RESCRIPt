@@ -664,7 +664,13 @@ plugin.methods.register_function(
     description=(
         'Download and import sequences from the NCBI Nucleotide '
         'database and download, parse, and import the corresponding '
-        'taxonomies from the NCBI Taxonomy database.'),
+        'taxonomies from the NCBI Taxonomy database. Please be aware of the '
+        'NCBI Disclaimer and Copyright notice '
+        '(https://www.ncbi.nlm.nih.gov/home/about/policies/), particularly '
+        '"run retrieval scripts on weekends or between 9 pm and 5 am Eastern '
+        'Time weekdays for any series of more than 100 requests". The number '
+        'of requests could be as many as roughly '
+        'expected-number-of-sequences/5000.'),
     citations=[citations['ncbi2018database'], citations['benson2012genbank']]
 )
 

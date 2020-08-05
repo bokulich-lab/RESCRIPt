@@ -17,6 +17,8 @@ from skbio import DNA
 from qiime2 import Metadata
 from collections import OrderedDict
 
+_entrez_params = dict(tool='qiime2-rescript', email='b.kaehler@adfa.edu.au')
+
 _default_ranks = [
     'kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species'
 ]
@@ -94,7 +96,7 @@ def _get(params, ids=None, entrez_delay=0.):
         epost = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/epost.fcgi'
         data = {'db': params['db'], 'id': ','.join(ids)}
         time.sleep(entrez_delay)
-        r = requests.post(epost, data=data)
+        r = requests.post(epost, data=data, params=_entrez_params)
         r.raise_for_status()
         webenv = parse(r.content)['ePostResult']
         if 'ERROR' in webenv:
@@ -111,7 +113,7 @@ def _get(params, ids=None, entrez_delay=0.):
     else:
         esearch = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi'
         time.sleep(entrez_delay)
-        r = requests.get(esearch, params=params)
+        r = requests.get(esearch, params=dict(params, **_entrez_params))
         r.raise_for_status()
         webenv = parse(r.content)['eSearchResult']
         if 'WebEnv' not in webenv:
@@ -126,8 +128,9 @@ def _get(params, ids=None, entrez_delay=0.):
     data = []
     while len(data) < expected_num_records:
         params['retstart'] = len(data)
+        params['retmax'] = 5000
         time.sleep(entrez_delay)
-        r = requests.get(efetch, params=params)
+        r = requests.get(efetch, params=dict(params, **_entrez_params))
         if r.status_code != requests.codes.ok:
             content = parse(r.content)
             content = list(content.values()).pop()
@@ -161,6 +164,7 @@ def _get(params, ids=None, entrez_delay=0.):
             data.extend(chunk)
         else:
             data.append(chunk)
+        print('got', len(data), 'records')
     return data
 
 
@@ -192,54 +196,56 @@ def get_nuc_for_query(query, entrez_delay=0.):
 
 def get_taxonomies(
         taxids, ranks=None, rank_propagation=False, entrez_delay=0.):
-    # download the taxonomies
     params = dict(db='taxonomy')
-    ids = list(map(str, taxids.values()))
-    records = _get(params, ids, entrez_delay)
+    ids = list(set(map(str, taxids.values())))
+    chunk_size = max(10000, len(ids) // 90)  # so ncbi doesn't get grumpy
     taxa = {}
-
-    # parse the taxonomies
-    for rec in records:
-        if rank_propagation:
-            taxonomy = OrderedDict([('NCBI_Division', rec['Division'])])
-            taxonomy.update((r, None) for r in _allowed_ranks)
-            for rank in rec['LineageEx']['Taxon']:
-                if rank['Rank'] in _allowed_ranks:
-                    taxonomy[rank['Rank']] = rank['ScientificName']
-            species = rec['ScientificName']
-            if taxonomy['genus']:
-                if species.startswith(taxonomy['genus'] + ' '):
-                    species = species[len(taxonomy['genus']) + 1:]
-            elif ' ' in species:
-                genus, species = species.split(' ', 1)
-                taxonomy['genus'] = genus
-            taxonomy['species'] = species
-            last_label = taxonomy['NCBI_Division']
-            for rank in taxonomy:
-                if taxonomy[rank] is None:
-                    taxonomy[rank] = last_label
-                last_label = taxonomy[rank]
-        else:
-            taxonomy = {r: '' for r in ranks}
-            if 'domain' in ranks:
-                taxonomy['domain'] = rec['Division']
-            elif 'kingdom' in ranks:
-                taxonomy['kingdom'] = rec['Division']
-            for rank in rec['LineageEx']['Taxon']:
-                taxonomy[rank['Rank']] = rank['ScientificName']
-            species = rec['ScientificName']
-            # if we care about genus and genus is in the species label and
-            # we don't already know genus, split it out
-            if 'genus' in ranks:
+    for i in range(0, len(ids), chunk_size):  # chunking works better
+        # download and parse the taxonomies
+        for rec in _get(params, ids[i:i+chunk_size], entrez_delay):
+            if not isinstance(rec, dict):
+                print(rec)
+            if rank_propagation:
+                taxonomy = OrderedDict([('NCBI_Division', rec['Division'])])
+                taxonomy.update((r, None) for r in _allowed_ranks)
+                for rank in rec['LineageEx']['Taxon']:
+                    if rank['Rank'] in _allowed_ranks:
+                        taxonomy[rank['Rank']] = rank['ScientificName']
+                species = rec['ScientificName']
                 if taxonomy['genus']:
                     if species.startswith(taxonomy['genus'] + ' '):
                         species = species[len(taxonomy['genus']) + 1:]
                 elif ' ' in species:
                     genus, species = species.split(' ', 1)
                     taxonomy['genus'] = genus
-            taxonomy['species'] = species
+                taxonomy['species'] = species
+                last_label = taxonomy['NCBI_Division']
+                for rank in taxonomy:
+                    if taxonomy[rank] is None:
+                        taxonomy[rank] = last_label
+                    last_label = taxonomy[rank]
+            else:
+                taxonomy = {r: '' for r in ranks}
+                if 'domain' in ranks:
+                    taxonomy['domain'] = rec['Division']
+                elif 'kingdom' in ranks:
+                    taxonomy['kingdom'] = rec['Division']
+                for rank in rec['LineageEx']['Taxon']:
+                    taxonomy[rank['Rank']] = rank['ScientificName']
+                species = rec['ScientificName']
+                # if we care about genus and genus is in the species label and
+                # we don't already know genus, split it out
+                if 'genus' in ranks:
+                    if taxonomy['genus']:
+                        if species.startswith(taxonomy['genus'] + ' '):
+                            species = species[len(taxonomy['genus']) + 1:]
+                    elif ' ' in species:
+                        genus, species = species.split(' ', 1)
+                        taxonomy['genus'] = genus
+                taxonomy['species'] = species
 
-        taxa[rec['TaxId']] = taxonomy
+            taxa[rec['TaxId']] = taxonomy
+        print('got', len(taxa), 'taxa')
 
     # return the taxonomies
     missing_accs = []
