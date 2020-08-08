@@ -6,8 +6,6 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-import warnings
-
 import qiime2
 from qiime2 import Metadata
 from qiime2.plugin.testing import TestPluginBase
@@ -52,13 +50,12 @@ class TestNCBI(TestPluginBase):
         df = DataFrame(index=['M59083.2', 'not_an_accession', 'AJ234039.1'])
         df.index.name = 'id'
         md = Metadata(df)
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
+        with self.assertLogs(level='WARNING') as log:
             with self.assertRaises(RuntimeError):
                 acc_seq, acc_tax = self.get_ncbi_data(accession_ids=md)
-            self.assertGreaterEqual(len(w), 1)
-            num_user_warnings = sum(_w.category is UserWarning for _w in w)
-            self.assertGreaterEqual(num_user_warnings, 1)
+        self.assertEqual(log.output,
+                         ['WARNING:root:Some IDs have invalid value and were '
+                          'omitted. Maximum ID value 18446744073709551615'])
 
     def test_get_ncbi_data_rank_propagation_nonstandard_ranks(self):
         df = DataFrame(index=['M59083.2', 'AJ234039.1'])

@@ -7,9 +7,12 @@
 # ----------------------------------------------------------------------------
 
 import time
-import warnings
+import logging
 
 import requests
+from requests.exceptions import (
+    HTTPError, ChunkedEncodingError, ConnectionError)
+from xml.parsers.expat import ExpatError
 from xmltodict import parse
 from pandas import DataFrame
 from q2_types.feature_data import DNAIterator
@@ -60,12 +63,16 @@ _allowed_ranks = OrderedDict([
 def get_ncbi_data(
         query: str = None, accession_ids: Metadata = None,
         ranks: list = None, rank_propagation: bool = True,
-        entrez_delay: float = 0.334) -> (DNAIterator, DataFrame):
-    if query is None and accession_ids is None:
-        raise ValueError('Query or accession_ids must be supplied')
+        entrez_delay: float = 0.334, logging_level: str = None
+        ) -> (DNAIterator, DataFrame):
+    if logging_level is not None:
+        logging.basicConfig(level=logging_level)
+
     if ranks is None:
         ranks = _default_ranks
 
+    if query is None and accession_ids is None:
+        raise ValueError('Query or accession_ids must be supplied')
     if query:
         seqs, taxids = get_nuc_for_query(query, entrez_delay)
 
@@ -90,89 +97,143 @@ def get_ncbi_data(
     return seqs, taxa
 
 
-def _get(params, ids=None, entrez_delay=0.):
-    if ids:
-        assert len(ids) >= 1, "need at least one id"
-        epost = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/epost.fcgi'
-        data = {'db': params['db'], 'id': ','.join(ids)}
-        time.sleep(entrez_delay)
-        r = requests.post(epost, data=data, params=_entrez_params)
-        r.raise_for_status()
-        webenv = parse(r.content)['ePostResult']
-        if 'ERROR' in webenv:
-            if isinstance(webenv['ERROR'], list):
-                for error in webenv['ERROR']:
-                    warnings.warn(error, UserWarning)
-            else:
-                warnings.warn(webenv['ERROR'], UserWarning)
-        if 'WebEnv' not in webenv:
-            raise ValueError('No data for given ids')
-        params['WebEnv'] = webenv['WebEnv']
-        params['query_key'] = webenv['QueryKey']
-        expected_num_records = len(ids)
-    else:
-        esearch = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi'
-        time.sleep(entrez_delay)
-        r = requests.get(esearch, params=dict(params, **_entrez_params))
-        r.raise_for_status()
-        webenv = parse(r.content)['eSearchResult']
-        if 'WebEnv' not in webenv:
-            raise ValueError('No sequences for given query')
-        params = dict(
-            db='nuccore', rettype='fasta', retmode='xml',
-            WebEnv=webenv['WebEnv'], query_key=webenv['QueryKey']
-        )
-        expected_num_records = int(webenv['Count'])
-
-    efetch = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi'
-    data = []
-    while len(data) < expected_num_records:
-        params['retstart'] = len(data)
-        params['retmax'] = 5000
-        time.sleep(entrez_delay)
-        r = requests.get(efetch, params=dict(params, **_entrez_params))
-        if r.status_code != requests.codes.ok:
-            content = parse(r.content)
-            content = list(content.values()).pop()
-            error = 'Download did not finish.\n'
-            if len(data) < expected_num_records:
-                error += ('\n' + str(expected_num_records) + ' records were '
-                          'expected but only ' + str(len(data)) +
-                          ' were received.\n')
-                if ids:
-                    ungotten = []
-                    for _id in ids:
-                        ungotten_id = True
-                        for datum in data:
-                            if _id in str(datum):
-                                ungotten_id = False
-                                break
-                        if ungotten_id:
-                            ungotten.append(_id)
-                    if len(ungotten) > 10:
-                        error += '\nThe first 10 missing records were '
-                    else:
-                        error += '\nThe missing records were '
-                    error += ', '.join(ungotten[:10]) + '.\n'
-            error += ('\nThe following error was '
-                      'received:\n' + content['ERROR'])
-            raise RuntimeError(error)
-        chunk = parse(r.content)
-        chunk = list(chunk.values()).pop()
-        chunk = list(chunk.values()).pop()
-        if isinstance(chunk, list):
-            data.extend(chunk)
+def _epost(params, ids, entrez_delay=0.):
+    assert len(ids) >= 1, "need at least one id"
+    epost = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/epost.fcgi'
+    data = {'db': params['db'], 'id': ','.join(ids)}
+    time.sleep(entrez_delay)
+    r = requests.post(epost, data=data, params=_entrez_params, timeout=10)
+    r.raise_for_status()
+    webenv = parse(r.content)['ePostResult']
+    if 'ERROR' in webenv:
+        if isinstance(webenv['ERROR'], list):
+            for error in webenv['ERROR']:
+                logging.warning(error)
         else:
-            data.append(chunk)
-        print('got', len(data), 'records')
+            logging.warning(webenv['ERROR'])
+    if 'WebEnv' not in webenv:
+        raise ValueError('No data for given ids')
+    params = dict(params)
+    params['WebEnv'] = webenv['WebEnv']
+    params['query_key'] = webenv['QueryKey']
+    expected_num_records = len(ids)
+    return params, expected_num_records
+
+
+def _esearch(params, entrez_delay=0.):
+    esearch = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi'
+    time.sleep(entrez_delay)
+    r = requests.get(esearch, params=dict(params), timeout=20)
+    r.raise_for_status()
+    webenv = parse(r.content)['eSearchResult']
+    if 'WebEnv' not in webenv:
+        raise ValueError('No sequences for given query')
+    params = dict(
+        db='nuccore', rettype='fasta', retmode='xml',
+        WebEnv=webenv['WebEnv'], query_key=webenv['QueryKey'], **_entrez_params
+    )
+    expected_num_records = int(webenv['Count'])
+    return params, expected_num_records
+
+
+def _efetch_5000(params, entrez_delay=0.):
+    efetch = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi'
+    params['retmax'] = 5000
+    max_retries = 10
+    backoff_factor = 1
+    max_backoff = 120
+    status_forcelist = [429, 500, 502, 503, 504]
+    for retry in range(max_retries):
+        try:
+            time.sleep(entrez_delay)
+            r = requests.get(efetch, params=dict(params), timeout=5)
+            r.raise_for_status()
+            data = parse(r.content)
+            data = list(data.values()).pop()
+            data = list(data.values()).pop()
+            # check that we got everything
+            if isinstance(data, list):
+                for rec in data:
+                    if not isinstance(rec, dict):
+                        logging.info('bad record:\n' + str(rec))
+                        break
+                else:
+                    return data
+            elif isinstance(data, dict):
+                return [data]
+            else:
+                logging.info('bad record:\n' + str(data))
+        except HTTPError as e:
+            if e.response.code == 400:  # because of missing ids
+                return []
+            if e.response.code not in status_forcelist:
+                raise e
+            logging.info('Fetch failed with error code '
+                         + str(e.response.code) + '. Retrying.')
+        except ChunkedEncodingError as e:
+            logging.info('Fetch failed with ChunkedEncodingError:\n' + str(e) +
+                         '\nRetrying.')
+        except ConnectionError as e:
+            logging.info('Fetch failed with ConnectionError:\n' + str(e) +
+                         '\nRetrying.')
+        except ExpatError as e:
+            logging.info('Fetch failed with ExpatError:\n' + str(e) +
+                         '\nRetrying.')
+        time.sleep(min(backoff_factor*2**retry, max_backoff))
+    raise RuntimeError('Maximum retries (10) exceeded for download. '
+                       'Persistent trouble downloading from NCBI.')
+
+
+def _large_warning():
+    logging.warning(
+        'This query could result in more than 100 requests to NCBI. If you '
+        'are not running it on the weekend or between 9 pm and 5 am Eastern '
+        'Time weekdays, it may result in NCBI blocking your IP address. See '
+        'https://www.ncbi.nlm.nih.gov/home/about/policies/ for details.')
+
+
+def _ungotten_ids(ids, data):
+    ungotten = []
+    for _id in ids:
+        ungotten_id = True
+        for datum in data:
+            if _id in str(datum):
+                ungotten_id = False
+                break
+        if ungotten_id:
+            ungotten.append(_id)
+    if len(ungotten) > 10:
+        error = ('\nMore than 10 records were missing. The first 10 were ')
+    else:
+        error = '\nThe following records were missing '
+    error += ', '.join(ungotten[:10]) + '.\n'
+    return error
+
+
+def _get_for_ids(params, ids, entrez_delay=0.):
+    logging.info('Downloading ' + str(len(ids)) + ' records')
+    ids = list(ids)
+    data = []
+    for chunk in range(0, len(ids), 5000):
+        ids_chunk = ids[chunk:chunk+5000]
+        chunk_params, chunk_size = _epost(params, ids_chunk, entrez_delay)
+        data_chunk = _efetch_5000(chunk_params, entrez_delay)
+        if len(ids_chunk) != len(data_chunk):
+            error = "Download did not finish."
+            error += _ungotten_ids(ids_chunk, data_chunk)
+            raise RuntimeError(error)
+        data.extend(data_chunk)
+        logging.info('got ' + str(len(data)) + ' records')
     return data
 
 
 def get_nuc_for_accs(accs, entrez_delay=0.):
+    if len(accs) > 125000:
+        _large_warning()
     params = dict(
-        db='nuccore', rettype='fasta', retmode='xml'
+        db='nuccore', rettype='fasta', retmode='xml', **_entrez_params
     )
-    records = _get(params, accs, entrez_delay)
+    records = _get_for_ids(params, accs, entrez_delay)
     seqs = {}
     taxids = {}
     for rec in records:
@@ -183,9 +244,22 @@ def get_nuc_for_accs(accs, entrez_delay=0.):
 
 def get_nuc_for_query(query, entrez_delay=0.):
     params = dict(
-        db='nuccore', term=query, usehistory='y', retmax=0
+        db='nuccore', term=query, usehistory='y', retmax=0, **_entrez_params
     )
-    records = _get(params, entrez_delay=entrez_delay)
+    params, expected_num_records = _esearch(params, entrez_delay)
+    if expected_num_records > 166666:
+        _large_warning()
+    records = []
+    logging.info('Downloading ' + str(expected_num_records) + ' sequences')
+    for chunk in range(0, expected_num_records, 5000):
+        params['retstart'] = chunk
+        data_chunk = _efetch_5000(params, entrez_delay)
+        records.extend(data_chunk)
+        logging.info('got ' + str(len(records)) + ' sequences')
+    if len(records) != expected_num_records:
+        raise RuntimeError(
+            'Download did not finish. Expected ' + str(expected_num_records) +
+            ' sequences, but only got ' + str(len(records)))
     seqs = {}
     taxids = {}
     for rec in records:
@@ -196,56 +270,54 @@ def get_nuc_for_query(query, entrez_delay=0.):
 
 def get_taxonomies(
         taxids, ranks=None, rank_propagation=False, entrez_delay=0.):
-    params = dict(db='taxonomy')
-    ids = list(set(map(str, taxids.values())))
-    chunk_size = max(10000, len(ids) // 90)  # so ncbi doesn't get grumpy
+    # download the taxonomies
+    params = dict(db='taxonomy', **_entrez_params)
+    ids = set(map(str, taxids.values()))
+    records = _get_for_ids(params, ids, entrez_delay)
     taxa = {}
-    for i in range(0, len(ids), chunk_size):  # chunking works better
-        # download and parse the taxonomies
-        for rec in _get(params, ids[i:i+chunk_size], entrez_delay):
-            if not isinstance(rec, dict):
-                print(rec)
-            if rank_propagation:
-                taxonomy = OrderedDict([('NCBI_Division', rec['Division'])])
-                taxonomy.update((r, None) for r in _allowed_ranks)
-                for rank in rec['LineageEx']['Taxon']:
-                    if rank['Rank'] in _allowed_ranks:
-                        taxonomy[rank['Rank']] = rank['ScientificName']
-                species = rec['ScientificName']
+
+    # parse the taxonomies
+    for rec in records:
+        if rank_propagation:
+            taxonomy = OrderedDict([('NCBI_Division', rec['Division'])])
+            taxonomy.update((r, None) for r in _allowed_ranks)
+            for rank in rec['LineageEx']['Taxon']:
+                if rank['Rank'] in _allowed_ranks:
+                    taxonomy[rank['Rank']] = rank['ScientificName']
+            species = rec['ScientificName']
+            if taxonomy['genus']:
+                if species.startswith(taxonomy['genus'] + ' '):
+                    species = species[len(taxonomy['genus']) + 1:]
+            elif ' ' in species:
+                genus, species = species.split(' ', 1)
+                taxonomy['genus'] = genus
+            taxonomy['species'] = species
+            last_label = taxonomy['NCBI_Division']
+            for rank in taxonomy:
+                if taxonomy[rank] is None:
+                    taxonomy[rank] = last_label
+                last_label = taxonomy[rank]
+        else:
+            taxonomy = {r: '' for r in ranks}
+            if 'domain' in ranks:
+                taxonomy['domain'] = rec['Division']
+            elif 'kingdom' in ranks:
+                taxonomy['kingdom'] = rec['Division']
+            for rank in rec['LineageEx']['Taxon']:
+                taxonomy[rank['Rank']] = rank['ScientificName']
+            species = rec['ScientificName']
+            # if we care about genus and genus is in the species label and
+            # we don't already know genus, split it out
+            if 'genus' in ranks:
                 if taxonomy['genus']:
                     if species.startswith(taxonomy['genus'] + ' '):
                         species = species[len(taxonomy['genus']) + 1:]
                 elif ' ' in species:
                     genus, species = species.split(' ', 1)
                     taxonomy['genus'] = genus
-                taxonomy['species'] = species
-                last_label = taxonomy['NCBI_Division']
-                for rank in taxonomy:
-                    if taxonomy[rank] is None:
-                        taxonomy[rank] = last_label
-                    last_label = taxonomy[rank]
-            else:
-                taxonomy = {r: '' for r in ranks}
-                if 'domain' in ranks:
-                    taxonomy['domain'] = rec['Division']
-                elif 'kingdom' in ranks:
-                    taxonomy['kingdom'] = rec['Division']
-                for rank in rec['LineageEx']['Taxon']:
-                    taxonomy[rank['Rank']] = rank['ScientificName']
-                species = rec['ScientificName']
-                # if we care about genus and genus is in the species label and
-                # we don't already know genus, split it out
-                if 'genus' in ranks:
-                    if taxonomy['genus']:
-                        if species.startswith(taxonomy['genus'] + ' '):
-                            species = species[len(taxonomy['genus']) + 1:]
-                    elif ' ' in species:
-                        genus, species = species.split(' ', 1)
-                        taxonomy['genus'] = genus
-                taxonomy['species'] = species
+            taxonomy['species'] = species
 
-            taxa[rec['TaxId']] = taxonomy
-        print('got', len(taxa), 'taxa')
+        taxa[rec['TaxId']] = taxonomy
 
     # return the taxonomies
     missing_accs = []
@@ -260,7 +332,8 @@ def get_taxonomies(
             missing_accs.append(acc)
             missing_taxids.add(taxid)
     if missing_accs:
-        warnings.warn('The following accessions did not have valid taxids: ' +
-                      ', '.join(missing_accs) + '. The bad taxids were: ' +
-                      ', '.join(missing_taxids), UserWarning)
+        logging.warning(
+            'The following accessions did not have valid taxids: ' +
+            ', '.join(missing_accs) + '. The bad taxids were: ' +
+            ', '.join(missing_taxids), UserWarning)
     return tax_strings

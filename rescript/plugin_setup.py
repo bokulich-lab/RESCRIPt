@@ -643,7 +643,9 @@ plugin.methods.register_function(
         'accession_ids': Metadata,
         'ranks': List[Str % Choices(_allowed_ranks)],
         'rank_propagation': Bool,
-        'entrez_delay': Float},
+        'entrez_delay': Float,
+        'logging_level': Str % Choices([
+            'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'])},
     outputs=[('sequences', FeatureData[Sequence]),
              ('taxonomy', FeatureData[Taxonomy])],
     input_descriptions={},
@@ -656,7 +658,8 @@ plugin.methods.register_function(
                  "', '".join(_default_ranks) + "']",
         'rank_propagation': 'Propagate known ranks to missing ranks if true',
         'entrez_delay': 'Delay between queries (in seconds) to stay inside '
-                        'the Entrez Guidelines'},
+                        'the Entrez Guidelines',
+        'logging_level': 'Logging level, set to INFO for download progress'},
     output_descriptions={
         'sequences': 'Sequences from the NCBI Nucleotide database',
         'taxonomy': 'Taxonomies from the NCBI Taxonomy database'},
@@ -668,9 +671,9 @@ plugin.methods.register_function(
         'NCBI Disclaimer and Copyright notice '
         '(https://www.ncbi.nlm.nih.gov/home/about/policies/), particularly '
         '"run retrieval scripts on weekends or between 9 pm and 5 am Eastern '
-        'Time weekdays for any series of more than 100 requests". The number '
-        'of requests could be as many as roughly '
-        'expected-number-of-sequences/5000.'),
+        'Time weekdays for any series of more than 100 requests". As a rough '
+        'guide, if you are downloading more than 125,000 sequences, only run '
+        'this method at those times.'),
     citations=[citations['ncbi2018database'], citations['benson2012genbank']]
 )
 
