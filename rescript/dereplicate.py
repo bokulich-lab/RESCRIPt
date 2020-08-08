@@ -8,11 +8,13 @@
 
 import tempfile
 import pandas as pd
-import qiime2
+import skbio
+import shutil
 
 from q2_types.feature_data import DNAFASTAFormat
 
-from ._utilities import run_command, _find_lca, _majority, _rank_handles
+from ._utilities import (run_command, _find_lca, _majority, _rank_handles,
+                         _find_super_lca)
 
 
 def dereplicate(sequences: DNAFASTAFormat,
@@ -21,7 +23,7 @@ def dereplicate(sequences: DNAFASTAFormat,
                 perc_identity: float = 1.0,
                 threads: int = 1,
                 rank_handles: str = 'silva',
-                derep_prefix: bool = False) -> (pd.Series, pd.DataFrame):
+                derep_prefix: bool = False) -> (DNAFASTAFormat, pd.DataFrame):
     with tempfile.NamedTemporaryFile() as out_fasta:
         with tempfile.NamedTemporaryFile() as out_uc:
             # dereplicate sequences with vsearch
@@ -31,12 +33,11 @@ def dereplicate(sequences: DNAFASTAFormat,
             _vsearch_derep(str(sequences), out_fasta.name, out_uc.name,
                            str(threads), derep_prefix)
             out_uc.seek(0)
-
             uc = _parse_uc(out_uc.name)
 
             # optionally cluster seqs into OTUs
+            clustered_seqs = DNAFASTAFormat()
             if perc_identity < 1.0:
-                clustered_seqs = DNAFASTAFormat()
                 _vsearch_cluster_size(str(out_fasta.name), str(perc_identity),
                                       str(clustered_seqs), out_uc.name,
                                       str(threads))
@@ -47,18 +48,10 @@ def dereplicate(sequences: DNAFASTAFormat,
                 uc['centroidID'] = uc['centroidID'].apply(
                     lambda x: uc_clust.loc[x, 'centroidID'])
             else:
-                clustered_seqs = out_fasta.name
-
-            # open dereplicated fasta and uc file
-            derep_seqs = qiime2.Artifact.import_data(
-                'FeatureData[Sequence]', str(clustered_seqs)).view(pd.Series)
-
-            # transform raw sequences to series for easy parsing
-            sequences = qiime2.Artifact.import_data(
-                'FeatureData[Sequence]', sequences).view(pd.Series)
+                shutil.copyfile(out_fasta.name, str(clustered_seqs))
 
             derep_taxa, seqs_out = _dereplicate_taxa(
-                taxa, sequences, derep_seqs, uc, mode=mode)
+                taxa, sequences, clustered_seqs, uc, mode=mode)
 
             if rank_handles != 'disable':
                 rank_handles = _rank_handles[rank_handles]
@@ -117,6 +110,7 @@ def _parse_uc(uc_fp):
 def _dereplicate_taxa(taxa, raw_seqs, derep_seqs, uc, mode):
     # we only want to grab hits for uniq mode
     if mode == 'uniq':
+        centroid_ids = set(uc['centroidID'].unique())
         uc = uc[uc['seqID'] != uc['centroidID']]
     # map to taxonomy labels
     uc['Taxon'] = uc['seqID'].apply(lambda x: taxa.loc[x])
@@ -128,11 +122,16 @@ def _dereplicate_taxa(taxa, raw_seqs, derep_seqs, uc, mode):
         # drop duplicates that share centroid ID and taxa assignment
         rereplicates = rereplicates.drop_duplicates(['centroidID', 'Taxon'])
         # grab associated seqs
-        rereplicate_seqs = raw_seqs.loc[rereplicates['seqID']]
-        # concatenate with dereplicated seqs
-        seqs_out = pd.concat([derep_seqs, rereplicate_seqs])
+        rereplicate_ids = centroid_ids.union(rereplicates['seqID'].unique())
+        # write out seqs for centroids and daughters with unique taxonomies
+        seqs_out = DNAFASTAFormat()
+        with seqs_out.open() as out_fasta:
+            seq_fp = str(raw_seqs)
+            for s in skbio.read(seq_fp, format='fasta', constructor=skbio.DNA):
+                if s.metadata['id'] in rereplicate_ids:
+                    s.write(out_fasta)
         # generate list of dereplicated taxa
-        derep_taxa = taxa.reindex(seqs_out.index)
+        derep_taxa = taxa.reindex(rereplicate_ids)
 
     else:
         # group seqs that share centroids (this includes the centroid)
@@ -141,7 +140,11 @@ def _dereplicate_taxa(taxa, raw_seqs, derep_seqs, uc, mode):
         if mode == 'lca':
             derep_taxa = derep_taxa.apply(lambda x: ';'.join(
                 _find_lca([y.split(';') for y in x]))).to_frame()
-            # find majority taxon within each cluster
+        # find majority superset LCA within each cluster
+        elif mode == 'super':
+            derep_taxa = derep_taxa.apply(lambda x: ';'.join(
+                _find_super_lca([y.split(';') for y in x]))).to_frame()
+        # find majority taxon within each cluster
         elif mode == 'majority':
             derep_taxa = derep_taxa.apply(lambda x: _majority(x)).to_frame()
         # LCA and majority do nothing with the seqs

@@ -12,7 +12,7 @@ from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int,
                            Float, Visualization, Bool, TypeMap, Metadata)
 from .merge import merge_taxa
 from .dereplicate import dereplicate
-from .evaluate import evaluate_taxonomy
+from .evaluate import evaluate_taxonomy, evaluate_seqs
 from .screenseq import cull_seqs
 from .degap import degap_seqs
 from .parse_silva_taxonomy import parse_silva_taxonomy
@@ -20,7 +20,8 @@ from .get_data import get_silva_data
 from .cross_validate import (evaluate_cross_validate,
                              evaluate_classifications,
                              evaluate_fit_classifier)
-from .filter_length import filter_seqs_length_by_taxon, filter_seqs_length
+from .filter_length import (filter_seqs_length_by_taxon, filter_seqs_length,
+                            filter_taxa)
 from .orient import orient_seqs
 from q2_types.feature_data import (FeatureData, Taxonomy, Sequence,
                                    AlignedSequence)
@@ -80,12 +81,19 @@ rank_handle_extra_note = (
     'new_rank_handle parameter to replace the rank handles.')
 
 labels_description = (
-    'List of labels to use for labeling taxonomic results in the resulting '
-    'visualization. Taxonomies are labeled with labels in the order that each '
-    'is input. If there are fewer labels than taxonomies (or no labels), '
-    'unnamed taxonomies are labeled numerically in sequential order. Extra '
+    'List of labels to use for labeling evaluation results in the resulting '
+    'visualization. Inputs are labeled with labels in the order that each '
+    'is input. If there are fewer labels than inputs (or no labels), '
+    'unnamed inputs are labeled numerically in sequential order. Extra '
     'labels are ignored.')
 
+super_lca_desc = (
+    '"super" finds the LCA consensus while giving preference to '
+    'majority labels and collapsing substrings into superstrings. '
+    'For example, when a more specific taxonomy does not '
+    'contradict a less specific taxonomy, the more specific is '
+    'chosen. That is, "g__Faecalibacterium; s__prausnitzii", '
+    'will be preferred over "g__Faecalibacterium; s__"')
 
 plugin.pipelines.register_function(
     function=evaluate_fit_classifier,
@@ -142,7 +150,8 @@ plugin.pipelines.register_function(
         'n_jobs': _classify_parameters['n_jobs'],
         'confidence': _classify_parameters['confidence']},
     outputs=[('expected_taxonomy', FeatureData[Taxonomy]),
-             ('observed_taxonomy', FeatureData[Taxonomy])],
+             ('observed_taxonomy', FeatureData[Taxonomy]),
+             ('evaluation', Visualization)],
     input_descriptions={
         'sequences': 'Reference sequences to use for classifier '
                      'training/testing.',
@@ -159,7 +168,8 @@ plugin.pipelines.register_function(
                              'sequence. Taxonomic labels may be truncated due '
                              'to k-fold CV and stratification.',
         'observed_taxonomy': 'Observed taxonomic label for each input '
-                             'sequence, predicted by cross-validation.'},
+                             'sequence, predicted by cross-validation.',
+        'evaluation': 'Visualization of cross-validated accuracy results.'},
     name=('Evaluate DNA sequence reference database via cross-validated '
           'taxonomic classification.'),
     description=(
@@ -202,7 +212,7 @@ plugin.methods.register_function(
     function=merge_taxa,
     inputs={'data': List[FeatureData[Taxonomy]]},
     parameters={
-        'mode': Str % Choices(['len', 'lca', 'score']),
+        'mode': Str % Choices(['len', 'lca', 'score', 'super', 'majority']),
         'rank_handle_regex': Str,
         'new_rank_handle': Str % Choices(list(_rank_handles.keys()))},
     outputs=[('merged_data', FeatureData[Taxonomy])],
@@ -216,7 +226,8 @@ plugin.methods.register_function(
                 'taxonomy with the highest score (e.g., confidence or '
                 'consensus score). Note that "score" assumes that this score '
                 'is always contained as the second column in a feature '
-                'taxonomy dataframe.',
+                'taxonomy dataframe. "majority" finds the LCA consensus while '
+                'giving preference to majority labels. ' + super_lca_desc,
         'rank_handle_regex': rank_handle_description + rank_handle_extra_note,
         'new_rank_handle': (
             'Specifies the set of rank handles to prepend to taxonomic labels '
@@ -264,7 +275,7 @@ plugin.methods.register_function(
     inputs={'sequences': FeatureData[Sequence],
             'taxa': FeatureData[Taxonomy]},
     parameters={
-        'mode': Str % Choices(['uniq', 'lca', 'majority']),
+        'mode': Str % Choices(['uniq', 'lca', 'majority', 'super']),
         'threads': VSEARCH_PARAMS['threads'],
         'perc_identity': VSEARCH_PARAMS['perc_identity'],
         'derep_prefix': Bool,
@@ -281,7 +292,7 @@ plugin.methods.register_function(
                 'ancestor among all taxa sharing a sequence. "majority" will '
                 'find the most common taxonomic label associated with that '
                 'sequence; note that in the event of a tie, "majority" will '
-                'pick the winner arbitrarily.',
+                'pick the winner arbitrarily. ' + super_lca_desc,
         'threads': VSEARCH_PARAM_DESCRIPTIONS['threads'],
         'perc_identity': VSEARCH_PARAM_DESCRIPTIONS['perc_identity'],
         'derep_prefix': 'Merge sequences with identical prefixes. If a '
@@ -331,6 +342,44 @@ plugin.pipelines.register_function(
         VOLATILITY_PLOT_XAXIS_INTERPRETATION),
     citations=[citations['bokulich2017q2']]
 )
+
+
+palettes = ['Set1', 'Set2', 'Set3', 'Pastel1', 'Pastel2', 'Paired',
+            'Accent', 'Dark2', 'tab10', 'tab20', 'tab20b', 'tab20c',
+            'viridis', 'plasma', 'inferno', 'magma', 'cividis', 'terrain',
+            'rainbow', 'PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGy', 'RdBu',
+            'RdYlBu', 'RdYlGn', 'Spectral', 'coolwarm', 'bwr', 'seismic']
+
+plugin.visualizers.register_function(
+    function=evaluate_seqs,
+    inputs={'sequences': List[FeatureData[Sequence]]},
+    parameters={'labels': List[Str],
+                'kmer_lengths': List[Int % Range(1, None)],
+                'subsample_kmers': Float % Range(0, 1, inclusive_start=False,
+                                                 inclusive_end=True),
+                'palette': Str % Choices(palettes)},
+    input_descriptions={
+        'sequences': 'One or more sets of sequences to evaluate.'},
+    parameter_descriptions={
+        'labels': labels_description,
+        'kmer_lengths': 'Sequence kmer lengths to optionally use for entropy '
+                        'calculation. Warning: kmer entropy calculations may '
+                        'be time-consuming for large sequence sets.',
+        'subsample_kmers': 'Optionally subsample sequences prior to kmer '
+                           'entropy measurement. A fraction of the input '
+                           'sequences will be randomly subsampled at the '
+                           'specified value.',
+        'palette': 'Color palette to use for plotting evaluation results.'
+    },
+    name='Compute summary statistics on sequence artifact(s).',
+    description=(
+        'Compute summary statistics on sequence artifact(s) and visualize. '
+        'Summary statistics include the number of unique sequences, sequence '
+        'entropy, kmer entropy, and sequence length distributions. This '
+        'action is useful for both reference taxonomies and classification '
+        'results.')
+)
+
 
 plugin.methods.register_function(
     function=cull_seqs,
@@ -675,6 +724,32 @@ plugin.methods.register_function(
         'guide, if you are downloading more than 125,000 sequences, only run '
         'this method at those times.'),
     citations=[citations['ncbi2018database'], citations['benson2012genbank']]
+)
+
+
+plugin.methods.register_function(
+    function=filter_taxa,
+    inputs={'taxonomy': FeatureData[Taxonomy]},
+    parameters={
+        'ids_to_keep': Metadata,
+        'include': List[Str],
+        'exclude': List[Str]},
+    outputs=[('filtered_taxonomy', FeatureData[Taxonomy])],
+    input_descriptions={'taxonomy': 'Taxonomy to filter.'},
+    parameter_descriptions={
+        'ids_to_keep': 'List of IDs to keep (as Metadata). Selecting these '
+                       'IDs occurs after inclusion and exclusion filtering.',
+        'include': 'List of search terms. Taxa containing one or more of '
+                   'these terms will be retained. Inclusion filtering occurs '
+                   'prior to exclusion filtering and selecting `ids_to_keep`.',
+        'exclude': 'List of search terms. Taxa containing one or more of '
+                   'these terms will be excluded. Exclusion filtering occurs '
+                   'after inclusion filtering and prior to selecting '
+                   '`ids_to_keep`.'},
+    output_descriptions={
+        'filtered_taxonomy': 'The filtered taxonomy.'},
+    name='Filter taxonomy by list of IDs or search criteria.',
+    description=('Filter taxonomy by list of IDs or search criteria.'),
 )
 
 

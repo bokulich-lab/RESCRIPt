@@ -25,7 +25,7 @@ setup(
     package_data={
         'rescript.tests': ['data/*'],
         'rescript.types.tests': ['data/*'],
-        'rescript': ['citations.bib'],
+        'rescript': ['citations.bib', 'assets/*'],
     },
     zip_safe=False,
 )

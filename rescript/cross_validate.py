@@ -9,6 +9,7 @@
 import pandas as pd
 import qiime2 as q2
 import timeit
+from warnings import filterwarnings
 from sklearn.model_selection import StratifiedKFold
 from q2_feature_classifier._consensus_assignment import (
     _consensus_assignments, _get_default_unassignable_label)
@@ -25,8 +26,8 @@ def evaluate_fit_classifier(ctx,
                             n_jobs=1,
                             confidence=0.7):
     '''
-    taxonomy: pd.Series of taxonomy labels
-    sequences: pd.Series of sequences
+    taxonomy: FeatureData[Taxonomy] artifact of taxonomy labels
+    sequences: FeatureData[Sequence] artifact of sequences
     k: number of kfold cv splits to perform.
     '''
     # Validate inputs
@@ -66,11 +67,18 @@ def evaluate_cross_validate(ctx,
                             n_jobs=1,
                             confidence=0.7):
     '''
-    taxonomy: pd.Series of taxonomy labels
-    sequences: pd.Series of sequences
+    taxonomy: FeatureData[Taxonomy] artifact of taxonomy labels
+    sequences: FeatureData[Sequence] artifact of sequences
     k: number of kfold cv splits to perform.
     random_state: random state for cv.
     '''
+    # silence impertinent sklearn warnings:
+    # 1. classifier version (the classifier is not saved or reused)
+    # 2. class sizes (this is handled by taxonomic stratification/relabeling)
+    msg = 'The TaxonomicClassifier.*cannot be used with other versions'
+    filterwarnings("ignore", message=msg, category=UserWarning)
+    filterwarnings(
+        "ignore", message='The least populated class', category=UserWarning)
     # Validate inputs
     start = timeit.default_timer()
     taxa, seq_ids = _validate_cross_validate_inputs(taxonomy, sequences)
@@ -78,6 +86,7 @@ def evaluate_cross_validate(ctx,
 
     fit = ctx.get_action('feature_classifier', 'fit_classifier_naive_bayes')
     classify = ctx.get_action('feature_classifier', 'classify_sklearn')
+    _eval = ctx.get_action('rescript', 'evaluate_classifications')
 
     # split taxonomy into training and test sets
     train_test_data = _generate_train_test_data(taxa, k, random_state)
@@ -110,8 +119,10 @@ def evaluate_cross_validate(ctx,
         'FeatureData[Taxonomy]', pd.concat(expected_taxonomies))
     observed_taxonomies = q2.Artifact.import_data(
         'FeatureData[Taxonomy]', pd.concat(observed_taxonomies))
+    evaluation, = _eval([expected_taxonomies], [observed_taxonomies])
+    _check_time(new_time, 'Evaluation')
     _check_time(start, 'Total Runtime')
-    return expected_taxonomies, observed_taxonomies
+    return expected_taxonomies, observed_taxonomies, evaluation
 
 
 # NOTE: This is an experimental method. Use at your own risk. It appears to be
@@ -303,7 +314,7 @@ def _relabel_stratified_taxonomy(taxonomy, valid_taxonomies):
         if ';'.join(t[:level]) in valid_taxonomies:
             return ';'.join(t[:level]).strip()
     else:
-        raise RuntimeError('unknown kingdom in query set')
+        raise RuntimeError('unknown kingdom in query set: ' + taxonomy)
 
 
 def _calculate_per_rank_precision_recall(expected_taxonomies,

@@ -10,6 +10,7 @@ from itertools import zip_longest, takewhile
 from re import sub
 import subprocess
 import skbio
+from collections import Counter
 from q2_types.feature_data import DNAFASTAFormat
 
 
@@ -21,15 +22,29 @@ _rank_handles = {
 }
 
 
-def _find_lca_in_series(t1, t2):
-    '''
-    Find least common ancestor between two semicolon-delimited strings.
-    Input consists of two series containing index "Taxon".
-    Returns the LCA of those taxonomies as an iterator.
-    '''
-    t1 = t1['Taxon']
-    t2 = t2['Taxon']
-    return _find_lca([t1, t2])
+# modified version of _find_lca that prioritizes majority and supersets
+def _find_super_lca(taxa, collapse_substrings=True):
+    # collapse and count unique labels at each rank
+    # yields list of ('labels', counts) sorted by most to least abundant
+    taxa = [[t for t in r if t not in [None, '']] for r in zip_longest(*taxa)]
+    if collapse_substrings:
+        # find longest string in group of sub/superstrings, combine
+        taxa = [[max({i for i in x if t in i}, key=len) for t in x]
+                if x else '' for x in taxa]
+    taxa_comparison = [Counter(t).most_common() for t in taxa]
+    # return majority wherever a clear majority is found
+    # terminate when no majority is found, that's your LCA
+    # propagate empty ranks that maintain majority/consensus by inserting ''
+    # to preserve empty ranks in the original taxonomies (e.g., when using a
+    # rank handle unannotated levels will be removed, but as long as these pass
+    # muster we want to preserve those labels)
+    return [rank[0][0] if rank else '' for rank in takewhile(
+        lambda x: len(x) < 2 or x[0][1] > x[1][1], taxa_comparison)]
+
+
+# LCA majority is same as super majority without substring collapsing
+def _find_lca_majority(taxa):
+    return _find_super_lca(taxa, collapse_substrings=False)
 
 
 def _find_lca(taxa):
@@ -38,7 +53,7 @@ def _find_lca(taxa):
     # shortest is an inherent feature of LCA.
     # However if only one frame contains an assignment for feature x, we want
     # to just take that taxonomy. zip_longest will accomplish this while using
-    # the same machinery...
+    # the same machinery... same deal if we want to take a superset taxonomy
     if '' in taxa:
         zip_it = zip_longest
     else:

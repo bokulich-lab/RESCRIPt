@@ -40,7 +40,7 @@ class TestPipelines(TestPluginBase):
                 '; s__pseudocasei', '').sort_index()
 
     def test_evaluate_cross_validate_k3(self):
-        exp, obs = rescript.actions.evaluate_cross_validate(
+        exp, obs, _ = rescript.actions.evaluate_cross_validate(
             self.seqs, self.taxa, k=3)
         # exp_exp (expected ground truth taxonomies)
         # This will equal the original taxonomy except singleton labels will
