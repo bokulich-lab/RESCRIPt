@@ -106,12 +106,12 @@ def _robustify(http_request, *args):
         try:
             return http_request(*args)
         except HTTPError as e:
-            if e.response.code == 400:  # because of missing ids
+            if e.response.status_code == 400:  # because of missing ids
                 return []
-            if e.response.code not in status_forcelist:
+            if e.response.status_code not in status_forcelist:
                 raise e
-            logging.info('Request failed with error code '
-                         + str(e.response.code) + '. Retrying.')
+            logging.info('Request failed with code '
+                         + str(e.response.status_code) + '. Retrying.')
         except ChunkedEncodingError as e:
             logging.info('Request failed with ChunkedEncodingError:\n' +
                          str(e) + '\nRetrying.')
