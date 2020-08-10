@@ -321,7 +321,7 @@ def get_taxonomies(
 
     # return the taxonomies
     missing_accs = []
-    missing_taxids = {}
+    missing_taxids = set()
     tax_strings = {}
     for acc, taxid in taxids.items():
         if taxid in taxa:
