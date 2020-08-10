@@ -162,7 +162,7 @@ def _esearch(params, entrez_delay=0.):
 
     def request(params):
         time.sleep(entrez_delay)
-        r = requests.get(esearch, params=dict(params), timeout=5)
+        r = requests.get(esearch, params=params, timeout=5)
         r.raise_for_status()
         webenv = parse(r.content)['eSearchResult']
         if 'WebEnv' not in webenv:
@@ -183,7 +183,7 @@ def _efetch_5000(params, entrez_delay=0.):
 
     def request():
         time.sleep(entrez_delay)
-        r = requests.get(efetch, params=dict(params), timeout=5)
+        r = requests.get(efetch, params=params, timeout=5)
         r.raise_for_status()
         data = parse(r.content)
         data = list(data.values()).pop()
