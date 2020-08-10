@@ -97,91 +97,111 @@ def get_ncbi_data(
     return seqs, taxa
 
 
-def _epost(params, ids, entrez_delay=0.):
-    assert len(ids) >= 1, "need at least one id"
-    epost = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/epost.fcgi'
-    data = {'db': params['db'], 'id': ','.join(ids)}
-    time.sleep(entrez_delay)
-    r = requests.post(epost, data=data, params=_entrez_params, timeout=10)
-    r.raise_for_status()
-    webenv = parse(r.content)['ePostResult']
-    if 'ERROR' in webenv:
-        if isinstance(webenv['ERROR'], list):
-            for error in webenv['ERROR']:
-                logging.warning(error)
-        else:
-            logging.warning(webenv['ERROR'])
-    if 'WebEnv' not in webenv:
-        raise ValueError('No data for given ids')
-    params = dict(params)
-    params['WebEnv'] = webenv['WebEnv']
-    params['query_key'] = webenv['QueryKey']
-    expected_num_records = len(ids)
-    return params, expected_num_records
-
-
-def _esearch(params, entrez_delay=0.):
-    esearch = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi'
-    time.sleep(entrez_delay)
-    r = requests.get(esearch, params=dict(params), timeout=20)
-    r.raise_for_status()
-    webenv = parse(r.content)['eSearchResult']
-    if 'WebEnv' not in webenv:
-        raise ValueError('No sequences for given query')
-    params = dict(
-        db='nuccore', rettype='fasta', retmode='xml',
-        WebEnv=webenv['WebEnv'], query_key=webenv['QueryKey'], **_entrez_params
-    )
-    expected_num_records = int(webenv['Count'])
-    return params, expected_num_records
-
-
-def _efetch_5000(params, entrez_delay=0.):
-    efetch = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi'
-    params['retmax'] = 5000
+def _robustify(http_request, *args):
     max_retries = 10
     backoff_factor = 1
     max_backoff = 120
     status_forcelist = [429, 500, 502, 503, 504]
     for retry in range(max_retries):
         try:
-            time.sleep(entrez_delay)
-            r = requests.get(efetch, params=dict(params), timeout=5)
-            r.raise_for_status()
-            data = parse(r.content)
-            data = list(data.values()).pop()
-            data = list(data.values()).pop()
-            # check that we got everything
-            if isinstance(data, list):
-                for rec in data:
-                    if not isinstance(rec, dict):
-                        logging.info('bad record:\n' + str(rec))
-                        break
-                else:
-                    return data
-            elif isinstance(data, dict):
-                return [data]
-            else:
-                logging.info('bad record:\n' + str(data))
+            return http_request(*args)
         except HTTPError as e:
             if e.response.code == 400:  # because of missing ids
                 return []
             if e.response.code not in status_forcelist:
                 raise e
-            logging.info('Fetch failed with error code '
+            logging.info('Request failed with error code '
                          + str(e.response.code) + '. Retrying.')
         except ChunkedEncodingError as e:
-            logging.info('Fetch failed with ChunkedEncodingError:\n' + str(e) +
-                         '\nRetrying.')
+            logging.info('Request failed with ChunkedEncodingError:\n' +
+                         str(e) + '\nRetrying.')
         except ConnectionError as e:
-            logging.info('Fetch failed with ConnectionError:\n' + str(e) +
+            logging.info('Request failed with ConnectionError:\n' + str(e) +
                          '\nRetrying.')
         except ExpatError as e:
-            logging.info('Fetch failed with ExpatError:\n' + str(e) +
+            logging.info('Request failed with ExpatError:\n' + str(e) +
                          '\nRetrying.')
+        except RuntimeError as e:
+            if str(e) == 'bad request':
+                logging.info('Request failed. Retrying.')
+            else:
+                raise e
         time.sleep(min(backoff_factor*2**retry, max_backoff))
-    raise RuntimeError('Maximum retries (10) exceeded for download. '
+    raise RuntimeError('Maximum retries (10) exceeded for HTTP request. '
                        'Persistent trouble downloading from NCBI.')
+
+
+def _epost(params, ids, entrez_delay=0.):
+    assert len(ids) >= 1, "need at least one id"
+    epost = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/epost.fcgi'
+    data = {'db': params['db'], 'id': ','.join(ids)}
+
+    def request(params):
+        time.sleep(entrez_delay)
+        r = requests.post(
+            epost, data=data, params=_entrez_params, timeout=5)
+        r.raise_for_status()
+        webenv = parse(r.content)['ePostResult']
+        if 'ERROR' in webenv:
+            if isinstance(webenv['ERROR'], list):
+                for error in webenv['ERROR']:
+                    logging.warning(error)
+            else:
+                logging.warning(webenv['ERROR'])
+        if 'WebEnv' not in webenv:
+            raise ValueError('No data for given ids')
+        params = dict(params)
+        params['WebEnv'] = webenv['WebEnv']
+        params['query_key'] = webenv['QueryKey']
+        return params
+    return _robustify(request, params)
+
+
+def _esearch(params, entrez_delay=0.):
+    esearch = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi'
+
+    def request(params):
+        time.sleep(entrez_delay)
+        r = requests.get(esearch, params=dict(params), timeout=5)
+        r.raise_for_status()
+        webenv = parse(r.content)['eSearchResult']
+        if 'WebEnv' not in webenv:
+            raise ValueError('No sequences for given query')
+        params = dict(
+            db='nuccore', rettype='fasta', retmode='xml',
+            WebEnv=webenv['WebEnv'],
+            query_key=webenv['QueryKey'], **_entrez_params
+        )
+        expected_num_records = int(webenv['Count'])
+        return params, expected_num_records
+    return _robustify(request, params)
+
+
+def _efetch_5000(params, entrez_delay=0.):
+    efetch = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi'
+    params['retmax'] = 5000
+
+    def request():
+        time.sleep(entrez_delay)
+        r = requests.get(efetch, params=dict(params), timeout=5)
+        r.raise_for_status()
+        data = parse(r.content)
+        data = list(data.values()).pop()
+        data = list(data.values()).pop()
+        # check that we got everything
+        if isinstance(data, list):
+            for rec in data:
+                if not isinstance(rec, dict):
+                    logging.info('bad record:\n' + str(rec))
+                    raise RuntimeError('bad record')
+            else:
+                return data
+        elif isinstance(data, dict):
+            return [data]
+        else:
+            logging.info('bad record:\n' + str(data))
+            raise RuntimeError('bad record')
+    return _robustify(request)
 
 
 def _large_warning():
@@ -216,7 +236,7 @@ def _get_for_ids(params, ids, entrez_delay=0.):
     data = []
     for chunk in range(0, len(ids), 5000):
         ids_chunk = ids[chunk:chunk+5000]
-        chunk_params, chunk_size = _epost(params, ids_chunk, entrez_delay)
+        chunk_params = _epost(params, ids_chunk, entrez_delay)
         data_chunk = _efetch_5000(chunk_params, entrez_delay)
         if len(ids_chunk) != len(data_chunk):
             error = "Download did not finish."
