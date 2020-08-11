@@ -122,7 +122,7 @@ def _robustify(http_request, *args):
             logging.info('Request failed with ExpatError:\n' + str(e) +
                          '\nRetrying.')
         except RuntimeError as e:
-            if str(e) == 'bad request':
+            if str(e) == 'bad record':
                 logging.info('Request failed. Retrying.')
             else:
                 raise e
