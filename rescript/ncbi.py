@@ -101,19 +101,23 @@ def _robustify(http_request, *args):
     max_retries = 10
     backoff_factor = 1
     max_backoff = 120
-    status_forcelist = [429, 500, 502, 503, 504]
+    status_forcelist = [400, 429, 500, 502, 503, 504]
     exception_forcelist = (
         ChunkedEncodingError, ConnectionError, ExpatError, ReadTimeout)
     for retry in range(max_retries):
         try:
             return http_request(*args)
         except HTTPError as e:
-            if e.response.status_code == 400:  # because of missing ids
-                return []
-            if e.response.status_code not in status_forcelist:
+            if e.response.status_code == 400:
+                logging.debug(
+                    'Request failed with code 400. This could be because all '
+                    'of the requested accession ids are invalid, or it could '
+                    'just be a temporary failure. Retrying.')
+            elif e.response.status_code in status_forcelist:
+                logging.debug('Request failed with code '
+                              + str(e.response.status_code) + '. Retrying.')
+            else:
                 raise e
-            logging.debug('Request failed with code '
-                          + str(e.response.status_code) + '. Retrying.')
             last_exception = e
         except RuntimeError as e:
             if str(e) == 'bad record':
@@ -274,12 +278,10 @@ def get_nuc_for_query(query, entrez_delay=0.):
     for chunk in range(0, expected_num_records, 5000):
         params['retstart'] = chunk
         data_chunk = _efetch_5000(params, entrez_delay)
+        if len(data_chunk) != min(5000, expected_num_records-chunk):
+            raise RuntimeError('Download did not finish. Reason unknown.')
         records.extend(data_chunk)
         logging.info('got ' + str(len(records)) + ' sequences')
-    if len(records) != expected_num_records:
-        raise RuntimeError(
-            'Download did not finish. Expected ' + str(expected_num_records) +
-            ' sequences, but only got ' + str(len(records)))
     seqs = {}
     taxids = {}
     for rec in records:

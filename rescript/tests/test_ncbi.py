@@ -12,6 +12,7 @@ from unittest import mock
 from requests.exceptions import (
     HTTPError, ChunkedEncodingError, ConnectionError, ReadTimeout)
 from xml.parsers.expat import ExpatError
+from requests import Response
 import qiime2
 from qiime2 import Metadata
 from qiime2.plugin.testing import TestPluginBase
@@ -170,10 +171,11 @@ class TestNCBI(TestPluginBase):
     def test_ncbi_fails(self):
         exceptions = [ChunkedEncodingError(), ConnectionError(), ReadTimeout(),
                       ExpatError(), RuntimeError('bad record')]
-        http_exception = HTTPError()
-        http_exception.response = self.responses[0][1]
-        http_exception.response.status_code = 429
-        exceptions.append(http_exception)
+        for code in [400, 429]:
+            http_exception = HTTPError()
+            http_exception.response = Response()
+            http_exception.response.status_code = code
+            exceptions.append(http_exception)
 
         for exception in exceptions:
             self.ncbi_exception = exception
