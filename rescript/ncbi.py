@@ -112,18 +112,18 @@ def _robustify(http_request, *args):
                 return []
             if e.response.status_code not in status_forcelist:
                 raise e
-            logging.info('Request failed with code '
-                         + str(e.response.status_code) + '. Retrying.')
+            logging.debug('Request failed with code '
+                          + str(e.response.status_code) + '. Retrying.')
             last_exception = e
         except RuntimeError as e:
             if str(e) == 'bad record':
-                logging.info('Request failed. Retrying.')
+                logging.debug('Request failed. Retrying.')
             else:
                 raise e
             last_exception = e
         except exception_forcelist as e:
-            logging.info('Request failed with exception:\n' +
-                         str(e) + '\nRetrying.')
+            logging.debug('Request failed with exception:\n' +
+                          str(e) + '\nRetrying.')
             last_exception = e
         time.sleep(min(backoff_factor*2**retry, max_backoff))
     raise RuntimeError(
@@ -192,14 +192,14 @@ def _efetch_5000(params, entrez_delay=0.):
         if isinstance(data, list):
             for rec in data:
                 if not isinstance(rec, dict):
-                    logging.info('bad record:\n' + str(rec))
+                    logging.debug('bad record:\n' + str(rec))
                     raise RuntimeError('bad record')
             else:
                 return data
         elif isinstance(data, dict):
             return [data]
         else:
-            logging.info('bad record:\n' + str(data))
+            logging.debug('bad record:\n' + str(data))
             raise RuntimeError('bad record')
     return _robustify(request)
 
