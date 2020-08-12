@@ -11,7 +11,7 @@ import logging
 
 import requests
 from requests.exceptions import (
-    HTTPError, ChunkedEncodingError, ConnectionError)
+    HTTPError, ChunkedEncodingError, ConnectionError, ReadTimeout)
 from xml.parsers.expat import ExpatError
 from xmltodict import parse
 from pandas import DataFrame
@@ -102,6 +102,8 @@ def _robustify(http_request, *args):
     backoff_factor = 1
     max_backoff = 120
     status_forcelist = [429, 500, 502, 503, 504]
+    exception_forcelist = (
+        ChunkedEncodingError, ConnectionError, ExpatError, ReadTimeout)
     for retry in range(max_retries):
         try:
             return http_request(*args)
@@ -112,23 +114,21 @@ def _robustify(http_request, *args):
                 raise e
             logging.info('Request failed with code '
                          + str(e.response.status_code) + '. Retrying.')
-        except ChunkedEncodingError as e:
-            logging.info('Request failed with ChunkedEncodingError:\n' +
-                         str(e) + '\nRetrying.')
-        except ConnectionError as e:
-            logging.info('Request failed with ConnectionError:\n' + str(e) +
-                         '\nRetrying.')
-        except ExpatError as e:
-            logging.info('Request failed with ExpatError:\n' + str(e) +
-                         '\nRetrying.')
+            last_exception = e
         except RuntimeError as e:
             if str(e) == 'bad record':
                 logging.info('Request failed. Retrying.')
             else:
                 raise e
+            last_exception = e
+        except exception_forcelist as e:
+            logging.info('Request failed with exception:\n' +
+                         str(e) + '\nRetrying.')
+            last_exception = e
         time.sleep(min(backoff_factor*2**retry, max_backoff))
-    raise RuntimeError('Maximum retries (10) exceeded for HTTP request. '
-                       'Persistent trouble downloading from NCBI.')
+    raise RuntimeError(
+        'Maximum retries (10) exceeded for HTTP request. Persistent trouble '
+        'downloading from NCBI. Last exception was:\n' + str(last_exception))
 
 
 def _epost(params, ids, entrez_delay=0.):
