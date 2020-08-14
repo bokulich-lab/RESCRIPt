@@ -6,6 +6,7 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
+import sys
 import time
 import logging
 
@@ -19,6 +20,8 @@ from q2_types.feature_data import DNAIterator
 from skbio import DNA
 from qiime2 import Metadata
 from collections import OrderedDict
+from joblib import Parallel, delayed
+from joblib.externals.loky.backend.managers import LokyManager
 
 _entrez_params = dict(tool='qiime2-rescript', email='b.kaehler@adfa.edu.au')
 
@@ -63,32 +66,36 @@ _allowed_ranks = OrderedDict([
 def get_ncbi_data(
         query: str = None, accession_ids: Metadata = None,
         ranks: list = None, rank_propagation: bool = True,
-        entrez_delay: float = 0.334, logging_level: str = None
-        ) -> (DNAIterator, DataFrame):
-    if logging_level is not None:
-        logging.basicConfig(level=logging_level)
-
+        entrez_delay: float = 0.334, logging_level: str = None,
+        n_jobs: int = 1) -> (DNAIterator, DataFrame):
     if ranks is None:
         ranks = _default_ranks
+
+    manager = LokyManager()
+    manager.start()
+    request_lock = manager.Lock()
 
     if query is None and accession_ids is None:
         raise ValueError('Query or accession_ids must be supplied')
     if query:
-        seqs, taxids = get_nuc_for_query(query, entrez_delay)
+        seqs, taxids = get_nuc_for_query(
+            query, logging_level, n_jobs, request_lock, entrez_delay)
 
     if accession_ids:
         accs = accession_ids.get_ids()
         if query and seqs:
             accs = accs - seqs.keys()
             if accs:
-                acc_seqs, acc_taxids = get_nuc_for_accs(accs, entrez_delay)
+                acc_seqs, acc_taxids = get_nuc_for_accs(
+                    accs, logging_level, n_jobs, request_lock, entrez_delay)
                 seqs.update(acc_seqs)
                 taxids.update(acc_taxids)
         else:
-            seqs, taxids = get_nuc_for_accs(accs, entrez_delay)
+            seqs, taxids = get_nuc_for_accs(
+                accs, logging_level, n_jobs, request_lock, entrez_delay)
 
-    taxa = get_taxonomies(
-        taxids, ranks, rank_propagation, entrez_delay)
+    taxa = get_taxonomies(taxids, ranks, rank_propagation, logging_level,
+                          n_jobs, request_lock, entrez_delay)
 
     seqs = DNAIterator(DNA(v, metadata={'id': k}) for k, v in seqs.items())
     taxa = DataFrame(taxa, index=['Taxon']).T
@@ -97,7 +104,21 @@ def get_ncbi_data(
     return seqs, taxa
 
 
-def _robustify(http_request, *args):
+def _get_logger(logging_level):
+    logger = logging.getLogger('rescript')
+    if not hasattr(logger, 'isSetUp'):
+        formatter = logging.Formatter(
+            '%(levelname)s:%(asctime)-15s:%(processName)s:%(message)s')
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        if logging_level:
+            logger.setLevel(logging_level)
+        logger.isSetUp = True
+    return logger
+
+
+def _robustify(http_request, logger, *args):
     max_retries = 10
     backoff_factor = 1
     max_backoff = 120
@@ -109,25 +130,25 @@ def _robustify(http_request, *args):
             return http_request(*args)
         except HTTPError as e:
             if e.response.status_code == 400:
-                logging.debug(
+                logger.debug(
                     'Request failed with code 400. This could be because all '
                     'of the requested accession ids are invalid, or it could '
                     'just be a temporary failure. Retrying.')
             elif e.response.status_code in status_forcelist:
-                logging.debug('Request failed with code '
-                              + str(e.response.status_code) + '. Retrying.')
+                logger.debug('Request failed with code '
+                             + str(e.response.status_code) + '. Retrying.')
             else:
                 raise e
             last_exception = e
         except RuntimeError as e:
             if str(e) == 'bad record':
-                logging.debug('Request failed. Retrying.')
+                logger.debug('Request failed. Retrying.')
             else:
                 raise e
             last_exception = e
         except exception_forcelist as e:
-            logging.debug('Request failed with exception:\n' +
-                          str(e) + '\nRetrying.')
+            logger.debug('Request failed with exception:\n' +
+                         str(e) + '\nRetrying.')
             last_exception = e
         time.sleep(min(backoff_factor*2**retry, max_backoff))
     raise RuntimeError(
@@ -135,38 +156,46 @@ def _robustify(http_request, *args):
         'downloading from NCBI. Last exception was:\n' + str(last_exception))
 
 
-def _epost(params, ids, entrez_delay=0.):
+def _epost(params, ids, request_lock, logging_level, entrez_delay=0.):
     assert len(ids) >= 1, "need at least one id"
     epost = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/epost.fcgi'
     data = {'db': params['db'], 'id': ','.join(ids)}
+    logger = _get_logger(logging_level)
 
     def request(params):
+        request_lock.acquire()
+        logger.debug('request lock acquired')
         time.sleep(entrez_delay)
-        r = requests.post(
-            epost, data=data, params=_entrez_params, timeout=5)
+        try:
+            r = requests.post(
+                epost, data=data, params=_entrez_params, timeout=10,
+                stream=True)
+        finally:
+            request_lock.release()
+            logger.debug('request lock released')
         r.raise_for_status()
         webenv = parse(r.content)['ePostResult']
         if 'ERROR' in webenv:
             if isinstance(webenv['ERROR'], list):
                 for error in webenv['ERROR']:
-                    logging.warning(error)
+                    logger.warning(error)
             else:
-                logging.warning(webenv['ERROR'])
+                logger.warning(webenv['ERROR'])
         if 'WebEnv' not in webenv:
             raise ValueError('No data for given ids')
         params = dict(params)
         params['WebEnv'] = webenv['WebEnv']
         params['query_key'] = webenv['QueryKey']
         return params
-    return _robustify(request, params)
+    return _robustify(request, logger, params)
 
 
-def _esearch(params, entrez_delay=0.):
+def _esearch(params, logging_level, entrez_delay=0.):
     esearch = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi'
 
     def request(params):
         time.sleep(entrez_delay)
-        r = requests.get(esearch, params=params, timeout=5)
+        r = requests.get(esearch, params=params, timeout=10)
         r.raise_for_status()
         webenv = parse(r.content)['eSearchResult']
         if 'WebEnv' not in webenv:
@@ -178,16 +207,23 @@ def _esearch(params, entrez_delay=0.):
         )
         expected_num_records = int(webenv['Count'])
         return params, expected_num_records
-    return _robustify(request, params)
+    return _robustify(request, _get_logger(logging_level), params)
 
 
-def _efetch_5000(params, entrez_delay=0.):
+def _efetch_5000(params, request_lock, logging_level, entrez_delay=0.):
     efetch = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi'
     params['retmax'] = 5000
+    logger = _get_logger(logging_level)
 
     def request():
+        request_lock.acquire()
+        logger.debug('request lock acquired')
         time.sleep(entrez_delay)
-        r = requests.get(efetch, params=params, timeout=5)
+        try:
+            r = requests.get(efetch, params=params, timeout=10, stream=True)
+        finally:
+            request_lock.release()
+            logger.debug('request lock released')
         r.raise_for_status()
         data = parse(r.content)
         data = list(data.values()).pop()
@@ -196,20 +232,20 @@ def _efetch_5000(params, entrez_delay=0.):
         if isinstance(data, list):
             for rec in data:
                 if not isinstance(rec, dict):
-                    logging.debug('bad record:\n' + str(rec))
+                    logger.debug('bad record:\n' + str(rec))
                     raise RuntimeError('bad record')
             else:
                 return data
         elif isinstance(data, dict):
             return [data]
         else:
-            logging.debug('bad record:\n' + str(data))
+            logger.debug('bad record:\n' + str(data))
             raise RuntimeError('bad record')
-    return _robustify(request)
+    return _robustify(request, logger)
 
 
-def _large_warning():
-    logging.warning(
+def _large_warning(logging_level):
+    _get_logger(logging_level).warning(
         'This query could result in more than 100 requests to NCBI. If you '
         'are not running it on the weekend or between 9 pm and 5 am Eastern '
         'Time weekdays, it may result in NCBI blocking your IP address. See '
@@ -234,30 +270,45 @@ def _ungotten_ids(ids, data):
     return error
 
 
-def _get_for_ids(params, ids, entrez_delay=0.):
-    logging.info('Downloading ' + str(len(ids)) + ' records')
+def _get_id_chunk(
+        ids_chunk, params, request_lock, logging_level, entrez_delay):
+    chunk_params = _epost(
+        params, ids_chunk, request_lock, logging_level, entrez_delay)
+    data_chunk = _efetch_5000(
+        chunk_params, request_lock, logging_level, entrez_delay)
+    if len(ids_chunk) != len(data_chunk):
+        error = "Download did not finish."
+        error += _ungotten_ids(ids_chunk, data_chunk)
+        raise RuntimeError(error)
+    logger = _get_logger(logging_level)
+    logger.info('got ' + str(len(data_chunk)) + ' records')
+    return data_chunk
+
+
+def _get_for_ids(params, ids, logging_level, n_jobs, request_lock,
+                 entrez_delay=0.):
+    logger = _get_logger(logging_level)
+    logger.info('Downloading ' + str(len(ids)) + ' records')
     ids = list(ids)
-    data = []
-    for chunk in range(0, len(ids), 5000):
-        ids_chunk = ids[chunk:chunk+5000]
-        chunk_params = _epost(params, ids_chunk, entrez_delay)
-        data_chunk = _efetch_5000(chunk_params, entrez_delay)
-        if len(ids_chunk) != len(data_chunk):
-            error = "Download did not finish."
-            error += _ungotten_ids(ids_chunk, data_chunk)
-            raise RuntimeError(error)
-        data.extend(data_chunk)
-        logging.info('got ' + str(len(data)) + ' records')
+    parallel = Parallel(n_jobs=n_jobs, backend='loky')
+    chunky = parallel(delayed(_get_id_chunk)(ids[chunk:chunk+5000], params,
+                                             request_lock, logging_level,
+                                             entrez_delay)
+                      for chunk in range(0, len(ids), 5000))
+    data = [chunk for chunks in chunky for chunk in chunks]
+
     return data
 
 
-def get_nuc_for_accs(accs, entrez_delay=0.):
+def get_nuc_for_accs(accs, logging_level, n_jobs, request_lock,
+                     entrez_delay=0.):
     if len(accs) > 125000:
-        _large_warning()
+        _large_warning(logging_level)
     params = dict(
         db='nuccore', rettype='fasta', retmode='xml', **_entrez_params
     )
-    records = _get_for_ids(params, accs, entrez_delay)
+    records = _get_for_ids(params, accs, logging_level, n_jobs, request_lock,
+                           entrez_delay)
     seqs = {}
     taxids = {}
     for rec in records:
@@ -266,22 +317,39 @@ def get_nuc_for_accs(accs, entrez_delay=0.):
     return seqs, taxids
 
 
-def get_nuc_for_query(query, entrez_delay=0.):
+def _get_query_chunk(
+        chunk, params, entrez_delay, expected_num_records, request_lock,
+        logging_level):
+    params['retstart'] = chunk
+    data_chunk = _efetch_5000(params, request_lock, logging_level,
+                              entrez_delay)
+    if len(data_chunk) != min(5000, expected_num_records-chunk):
+        raise RuntimeError('Download did not finish. Reason unknown.')
+    logger = _get_logger(logging_level)
+    logger.info('got ' + str(len(data_chunk)) + ' sequences')
+    return data_chunk
+
+
+def get_nuc_for_query(
+        query, logging_level, n_jobs, request_lock, entrez_delay=0.):
     params = dict(
         db='nuccore', term=query, usehistory='y', retmax=0, **_entrez_params
     )
-    params, expected_num_records = _esearch(params, entrez_delay)
+    params, expected_num_records = _esearch(params, logging_level,
+                                            entrez_delay)
     if expected_num_records > 166666:
-        _large_warning()
+        _large_warning(logging_level)
     records = []
-    logging.info('Downloading ' + str(expected_num_records) + ' sequences')
-    for chunk in range(0, expected_num_records, 5000):
-        params['retstart'] = chunk
-        data_chunk = _efetch_5000(params, entrez_delay)
-        if len(data_chunk) != min(5000, expected_num_records-chunk):
-            raise RuntimeError('Download did not finish. Reason unknown.')
-        records.extend(data_chunk)
-        logging.info('got ' + str(len(records)) + ' sequences')
+    logger = _get_logger(logging_level)
+    logger.info('Downloading ' + str(expected_num_records) + ' sequences')
+
+    parallel = Parallel(n_jobs=n_jobs, backend='loky')
+    chunky = parallel(delayed(_get_query_chunk)(chunk, params, entrez_delay,
+                                                expected_num_records,
+                                                request_lock, logging_level)
+                      for chunk in range(0, expected_num_records, 5000))
+    records = [chunk for chunks in chunky for chunk in chunks]
+
     seqs = {}
     taxids = {}
     for rec in records:
@@ -291,11 +359,13 @@ def get_nuc_for_query(query, entrez_delay=0.):
 
 
 def get_taxonomies(
-        taxids, ranks=None, rank_propagation=False, entrez_delay=0.):
+        taxids, ranks, rank_propagation, logging_level, n_jobs, request_lock,
+        entrez_delay=0.):
     # download the taxonomies
     params = dict(db='taxonomy', **_entrez_params)
     ids = set(map(str, taxids.values()))
-    records = _get_for_ids(params, ids, entrez_delay)
+    records = _get_for_ids(params, ids, logging_level, n_jobs, request_lock,
+                           entrez_delay)
     taxa = {}
 
     # parse the taxonomies
@@ -354,8 +424,9 @@ def get_taxonomies(
             missing_accs.append(acc)
             missing_taxids.add(taxid)
     if missing_accs:
-        logging.warning(
+        logger = _get_logger(logging_level)
+        logger.warning(
             'The following accessions did not have valid taxids: ' +
             ', '.join(missing_accs) + '. The bad taxids were: ' +
-            ', '.join(missing_taxids), UserWarning)
+            ', '.join(missing_taxids))
     return tax_strings

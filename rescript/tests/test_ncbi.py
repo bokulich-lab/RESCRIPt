@@ -7,6 +7,7 @@
 # ----------------------------------------------------------------------------
 
 import pickle
+from os.path import exists
 from unittest import mock
 
 from requests.exceptions import (
@@ -27,20 +28,46 @@ import_data = qiime2.Artifact.import_data
 class TestNCBI(TestPluginBase):
     package = 'rescript.tests'
 
-    def mock_get(self, *args, **kwargs):
+    def record_get(self, *args, **kwargs):
+        if exists('ncbi-responses.pkl'):
+            with open('ncbi-responses.pkl', 'rb') as fh:
+                responses = pickle.load(fh)
+        else:
+            responses = []
+        response = self.actual_requests.get(*args, **kwargs)
+        responses.append([['get', args, kwargs], response])
+        with open('ncbi-responses.pkl', 'wb') as fh:
+            pickle.dump(responses, fh)
+        return response
+
+    def record_post(self, *args, **kwargs):
+        if exists('ncbi-responses.pkl'):
+            with open('ncbi-responses.pkl', 'rb') as fh:
+                responses = pickle.load(fh)
+        else:
+            responses = []
+        response = self.actual_requests.post(*args, **kwargs)
+        responses.append([['post', args, kwargs], response])
+        with open('ncbi-responses.pkl', 'wb') as fh:
+            pickle.dump(responses, fh)
+        return response
+
+    def mock_get(self, *args, stream=False, **kwargs):  # ignore stream
         if self.ncbi_exception:
             exception = self.ncbi_exception
             self.ncbi_exception = None
             raise exception
+        # return self.record_get(*args, **kwargs)  # uncomment to record
         for response in self.responses:
             if response[0] == ['get', args, kwargs]:
                 return response[1]
 
-    def mock_post(self, *args, **kwargs):
+    def mock_post(self, *args, stream=False, **kwargs):  # ignore stream
         if self.ncbi_exception:
             exception = self.ncbi_exception
             self.ncbi_exception = None
             raise exception
+        # return self.record_post(*args, **kwargs)  # uncomment to record
         for response in self.responses:
             if response[0][:2] == ['post', args]:
                 req_ids = set(kwargs['data']['id'].split(','))
@@ -96,8 +123,9 @@ class TestNCBI(TestPluginBase):
             with self.assertRaises(RuntimeError):
                 acc_seq, acc_tax = self.get_ncbi_data(accession_ids=md)
         self.assertEqual(log.output,
-                         ['WARNING:root:Some IDs have invalid value and were '
-                          'omitted. Maximum ID value 18446744073709551615'])
+                         ['WARNING:rescript:Some IDs have invalid value and '
+                          'were omitted. Maximum ID value '
+                          '18446744073709551615'])
 
     def test_get_ncbi_data_rank_propagation_nonstandard_ranks(self):
         df = DataFrame(index=['M59083.2', 'AJ234039.1'])

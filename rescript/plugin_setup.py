@@ -694,7 +694,8 @@ plugin.methods.register_function(
         'rank_propagation': Bool,
         'entrez_delay': Float,
         'logging_level': Str % Choices([
-            'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'])},
+            'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']),
+        'n_jobs': Int},
     outputs=[('sequences', FeatureData[Sequence]),
              ('taxonomy', FeatureData[Taxonomy])],
     input_descriptions={},
@@ -708,7 +709,9 @@ plugin.methods.register_function(
         'rank_propagation': 'Propagate known ranks to missing ranks if true',
         'entrez_delay': 'Delay between queries (in seconds) to stay inside '
                         'the Entrez Guidelines',
-        'logging_level': 'Logging level, set to INFO for download progress'},
+        'logging_level': 'Logging level, set to INFO for download progress',
+        'n_jobs': 'Number of concurrent download connections. More is faster '
+                  'until you run out of bandwidth.'},
     output_descriptions={
         'sequences': 'Sequences from the NCBI Nucleotide database',
         'taxonomy': 'Taxonomies from the NCBI Taxonomy database'},
