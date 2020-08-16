@@ -216,3 +216,23 @@ class TestNCBI(TestPluginBase):
                     'o__Boletales; f__Boletaceae; g__Boletus; s__edulis'
                 )
             self.assertTrue('Retrying' in log.output[0])
+
+    def test_get_ncbi_dirty_tricks(self):
+        with self.assertLogs(level='WARNING') as log:
+            seq, tax = self.get_ncbi_data(
+                query='M27461.1 OR DI201845.1 OR JQ430715.1')
+        for warning in log.output:
+            if '81077' in warning and 'bad taxids' not in warning:
+                self.assertTrue('TypeError' in warning)
+            elif '12908' in warning and 'bad taxids' not in warning:
+                self.assertTrue('KeyError' in warning)
+            else:
+                self.assertTrue('DI201845.1' in warning)
+                self.assertTrue('M27461.1' in warning)
+
+        tax = tax.view(DataFrame)
+        self.assertEqual(
+            tax['Taxon']['JQ430715.1'],
+            'k__Metazoa; p__Arthropoda; c__Insecta; o__Lepidoptera; '
+            'f__Nymphalidae; g__Junonia; s__evarete nigrosuffusa'
+        )

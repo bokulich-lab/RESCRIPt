@@ -9,6 +9,7 @@
 import sys
 import time
 import logging
+import json
 
 import requests
 from requests.exceptions import (
@@ -147,13 +148,14 @@ def _robustify(http_request, logger, *args):
                 raise e
             last_exception = e
         except exception_forcelist as e:
-            logger.debug('Request failed with exception:\n' +
-                         str(e) + '\nRetrying.')
+            logger.debug('Request failed with exception\n' +
+                         type(e).__name__ + ': ' + str(e) + '\nRetrying.')
             last_exception = e
         time.sleep(min(backoff_factor*2**retry, max_backoff))
     raise RuntimeError(
         'Maximum retries (10) exceeded for HTTP request. Persistent trouble '
-        'downloading from NCBI. Last exception was:\n' + str(last_exception))
+        'downloading from NCBI. Last exception was\n' +
+        type(last_exception).__name__ + ': ' + str(last_exception))
 
 
 def _epost(params, ids, request_lock, logging_level, entrez_delay=0.):
@@ -253,47 +255,51 @@ def _large_warning(logging_level):
 
 
 def _ungotten_ids(ids, data):
-    ungotten = []
-    for _id in ids:
-        ungotten_id = True
-        for datum in data:
-            if _id in str(datum):
-                ungotten_id = False
+    error = ("Partial download. Expected " + str(len(ids)) +
+             ' records, but got ' + str(len(data)) + '.')
+    id_keys = ['TSeq_accver', 'TaxId']
+    gotten = set()
+    for record in data:
+        for id_key in id_keys:
+            if id_key in record:
+                gotten.add(record[id_key])
                 break
-        if ungotten_id:
-            ungotten.append(_id)
+    ungotten = list(set(ids) - gotten)
     if len(ungotten) > 10:
-        error = ('\nMore than 10 records were missing. The first 10 were ')
+        error += ('\nMore than 10 ids were missing. Ten were: ')
     else:
-        error = '\nThe following records were missing '
+        error += '\nThe following ids were missing: '
     error += ', '.join(ungotten[:10]) + '.\n'
     return error
 
 
 def _get_id_chunk(
-        ids_chunk, params, request_lock, logging_level, entrez_delay):
+        ids_chunk, params, request_lock, logging_level, raise_on_partial,
+        entrez_delay):
     chunk_params = _epost(
         params, ids_chunk, request_lock, logging_level, entrez_delay)
     data_chunk = _efetch_5000(
         chunk_params, request_lock, logging_level, entrez_delay)
-    if len(ids_chunk) != len(data_chunk):
-        error = "Download did not finish."
-        error += _ungotten_ids(ids_chunk, data_chunk)
-        raise RuntimeError(error)
     logger = _get_logger(logging_level)
+    if len(ids_chunk) != len(data_chunk):
+        error = _ungotten_ids(ids_chunk, data_chunk)
+        if raise_on_partial:
+            raise RuntimeError(error)
+        else:
+            logger.warning(error)
     logger.info('got ' + str(len(data_chunk)) + ' records')
     return data_chunk
 
 
 def _get_for_ids(params, ids, logging_level, n_jobs, request_lock,
-                 entrez_delay=0.):
+                 raise_on_partial, entrez_delay=0.):
     logger = _get_logger(logging_level)
     logger.info('Downloading ' + str(len(ids)) + ' records')
     ids = list(ids)
     parallel = Parallel(n_jobs=n_jobs, backend='loky')
     chunky = parallel(delayed(_get_id_chunk)(ids[chunk:chunk+5000], params,
                                              request_lock, logging_level,
-                                             entrez_delay)
+                                             raise_on_partial, entrez_delay)
                       for chunk in range(0, len(ids), 5000))
     data = [chunk for chunks in chunky for chunk in chunks]
 
@@ -308,7 +314,7 @@ def get_nuc_for_accs(accs, logging_level, n_jobs, request_lock,
         db='nuccore', rettype='fasta', retmode='xml', **_entrez_params
     )
     records = _get_for_ids(params, accs, logging_level, n_jobs, request_lock,
-                           entrez_delay)
+                           True, entrez_delay)
     seqs = {}
     taxids = {}
     for rec in records:
@@ -365,51 +371,60 @@ def get_taxonomies(
     params = dict(db='taxonomy', **_entrez_params)
     ids = set(map(str, taxids.values()))
     records = _get_for_ids(params, ids, logging_level, n_jobs, request_lock,
-                           entrez_delay)
-    taxa = {}
+                           False, entrez_delay)
 
     # parse the taxonomies
+    taxa = {}
     for rec in records:
-        if rank_propagation:
-            taxonomy = OrderedDict([('NCBI_Division', rec['Division'])])
-            taxonomy.update((r, None) for r in _allowed_ranks)
-            for rank in rec['LineageEx']['Taxon']:
-                if rank['Rank'] in _allowed_ranks:
-                    taxonomy[rank['Rank']] = rank['ScientificName']
-            species = rec['ScientificName']
-            if taxonomy['genus']:
-                if species.startswith(taxonomy['genus'] + ' '):
-                    species = species[len(taxonomy['genus']) + 1:]
-            elif ' ' in species:
-                genus, species = species.split(' ', 1)
-                taxonomy['genus'] = genus
-            taxonomy['species'] = species
-            last_label = taxonomy['NCBI_Division']
-            for rank in taxonomy:
-                if taxonomy[rank] is None:
-                    taxonomy[rank] = last_label
-                last_label = taxonomy[rank]
-        else:
-            taxonomy = {r: '' for r in ranks}
-            if 'domain' in ranks:
-                taxonomy['domain'] = rec['Division']
-            elif 'kingdom' in ranks:
-                taxonomy['kingdom'] = rec['Division']
-            for rank in rec['LineageEx']['Taxon']:
-                taxonomy[rank['Rank']] = rank['ScientificName']
-            species = rec['ScientificName']
-            # if we care about genus and genus is in the species label and
-            # we don't already know genus, split it out
-            if 'genus' in ranks:
+        try:
+            if rank_propagation:
+                taxonomy = OrderedDict([('NCBI_Division', rec['Division'])])
+                taxonomy.update((r, None) for r in _allowed_ranks)
+                for rank in rec['LineageEx']['Taxon']:
+                    if rank['Rank'] in _allowed_ranks:
+                        taxonomy[rank['Rank']] = rank['ScientificName']
+                species = rec['ScientificName']
                 if taxonomy['genus']:
                     if species.startswith(taxonomy['genus'] + ' '):
                         species = species[len(taxonomy['genus']) + 1:]
                 elif ' ' in species:
                     genus, species = species.split(' ', 1)
                     taxonomy['genus'] = genus
-            taxonomy['species'] = species
-
-        taxa[rec['TaxId']] = taxonomy
+                taxonomy['species'] = species
+                last_label = taxonomy['NCBI_Division']
+                for rank in taxonomy:
+                    if taxonomy[rank] is None:
+                        taxonomy[rank] = last_label
+                    last_label = taxonomy[rank]
+            else:
+                taxonomy = {r: '' for r in ranks}
+                if 'domain' in ranks:
+                    taxonomy['domain'] = rec['Division']
+                elif 'kingdom' in ranks:
+                    taxonomy['kingdom'] = rec['Division']
+                for rank in rec['LineageEx']['Taxon']:
+                    taxonomy[rank['Rank']] = rank['ScientificName']
+                species = rec['ScientificName']
+                # if we care about genus and genus is in the species label and
+                # we don't already know genus, split it out
+                if 'genus' in ranks:
+                    if taxonomy['genus']:
+                        if species.startswith(taxonomy['genus'] + ' '):
+                            species = species[len(taxonomy['genus']) + 1:]
+                    elif ' ' in species:
+                        genus, species = species.split(' ', 1)
+                        taxonomy['genus'] = genus
+                taxonomy['species'] = species
+            taxa[rec['TaxId']] = taxonomy
+            if 'AkaTaxIds' in rec:
+                for akaTaxId in rec['AkaTaxIds']:
+                    taxa[rec['AkaTaxIds']['TaxId']] = taxonomy
+        except (KeyError, TypeError) as e:  # these are those we've seen so far
+            logger = _get_logger(logging_level)
+            logger.warning(
+                'Got exception\n' + type(e).__name__ + ': ' + str(e) +
+                '\nfrom taxon\n' + json.dumps(rec, indent=1) +
+                '\nSkipping this taxon.')
 
     # return the taxonomies
     missing_accs = []
@@ -427,6 +442,6 @@ def get_taxonomies(
         logger = _get_logger(logging_level)
         logger.warning(
             'The following accessions did not have valid taxids: ' +
-            ', '.join(missing_accs) + '. The bad taxids were: ' +
-            ', '.join(missing_taxids))
+            ', '.join(missing_accs) + '.\nThe bad taxids were: ' +
+            ', '.join(missing_taxids) + '.')
     return tax_strings
