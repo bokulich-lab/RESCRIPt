@@ -267,3 +267,34 @@ class TestParseSilvaTaxonomy(TestPluginBase):
         exp_res.index.name = 'Feature ID'
         exp_res.sort_index(inplace=True)
         assert_series_equal(obs_res, exp_res)
+
+    def test_parse_silva_taxonomy_no_propagation(self):
+        obs_res = parse_silva_taxonomy(self.taxtree, self.taxmap2,
+                                       self.taxranks,
+                                       include_species_labels=False,
+                                       propagate_taxonomy_labels=False)
+        obs_res.sort_index(inplace=True)
+        # expected:
+        t1 = ("d__Archaea; p__Aenigmarchaeota; c__Aenigmarchaeia; "
+              "o__Aenigmarchaeales; f__; g__Candidatus_Aenigmarchaeum")
+        exp_res = pd.Series(t1, index=['AB600437.1.1389'])
+        exp_res.rename('Taxon', inplace=True)
+        exp_res.index.name = 'Feature ID'
+        exp_res.sort_index(inplace=True)
+        assert_series_equal(obs_res, exp_res)
+
+    def test_parse_silva_taxonomy_no_propagation_with_species(self):
+        obs_res = parse_silva_taxonomy(self.taxtree, self.taxmap2,
+                                       self.taxranks,
+                                       include_species_labels=True,
+                                       propagate_taxonomy_labels=False)
+        obs_res.sort_index(inplace=True)
+        # expected:
+        t1 = ("d__Archaea; p__Aenigmarchaeota; c__Aenigmarchaeia; "
+              "o__Aenigmarchaeales; f__; g__Candidatus_Aenigmarchaeum; "
+              "s__uncultured_archaeon")
+        exp_res = pd.Series(t1, index=['AB600437.1.1389'])
+        exp_res.rename('Taxon', inplace=True)
+        exp_res.index.name = 'Feature ID'
+        exp_res.sort_index(inplace=True)
+        assert_series_equal(obs_res, exp_res)

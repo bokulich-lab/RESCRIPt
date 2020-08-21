@@ -23,6 +23,7 @@ def get_silva_data(ctx,
                    version='138',
                    target='SSURef_NR99',
                    include_species_labels=False,
+                   propagate_taxonomy_labels=True,
                    download_sequences=True):
     # download data from SILVA
     print('Downloading raw files may take some time... get some coffee.')
@@ -34,7 +35,8 @@ def get_silva_data(ctx,
         taxonomy_tree=results['taxonomy tree'],
         taxonomy_map=results['taxonomy map'],
         taxonomy_ranks=results['taxonomy ranks'],
-        include_species_labels=include_species_labels)
+        include_species_labels=include_species_labels,
+        propagate_taxonomy_labels=propagate_taxonomy_labels)
     # if skipping sequences, need to output an empty sequence file.
     if not download_sequences:
         results['sequences'] = qiime2.Artifact.import_data(

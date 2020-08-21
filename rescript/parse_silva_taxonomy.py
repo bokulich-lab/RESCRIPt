@@ -44,7 +44,8 @@ def _keep_allowed_chars(lin_name, allowed_chars=ALLOWED_CHARS,
     return new_lin_name
 
 
-def _build_base_silva_taxonomy(tree, taxrank, allowed_ranks):
+def _build_base_silva_taxonomy(tree, taxrank, allowed_ranks,
+                               propagate_taxonomy_labels):
     # Return base silva taxonomy dataframe by traversing taxonomy tree
     # and forward filling the lower ranks with upper-level taxonomy, then
     # pre-pend the rank labels.
@@ -54,6 +55,8 @@ def _build_base_silva_taxonomy(tree, taxrank, allowed_ranks):
     # capture and parse
     # output : pandas DataFrame with 'taxid' as the index and the full taxonomy
     # path (i.e. domain-to-genus) as the values.
+    # propagate_taxonomy_labels : boolean value to determine if empty taxonomy
+    # ranks should be fille from upper-level taxonomies.
     tid = {}
     for node in tree.postorder():
         if node.is_root():
@@ -79,7 +82,8 @@ def _build_base_silva_taxonomy(tree, taxrank, allowed_ranks):
                                              columns=allowed_ranks.values())
     silva_tax_id_df.index.name = 'taxid'
     # forward fill missing taxonomy with upper level taxonomy
-    silva_tax_id_df.ffill(axis=1, inplace=True)
+    if propagate_taxonomy_labels:
+        silva_tax_id_df.ffill(axis=1, inplace=True)
     return silva_tax_id_df
 
 
@@ -157,6 +161,10 @@ def _compile_taxonomy_output(updated_taxmap, include_species_labels=False,
     # of selected_ranks. The user can opt to return the species labels.
     sr = list(selected_ranks.values())
     # add rank prefixes (i.e. 'p__')
+    # Must replace NaNs with empty string prior to the following
+    # operations, or we'll get a "expected str instance, float found" or
+    # similar error.
+    updated_taxmap.fillna('', inplace=True)
     updated_taxmap.loc[:, sr] = updated_taxmap.loc[:, sr].apply(
                                                     lambda x: x.name + x)
     if include_species_labels:
@@ -171,6 +179,7 @@ def _compile_taxonomy_output(updated_taxmap, include_species_labels=False,
 def parse_silva_taxonomy(taxonomy_tree: TreeNode,
                          taxonomy_map: pd.DataFrame,
                          taxonomy_ranks: pd.DataFrame,
+                         propagate_taxonomy_labels: bool = True,
                          include_species_labels: bool = False) -> pd.Series:
     # Traverse the taxonomy hierarchy tree (taxonomy_tree) to obtain the
     # taxids. These will be used to look up the taxonomy and rank information
@@ -181,7 +190,8 @@ def parse_silva_taxonomy(taxonomy_tree: TreeNode,
     taxmap = _prep_taxmap(taxonomy_map)
     _validate_taxrank_taxmap_taxtree(taxrank, taxmap, taxonomy_tree)
     silva_tax_id_df = _build_base_silva_taxonomy(taxonomy_tree, taxrank,
-                                                 ALLOWED_RANKS)
+                                                 ALLOWED_RANKS,
+                                                 propagate_taxonomy_labels)
     updated_taxmap = pd.merge(taxmap, silva_tax_id_df, left_on='taxid',
                               right_index=True)
     taxonomy = _compile_taxonomy_output(updated_taxmap,
