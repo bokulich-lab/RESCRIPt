@@ -134,7 +134,8 @@ class TestParseSilvaTaxonomy(TestPluginBase):
         input_taxranks = _prep_taxranks(self.taxranks)
         obs_taxonomy = _build_base_silva_taxonomy(self.taxtree,
                                                   input_taxranks,
-                                                  ALLOWED_RANKS)
+                                                  ALLOWED_RANKS,
+                                                  rank_propagation=True)
         obs_taxonomy.sort_index(inplace=True)
         tid = {'taxid': ['2', '11084', '42913', '42914', '42915',
                          '11089', '24228', '24229', '42916', '42917'],
@@ -212,7 +213,8 @@ class TestParseSilvaTaxonomy(TestPluginBase):
     def test_compile_taxonomy_output_default(self):
         input_taxrank = _prep_taxranks(self.taxranks)
         silva_tax = _build_base_silva_taxonomy(self.taxtree, input_taxrank,
-                                               ALLOWED_RANKS)
+                                               ALLOWED_RANKS,
+                                               rank_propagation=True)
         input_taxmap = _prep_taxmap(self.taxmap2)
         updated_taxmap = pd.merge(input_taxmap, silva_tax, left_on='taxid',
                                   right_index=True)

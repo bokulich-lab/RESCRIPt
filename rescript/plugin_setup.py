@@ -569,9 +569,9 @@ INCLUDE_SPECIES_LABELS_DESCRIPTION = (
 RANK_PROPAGATE_DESCRIPTION = (
     'If a rank has no taxonomy associated with it, the taxonomy from the '
     'upper-level rank of that lineage, will be propagated downward. For '
-    'example, if we are missing the genus label for \'f__Pasteurellaceae; g__\''
-    'then the \'f__\' rank will be propagated to become: '
-    '\'f__Pasteurellaceae; g__Pasteurellaceae\'.'
+    'example, if we are missing the genus label for '
+    '\'f__Pasteurellaceae; g__\'then the \'f__\' rank will be propagated to '
+    'become: \'f__Pasteurellaceae; g__Pasteurellaceae\'.'
 )
 
 _SILVA_VERSIONS = ['128', '132', '138']
@@ -604,7 +604,7 @@ plugin.pipelines.register_function(
                   'reference. SSURef_NR99 = non-redundant (clustered at 99% '
                   'similarity) small subunit reference.',
         'include_species_labels': INCLUDE_SPECIES_LABELS_DESCRIPTION,
-        'rank_propagation' : RANK_PROPAGATE_DESCRIPTION,
+        'rank_propagation': RANK_PROPAGATE_DESCRIPTION,
         'download_sequences': 'Toggle whether or not to download and import '
                               'the SILVA reference sequences associated with '
                               'the release. Skipping the sequences is useful '
@@ -661,7 +661,7 @@ plugin.methods.register_function(
         },
     parameter_descriptions={
         'include_species_labels': INCLUDE_SPECIES_LABELS_DESCRIPTION,
-        'rank_propagation' : RANK_PROPAGATE_DESCRIPTION
+        'rank_propagation': RANK_PROPAGATE_DESCRIPTION
     },
     output_descriptions={
         'taxonomy': 'The resulting fixed-rank formatted SILVA taxonomy.'
