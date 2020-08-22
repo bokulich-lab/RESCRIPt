@@ -272,7 +272,7 @@ class TestParseSilvaTaxonomy(TestPluginBase):
         obs_res = parse_silva_taxonomy(self.taxtree, self.taxmap2,
                                        self.taxranks,
                                        include_species_labels=False,
-                                       propagate_taxonomy_labels=False)
+                                       rank_propagation=False)
         obs_res.sort_index(inplace=True)
         # expected:
         t1 = ("d__Archaea; p__Aenigmarchaeota; c__Aenigmarchaeia; "
@@ -287,7 +287,7 @@ class TestParseSilvaTaxonomy(TestPluginBase):
         obs_res = parse_silva_taxonomy(self.taxtree, self.taxmap2,
                                        self.taxranks,
                                        include_species_labels=True,
-                                       propagate_taxonomy_labels=False)
+                                       rank_propagation=False)
         obs_res.sort_index(inplace=True)
         # expected:
         t1 = ("d__Archaea; p__Aenigmarchaeota; c__Aenigmarchaeia; "
