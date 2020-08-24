@@ -12,7 +12,7 @@ from qiime2.plugin.testing import TestPluginBase
 from rescript.parse_silva_taxonomy import (parse_silva_taxonomy,
                                            _keep_allowed_chars, _prep_taxranks,
                                            _prep_taxmap, ALLOWED_RANKS,
-                                           SELECTED_RANKS,
+                                           DEFAULT_RANKS,
                                            _build_base_silva_taxonomy,
                                            _validate_taxrank_taxmap_taxtree,
                                            _compile_taxonomy_output,
@@ -219,8 +219,8 @@ class TestParseSilvaTaxonomy(TestPluginBase):
         updated_taxmap = pd.merge(input_taxmap, silva_tax, left_on='taxid',
                                   right_index=True)
         obs_6r_tax = _compile_taxonomy_output(updated_taxmap,
-                                              include_species_labels=False,
-                                              selected_ranks=SELECTED_RANKS)
+                                              ranks=DEFAULT_RANKS,
+                                              include_species_labels=False)
         obs_6r_tax.sort_index(inplace=True)
         # expected 6-rank taxonomy
         t1 = ("d__Archaea; p__Aenigmarchaeota; c__Aenigmarchaeia; "
@@ -295,6 +295,23 @@ class TestParseSilvaTaxonomy(TestPluginBase):
         t1 = ("d__Archaea; p__Aenigmarchaeota; c__Aenigmarchaeia; "
               "o__Aenigmarchaeales; f__; g__Candidatus_Aenigmarchaeum; "
               "s__uncultured_archaeon")
+        exp_res = pd.Series(t1, index=['AB600437.1.1389'])
+        exp_res.rename('Taxon', inplace=True)
+        exp_res.index.name = 'Feature ID'
+        exp_res.sort_index(inplace=True)
+        assert_series_equal(obs_res, exp_res)
+
+    def test_parse_silva_taxonomy_no_prop_outoforder_noclass_wsp(self):
+        obs_res = parse_silva_taxonomy(self.taxtree, self.taxmap2,
+                                       self.taxranks,
+                                       include_species_labels=True,
+                                       rank_propagation=False,
+                                       ranks=['domain', 'phylum', 'genus',
+                                              'family', 'order'])
+        obs_res.sort_index(inplace=True)
+        # expected:
+        t1 = ("d__Archaea; p__Aenigmarchaeota; o__Aenigmarchaeales; "
+              "f__; g__Candidatus_Aenigmarchaeum; s__uncultured_archaeon")
         exp_res = pd.Series(t1, index=['AB600437.1.1389'])
         exp_res.rename('Taxon', inplace=True)
         exp_res.index.name = 'Feature ID'

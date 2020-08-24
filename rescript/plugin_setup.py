@@ -15,7 +15,8 @@ from .dereplicate import dereplicate
 from .evaluate import evaluate_taxonomy, evaluate_seqs
 from .screenseq import cull_seqs
 from .degap import degap_seqs
-from .parse_silva_taxonomy import parse_silva_taxonomy
+from .parse_silva_taxonomy import (parse_silva_taxonomy, ALLOWED_RANKS,
+                                   DEFAULT_RANKS)
 from .get_data import get_silva_data
 from .cross_validate import (evaluate_cross_validate,
                              evaluate_classifications,
@@ -574,6 +575,12 @@ RANK_PROPAGATE_DESCRIPTION = (
     'become: \'f__Pasteurellaceae; g__Pasteurellaceae\'.'
 )
 
+RANK_DESCRIPTION = ('List of taxonomic ranks for building a taxonomy from the '
+                    'SILVA Taxonomy database. Use \'include_species_labels\' '
+                    'to append the organism name as the species label. '
+                    "[default: '" +
+                    "', '".join(DEFAULT_RANKS) + "']")
+
 _SILVA_VERSIONS = ['128', '132', '138']
 _SILVA_TARGETS = ['SSURef_NR99', 'SSURef', 'LSURef']
 
@@ -637,7 +644,8 @@ plugin.methods.register_function(
             },
     parameters={
         'include_species_labels': Bool,
-        'rank_propagation': Bool
+        'rank_propagation': Bool,
+        'ranks': List[Str % Choices(ALLOWED_RANKS)]
         },
     outputs=[('taxonomy', FeatureData[Taxonomy])],
     input_descriptions={
@@ -661,7 +669,8 @@ plugin.methods.register_function(
         },
     parameter_descriptions={
         'include_species_labels': INCLUDE_SPECIES_LABELS_DESCRIPTION,
-        'rank_propagation': RANK_PROPAGATE_DESCRIPTION
+        'rank_propagation': RANK_PROPAGATE_DESCRIPTION,
+        'ranks': RANK_DESCRIPTION
     },
     output_descriptions={
         'taxonomy': 'The resulting fixed-rank formatted SILVA taxonomy.'
