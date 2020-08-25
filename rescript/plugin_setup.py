@@ -692,10 +692,9 @@ plugin.methods.register_function(
         'accession_ids': Metadata,
         'ranks': List[Str % Choices(_allowed_ranks)],
         'rank_propagation': Bool,
-        'entrez_delay': Float,
         'logging_level': Str % Choices([
             'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']),
-        'n_jobs': Int},
+        'n_jobs': Int % Range(1, None)},
     outputs=[('sequences', FeatureData[Sequence]),
              ('taxonomy', FeatureData[Taxonomy])],
     input_descriptions={},
@@ -707,9 +706,8 @@ plugin.methods.register_function(
                  "NCBI Taxonomy database. [default: '" +
                  "', '".join(_default_ranks) + "']",
         'rank_propagation': 'Propagate known ranks to missing ranks if true',
-        'entrez_delay': 'Delay between queries (in seconds) to stay inside '
-                        'the Entrez Guidelines',
-        'logging_level': 'Logging level, set to INFO for download progress',
+        'logging_level': 'Logging level, set to INFO for download progress or '
+                         'DEBUG for copious verbosity',
         'n_jobs': 'Number of concurrent download connections. More is faster '
                   'until you run out of bandwidth.'},
     output_descriptions={

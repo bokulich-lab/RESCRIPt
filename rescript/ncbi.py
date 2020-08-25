@@ -24,7 +24,13 @@ from collections import OrderedDict
 from joblib import Parallel, delayed
 from joblib.externals.loky.backend.managers import LokyManager
 
+# This the tool-email pair for this tool that is registered with NCBI.
+# If you change it, register a new tool-email pair with NCBI at
+# eutilities@ncbi.nlm.nih.gov.
 _entrez_params = dict(tool='qiime2-rescript', email='b.kaehler@adfa.edu.au')
+# The entrez delay could be reduced to 0.1 with an NCBI API KEY but there is no
+# point because this isn't the bottlekneck.
+_entrez_delay = 0.334
 
 _default_ranks = [
     'kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species'
@@ -67,8 +73,8 @@ _allowed_ranks = OrderedDict([
 def get_ncbi_data(
         query: str = None, accession_ids: Metadata = None,
         ranks: list = None, rank_propagation: bool = True,
-        entrez_delay: float = 0.334, logging_level: str = None,
-        n_jobs: int = 1) -> (DNAIterator, DataFrame):
+        logging_level: str = None, n_jobs: int = 1
+        ) -> (DNAIterator, DataFrame):
     if ranks is None:
         ranks = _default_ranks
 
@@ -80,7 +86,7 @@ def get_ncbi_data(
         raise ValueError('Query or accession_ids must be supplied')
     if query:
         seqs, taxids = get_nuc_for_query(
-            query, logging_level, n_jobs, request_lock, entrez_delay)
+            query, logging_level, n_jobs, request_lock, _entrez_delay)
 
     if accession_ids:
         accs = accession_ids.get_ids()
@@ -88,16 +94,16 @@ def get_ncbi_data(
             accs = accs - seqs.keys()
             if accs:
                 acc_seqs, acc_taxids = get_nuc_for_accs(
-                    accs, logging_level, n_jobs, request_lock, entrez_delay)
+                    accs, logging_level, n_jobs, request_lock, _entrez_delay)
                 seqs.update(acc_seqs)
                 taxids.update(acc_taxids)
         else:
             seqs, taxids = get_nuc_for_accs(
-                accs, logging_level, n_jobs, request_lock, entrez_delay)
+                accs, logging_level, n_jobs, request_lock, _entrez_delay)
 
     taxa, bad_accs = get_taxonomies(taxids, ranks, rank_propagation,
                                     logging_level, n_jobs, request_lock,
-                                    entrez_delay)
+                                    _entrez_delay)
     for acc in bad_accs:
         del seqs[acc]
 
@@ -161,7 +167,7 @@ def _robustify(http_request, logger, *args):
         type(last_exception).__name__ + ': ' + str(last_exception))
 
 
-def _epost(params, ids, request_lock, logging_level, entrez_delay=0.):
+def _epost(params, ids, request_lock, logging_level, entrez_delay=0.334):
     assert len(ids) >= 1, "need at least one id"
     epost = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/epost.fcgi'
     data = {'db': params['db'], 'id': ','.join(ids)}
@@ -195,7 +201,7 @@ def _epost(params, ids, request_lock, logging_level, entrez_delay=0.):
     return _robustify(request, logger, params)
 
 
-def _esearch(params, logging_level, entrez_delay=0.):
+def _esearch(params, logging_level, entrez_delay=0.334):
     esearch = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi'
 
     def request(params):
@@ -215,7 +221,7 @@ def _esearch(params, logging_level, entrez_delay=0.):
     return _robustify(request, _get_logger(logging_level), params)
 
 
-def _efetch_5000(params, request_lock, logging_level, entrez_delay=0.):
+def _efetch_5000(params, request_lock, logging_level, entrez_delay=0.334):
     efetch = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi'
     params['retmax'] = 5000
     logger = _get_logger(logging_level)
@@ -295,7 +301,7 @@ def _get_id_chunk(
 
 
 def _get_for_ids(params, ids, logging_level, n_jobs, request_lock,
-                 raise_on_partial, entrez_delay=0.):
+                 raise_on_partial, entrez_delay=0.334):
     logger = _get_logger(logging_level)
     logger.info('Downloading ' + str(len(ids)) + ' records')
     ids = list(ids)
@@ -310,7 +316,7 @@ def _get_for_ids(params, ids, logging_level, n_jobs, request_lock,
 
 
 def get_nuc_for_accs(accs, logging_level, n_jobs, request_lock,
-                     entrez_delay=0.):
+                     entrez_delay=0.334):
     if len(accs) > 125000:
         _large_warning(logging_level)
     params = dict(
@@ -340,7 +346,7 @@ def _get_query_chunk(
 
 
 def get_nuc_for_query(
-        query, logging_level, n_jobs, request_lock, entrez_delay=0.):
+        query, logging_level, n_jobs, request_lock, entrez_delay=0.334):
     params = dict(
         db='nuccore', term=query, usehistory='y', retmax=0, **_entrez_params
     )
@@ -369,7 +375,7 @@ def get_nuc_for_query(
 
 def get_taxonomies(
         taxids, ranks, rank_propagation, logging_level, n_jobs, request_lock,
-        entrez_delay=0.):
+        entrez_delay=0.334):
     # download the taxonomies
     params = dict(db='taxonomy', **_entrez_params)
     ids = set(map(str, taxids.values()))
