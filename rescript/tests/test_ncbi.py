@@ -222,9 +222,9 @@ class TestNCBI(TestPluginBase):
             seq, tax = self.get_ncbi_data(
                 query='M27461.1 OR DI201845.1 OR JQ430715.1')
         for warning in log.output:
-            if '81077' in warning and 'bad taxids' not in warning:
+            if '81077' in warning and 'problematic taxids' not in warning:
                 self.assertTrue('TypeError' in warning)
-            elif '12908' in warning and 'bad taxids' not in warning:
+            elif '12908' in warning and 'problematic taxids' not in warning:
                 self.assertTrue('KeyError' in warning)
             else:
                 self.assertTrue('DI201845.1' in warning)
@@ -235,4 +235,9 @@ class TestNCBI(TestPluginBase):
             tax['Taxon']['JQ430715.1'],
             'k__Metazoa; p__Arthropoda; c__Insecta; o__Lepidoptera; '
             'f__Nymphalidae; g__Junonia; s__evarete nigrosuffusa'
+        )
+
+        self.assertEqual(
+            [s.metadata['id'] for s in seq.view(DNAIterator)],
+            ['JQ430715.1']
         )

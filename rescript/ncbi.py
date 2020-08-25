@@ -95,8 +95,11 @@ def get_ncbi_data(
             seqs, taxids = get_nuc_for_accs(
                 accs, logging_level, n_jobs, request_lock, entrez_delay)
 
-    taxa = get_taxonomies(taxids, ranks, rank_propagation, logging_level,
-                          n_jobs, request_lock, entrez_delay)
+    taxa, bad_accs = get_taxonomies(taxids, ranks, rank_propagation,
+                                    logging_level, n_jobs, request_lock,
+                                    entrez_delay)
+    for acc in bad_accs:
+        del seqs[acc]
 
     seqs = DNAIterator(DNA(v, metadata={'id': k}) for k, v in seqs.items())
     taxa = DataFrame(taxa, index=['Taxon']).T
@@ -441,7 +444,8 @@ def get_taxonomies(
     if missing_accs:
         logger = _get_logger(logging_level)
         logger.warning(
-            'The following accessions did not have valid taxids: ' +
-            ', '.join(missing_accs) + '.\nThe bad taxids were: ' +
+            'The following accessions were deleted from the sequence database '
+            'because there was a problem with their taxonomies: ' +
+            ', '.join(missing_accs) + '.\nThe problematic taxids were: ' +
             ', '.join(missing_taxids) + '.')
-    return tax_strings
+    return tax_strings, missing_accs
