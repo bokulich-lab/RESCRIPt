@@ -153,24 +153,17 @@ def _compile_taxonomy_output(updated_taxmap, ranks,
                              include_species_labels=False):
     # Takes the updated_taxmap dataframe (i.e. the combined
     # output from _build_base_silva_taxonomy and _prep_taxmap) and only
-    # returns the desired ranks (as a pandas Series) from selected_ranks, which
-    # is an ordered dict.
-    # sort user ranks relative to allowed_ranks
+    # returns the desired ranks (as a pandas Series).
+    # Sort user ranks relative to allowed_ranks
     # this ensures that the taxonomic ranks supplied by the user are in order
-    allowed_rank_prefixes = list(ALLOWED_RANKS.values())
-    user_rank_prefixes = [ALLOWED_RANKS[r] for r in ranks]
-    allowed_rank_indices = [allowed_rank_prefixes.index(r) for r in
-                            user_rank_prefixes]
-    allowed_rank_indices.sort()
-    sorted_ranks = [allowed_rank_prefixes[i] for i in allowed_rank_indices]
+    sorted_ranks = [p for r, p in ALLOWED_RANKS.items() if r in ranks]
     # Must replace NaNs with empty string prior to the following
     # operations, or we'll get a "expected str instance, float found" or
     # similar error.
     updated_taxmap.fillna('', inplace=True)
     # add rank prefixes (i.e. 'p__')
-    updated_taxmap.loc[:, sorted_ranks] = updated_taxmap.loc[:, sorted_ranks
-                                                             ].apply(
-                                                 lambda x: x.name + x)
+    updated_taxmap.loc[:, sorted_ranks] = \
+        updated_taxmap.loc[:, sorted_ranks].apply(lambda x: x.name + x)
     if include_species_labels:
         updated_taxmap.loc[:, 'organism_name'] = updated_taxmap.loc[
                            :, 'organism_name'].apply(lambda x: 's__' + x)
