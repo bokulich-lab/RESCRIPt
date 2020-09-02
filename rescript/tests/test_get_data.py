@@ -76,3 +76,10 @@ class TestGetSILVA(TestPluginBase):
             rescript.actions.get_silva_data(
                 version='132', target='SSURef_NR99', download_sequences=False)
             self.assertTrue(True)
+
+        with patch('rescript.get_data._retrieve_data_from_silva',
+                   new=_fake_data_on_demand):
+            rescript.actions.get_silva_data(
+                version='132', target='SSURef_NR99', ranks=['phylum', 'genus'],
+                download_sequences=False)
+            self.assertTrue(True)

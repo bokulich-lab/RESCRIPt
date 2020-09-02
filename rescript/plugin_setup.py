@@ -600,6 +600,7 @@ plugin.pipelines.register_function(
         'target': target_map,
         'include_species_labels': Bool,
         'rank_propagation': Bool,
+        'ranks': List[Str % Choices(ALLOWED_RANKS)],
         'download_sequences': Bool},
     outputs=[('silva_sequences', FeatureData[RNASequence]),
              ('silva_taxonomy', FeatureData[Taxonomy])],
@@ -612,6 +613,7 @@ plugin.pipelines.register_function(
                   'similarity) small subunit reference.',
         'include_species_labels': INCLUDE_SPECIES_LABELS_DESCRIPTION,
         'rank_propagation': RANK_PROPAGATE_DESCRIPTION,
+        'ranks': RANK_DESCRIPTION,
         'download_sequences': 'Toggle whether or not to download and import '
                               'the SILVA reference sequences associated with '
                               'the release. Skipping the sequences is useful '

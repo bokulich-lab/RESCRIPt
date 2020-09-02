@@ -12,7 +12,6 @@ import hashlib
 import shutil
 import gzip
 import warnings
-
 import qiime2
 from urllib.request import urlretrieve
 from urllib.error import HTTPError
@@ -24,6 +23,7 @@ def get_silva_data(ctx,
                    target='SSURef_NR99',
                    include_species_labels=False,
                    rank_propagation=True,
+                   ranks=None,
                    download_sequences=True):
     # download data from SILVA
     print('Downloading raw files may take some time... get some coffee.')
@@ -36,6 +36,7 @@ def get_silva_data(ctx,
         taxonomy_map=results['taxonomy map'],
         taxonomy_ranks=results['taxonomy ranks'],
         include_species_labels=include_species_labels,
+        ranks=ranks,
         rank_propagation=rank_propagation)
     # if skipping sequences, need to output an empty sequence file.
     if not download_sequences:
