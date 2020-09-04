@@ -12,6 +12,7 @@ import hashlib
 import shutil
 import gzip
 import warnings
+
 import qiime2
 from urllib.request import urlretrieve
 from urllib.error import HTTPError
