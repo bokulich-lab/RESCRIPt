@@ -40,4 +40,5 @@ jobs:
       with:
         plugin-name: rescript
         additional-tests: pytest --pyargs rescript
+        build-target: staging
 
