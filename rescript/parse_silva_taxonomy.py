@@ -54,7 +54,7 @@ def _build_base_silva_taxonomy(tree, taxrank, allowed_ranks,
     # output : pandas DataFrame with 'taxid' as the index and the full taxonomy
     # path (i.e. domain-to-genus) as the values.
     # rank_propagation : boolean value to determine if empty taxonomy
-    # ranks should be fille from upper-level taxonomies.
+    # ranks should be filled from upper-level taxonomies.
     tid = {}
     for node in tree.postorder():
         if node.is_root():
