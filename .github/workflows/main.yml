@@ -45,4 +45,4 @@ jobs:
         additional-tests: pytest --pyargs rescript
         # TODO: update this to `release` when tagging release
         build-target: staging
-
+        library-token: ${{ secrets.LIBRARY_TOKEN }}
