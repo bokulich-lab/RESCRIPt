@@ -96,8 +96,8 @@ def _prep_taxmap(taxmap):
     # This is how the coreesponding FASTA file IDs are structured
     taxmap.index = taxmap.index + '.' + taxmap.start + '.' + taxmap.stop
     taxmap.index.name = 'Feature ID'
-    taxmap = taxmap[['organism_name', 'taxid']]
-    taxmap.loc[:, 'organism_name'] = taxmap['organism_name'].apply(
+    taxmap = taxmap.loc[:, ['organism_name', 'taxid']]
+    taxmap.loc[:, 'organism_name'] = taxmap.loc[:, 'organism_name'].apply(
                                             _get_clean_organism_name)
     return taxmap
 
