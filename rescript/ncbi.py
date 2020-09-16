@@ -77,13 +77,13 @@ def get_ncbi_data(
         ) -> (DNAIterator, DataFrame):
     if ranks is None:
         ranks = _default_ranks
+    if query is None and accession_ids is None:
+        raise ValueError('Query or accession_ids must be supplied')
 
     manager = LokyManager()
     manager.start()
     request_lock = manager.Lock()
 
-    if query is None and accession_ids is None:
-        raise ValueError('Query or accession_ids must be supplied')
     if query:
         seqs, taxids = get_nuc_for_query(
             query, logging_level, n_jobs, request_lock, _entrez_delay)
