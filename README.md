@@ -3,6 +3,8 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3891931.svg)](https://doi.org/10.5281/zenodo.3891931)
  ![lint-build-test](https://github.com/bokulich-lab/RESCRIPt/workflows/lint-build-test/badge.svg)
 
+ <p align="left"><img src="logo.png" height="150" /></p>
+
 REference Sequence annotation and CuRatIon Pipeline
 
 **Note:** This is a beta release. Usage, and other details are forthcoming. See citation information below.
