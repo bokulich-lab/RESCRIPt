@@ -13,9 +13,10 @@ RESCRIPt is a python 3 package to support a variety of operations for managing a
 
 ## Install from source
 
-RESCRIPt will be installable as conda package in the near future. In the meantime, we provide a source installation.
+RESCRIPt will be installable as conda package in the near future. In the meantime, we provide two routes for source installation: a minimal RESCRIPt environment, or within an existing QIIME 2 environment:
 
-First create a conda environment and install relevant dependencies (you can skip this step and install RESCRIPt in a conda environment containing QIIME 2 2020.2+, which should contain the necessary dependencies/versions):
+### Option 1: Minimal RESCRIPt environment:
+First create a conda environment and install relevant dependencies:
 
 ```
 conda create -y -n rescript
@@ -24,13 +25,26 @@ conda install \
   -c conda-forge -c bioconda -c qiime2 -c defaults \
   qiime2 q2cli q2templates q2-types q2-longitudinal q2-feature-classifier "pandas>=0.25.3" xmltodict
 ```
-
-Finally install from source:
+Install source:
 
 ```
 pip install git+https://github.com/bokulich-lab/RESCRIPt.git
 ```
 
+### Option 2: Install within QIIME 2 environment
+First activate your QIIME 2 environment (ver 2020.8 or later) and install relevant dependencies:
+
+```
+conda activate qiime2-2020.8
+conda install -c conda-forge -c bioconda -c qiime2 -c defaults xmltodict
+```
+Install source:
+
+```
+pip install git+https://github.com/bokulich-lab/RESCRIPt.git
+```
+
+### Read help documentation
 To view a help menu for using rescript via the QIIME 2 CLI:
 ```
 qiime dev refresh-cache
