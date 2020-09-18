@@ -1,4 +1,5 @@
-name: lint-build-test
+name: ci
+
 # build on every PR and commit to master
 on:
   pull_request:
@@ -35,9 +36,13 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
+        # necessary for versioneer
         fetch-depth: 0
+    # TODO: update this to @v1 when it lands
     - uses: qiime2/action-library-packaging@alpha1
       with:
-        plugin-name: rescript
+        package-name: rescript
         additional-tests: pytest --pyargs rescript
-
+        # TODO: update this to `release` when tagging release
+        build-target: staging
+        library-token: ${{ secrets.LIBRARY_TOKEN }}

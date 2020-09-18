@@ -15,7 +15,8 @@ from .dereplicate import dereplicate
 from .evaluate import evaluate_taxonomy, evaluate_seqs
 from .screenseq import cull_seqs
 from .degap import degap_seqs
-from .parse_silva_taxonomy import parse_silva_taxonomy
+from .parse_silva_taxonomy import (parse_silva_taxonomy, ALLOWED_RANKS,
+                                   DEFAULT_RANKS)
 from .get_data import get_silva_data
 from .cross_validate import (evaluate_cross_validate,
                              evaluate_classifications,
@@ -566,6 +567,20 @@ INCLUDE_SPECIES_LABELS_DESCRIPTION = (
     'Include species rank labels in taxonomy output. Note: species-labels may '
     'not be reliable in all cases.')
 
+RANK_PROPAGATE_DESCRIPTION = (
+    'If a rank has no taxonomy associated with it, the taxonomy from the '
+    'upper-level rank of that lineage, will be propagated downward. For '
+    'example, if we are missing the genus label for '
+    '\'f__Pasteurellaceae; g__\'then the \'f__\' rank will be propagated to '
+    'become: \'f__Pasteurellaceae; g__Pasteurellaceae\'.'
+)
+
+RANK_DESCRIPTION = ('List of taxonomic ranks for building a taxonomy from the '
+                    'SILVA Taxonomy database. Use \'include_species_labels\' '
+                    'to append the organism name as the species label. '
+                    "[default: '" +
+                    "', '".join(DEFAULT_RANKS) + "']")
+
 _SILVA_VERSIONS = ['128', '132', '138']
 _SILVA_TARGETS = ['SSURef_NR99', 'SSURef', 'LSURef']
 
@@ -584,6 +599,8 @@ plugin.pipelines.register_function(
         'version': version_map,
         'target': target_map,
         'include_species_labels': Bool,
+        'rank_propagation': Bool,
+        'ranks': List[Str % Choices(ALLOWED_RANKS)],
         'download_sequences': Bool},
     outputs=[('silva_sequences', FeatureData[RNASequence]),
              ('silva_taxonomy', FeatureData[Taxonomy])],
@@ -595,6 +612,8 @@ plugin.pipelines.register_function(
                   'reference. SSURef_NR99 = non-redundant (clustered at 99% '
                   'similarity) small subunit reference.',
         'include_species_labels': INCLUDE_SPECIES_LABELS_DESCRIPTION,
+        'rank_propagation': RANK_PROPAGATE_DESCRIPTION,
+        'ranks': RANK_DESCRIPTION,
         'download_sequences': 'Toggle whether or not to download and import '
                               'the SILVA reference sequences associated with '
                               'the release. Skipping the sequences is useful '
@@ -626,7 +645,9 @@ plugin.methods.register_function(
             'taxonomy_ranks': FeatureData[SILVATaxonomy],
             },
     parameters={
-        'include_species_labels': Bool
+        'include_species_labels': Bool,
+        'rank_propagation': Bool,
+        'ranks': List[Str % Choices(ALLOWED_RANKS)]
         },
     outputs=[('taxonomy', FeatureData[Taxonomy])],
     input_descriptions={
@@ -650,6 +671,8 @@ plugin.methods.register_function(
         },
     parameter_descriptions={
         'include_species_labels': INCLUDE_SPECIES_LABELS_DESCRIPTION,
+        'rank_propagation': RANK_PROPAGATE_DESCRIPTION,
+        'ranks': RANK_DESCRIPTION
     },
     output_descriptions={
         'taxonomy': 'The resulting fixed-rank formatted SILVA taxonomy.'

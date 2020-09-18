@@ -3,6 +3,8 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3891931.svg)](https://doi.org/10.5281/zenodo.3891931)
  ![lint-build-test](https://github.com/bokulich-lab/RESCRIPt/workflows/lint-build-test/badge.svg)
 
+ <p align="left"><img src="logo.png" height="150" /></p>
+
 REference Sequence annotation and CuRatIon Pipeline
 
 **Note:** This is a beta release. Usage, and other details are forthcoming. See citation information below.
@@ -11,9 +13,10 @@ RESCRIPt is a python 3 package to support a variety of operations for managing a
 
 ## Install from source
 
-RESCRIPt will be installable as conda package in the near future. In the meantime, we provide a source installation.
+RESCRIPt will be installable as conda package in the near future. In the meantime, we provide two routes for source installation: a minimal RESCRIPt environment, or within an existing QIIME 2 environment:
 
-First create a conda environment and install relevant dependencies (you can skip this step and install RESCRIPt in a conda environment containing QIIME 2 2020.2+, which should contain the necessary dependencies/versions):
+### Option 1: Minimal RESCRIPt environment:
+First create a conda environment and install relevant dependencies:
 
 ```
 conda create -y -n rescript
@@ -22,13 +25,26 @@ conda install \
   -c conda-forge -c bioconda -c qiime2 -c defaults \
   qiime2 q2cli q2templates q2-types q2-longitudinal q2-feature-classifier "pandas>=0.25.3" xmltodict
 ```
-
-Finally install from source:
+Install source:
 
 ```
 pip install git+https://github.com/bokulich-lab/RESCRIPt.git
 ```
 
+### Option 2: Install within QIIME 2 environment
+First activate your QIIME 2 environment (ver 2020.8 or later) and install relevant dependencies:
+
+```
+conda activate qiime2-2020.8
+conda install -c conda-forge -c bioconda -c qiime2 -c defaults xmltodict
+```
+Install source:
+
+```
+pip install git+https://github.com/bokulich-lab/RESCRIPt.git
+```
+
+### Read help documentation
 To view a help menu for using rescript via the QIIME 2 CLI:
 ```
 qiime dev refresh-cache
@@ -38,8 +54,10 @@ qiime --help
 ## Using RESCRIPt
 
 These tutorials demonstrate some of the basic functionality of RESCRIPt, via the q2CLI (QIIME 2 command-line interface):
-[General Overview and working with SILVA data](https://forum.qiime2.org/t/rescript-sequence-reference-database-management-tutorial/15494)
-[Getting sequences and taxonomy with get-ncbi-data](https://forum.qiime2.org/t/using-rescript-to-compile-an-sequence-databases-and-taxonomy-classifiers-from-ncbi-genbank/15947)
+- [General Overview and working with SILVA data](https://forum.qiime2.org/t/rescript-sequence-reference-database-management-tutorial/15494)
+- [Getting sequences and taxonomy with get-ncbi-data](https://forum.qiime2.org/t/using-rescript-to-compile-an-sequence-databases-and-taxonomy-classifiers-from-ncbi-genbank/15947)
+- [Building a COI database with BOLD sequences](https://forum.qiime2.org/t/building-a-coi-database-from-bold-references/16129)
+- [Building a COI database with NCBI sequences](https://forum.qiime2.org/t/building-a-coi-database-from-ncbi-references/16500)
 
 
 ## Getting Help

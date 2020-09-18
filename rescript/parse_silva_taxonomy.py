@@ -31,9 +31,7 @@ ALLOWED_RANKS = OrderedDict({'domain': 'd__', 'superkingdom': 'sk__',
                              'family': 'f__', 'subfamily': 'fs__',
                              'genus': 'g__'})
 
-SELECTED_RANKS = OrderedDict({'domain': 'd__', 'phylum': 'p__',
-                              'class': 'c__',  'order': 'o__',
-                              'family': 'f__', 'genus': 'g__'})
+DEFAULT_RANKS = ['domain', 'phylum', 'class',  'order', 'family', 'genus']
 
 
 def _keep_allowed_chars(lin_name, allowed_chars=ALLOWED_CHARS,
@@ -44,7 +42,8 @@ def _keep_allowed_chars(lin_name, allowed_chars=ALLOWED_CHARS,
     return new_lin_name
 
 
-def _build_base_silva_taxonomy(tree, taxrank, allowed_ranks):
+def _build_base_silva_taxonomy(tree, taxrank, allowed_ranks,
+                               rank_propagation):
     # Return base silva taxonomy dataframe by traversing taxonomy tree
     # and forward filling the lower ranks with upper-level taxonomy, then
     # pre-pend the rank labels.
@@ -54,6 +53,8 @@ def _build_base_silva_taxonomy(tree, taxrank, allowed_ranks):
     # capture and parse
     # output : pandas DataFrame with 'taxid' as the index and the full taxonomy
     # path (i.e. domain-to-genus) as the values.
+    # rank_propagation : boolean value to determine if empty taxonomy
+    # ranks should be filled from upper-level taxonomies.
     tid = {}
     for node in tree.postorder():
         if node.is_root():
@@ -79,7 +80,8 @@ def _build_base_silva_taxonomy(tree, taxrank, allowed_ranks):
                                              columns=allowed_ranks.values())
     silva_tax_id_df.index.name = 'taxid'
     # forward fill missing taxonomy with upper level taxonomy
-    silva_tax_id_df.ffill(axis=1, inplace=True)
+    if rank_propagation:
+        silva_tax_id_df.ffill(axis=1, inplace=True)
     return silva_tax_id_df
 
 
@@ -94,8 +96,8 @@ def _prep_taxmap(taxmap):
     # This is how the coreesponding FASTA file IDs are structured
     taxmap.index = taxmap.index + '.' + taxmap.start + '.' + taxmap.stop
     taxmap.index.name = 'Feature ID'
-    taxmap = taxmap[['organism_name', 'taxid']]
-    taxmap.loc[:, 'organism_name'] = taxmap['organism_name'].apply(
+    taxmap = taxmap.loc[:, ['organism_name', 'taxid']]
+    taxmap.loc[:, 'organism_name'] = taxmap.loc[:, 'organism_name'].apply(
                                             _get_clean_organism_name)
     return taxmap
 
@@ -147,23 +149,26 @@ def _validate_taxrank_taxmap_taxtree(prepped_taxrank, prepped_taxmap, taxtree):
                          "taxids are: ", tree_map_diffs)
 
 
-def _compile_taxonomy_output(updated_taxmap, include_species_labels=False,
-                             selected_ranks=SELECTED_RANKS):
+def _compile_taxonomy_output(updated_taxmap, ranks,
+                             include_species_labels=False):
     # Takes the updated_taxmap dataframe (i.e. the combined
     # output from _build_base_silva_taxonomy and _prep_taxmap) and only
-    # returns the desired ranks (as a pandas Series) from selected_ranks, which
-    # is an ordered dict. For now, SELECTED_RANKS is used. In the future, we
-    # may provide the option to allow users to feed in their own dictionary
-    # of selected_ranks. The user can opt to return the species labels.
-    sr = list(selected_ranks.values())
+    # returns the desired ranks (as a pandas Series).
+    # Sort user ranks relative to allowed_ranks
+    # this ensures that the taxonomic ranks supplied by the user are in order
+    sorted_ranks = [p for r, p in ALLOWED_RANKS.items() if r in ranks]
+    # Must replace NaNs with empty string prior to the following
+    # operations, or we'll get a "expected str instance, float found" or
+    # similar error.
+    updated_taxmap.fillna('', inplace=True)
     # add rank prefixes (i.e. 'p__')
-    updated_taxmap.loc[:, sr] = updated_taxmap.loc[:, sr].apply(
-                                                    lambda x: x.name + x)
+    updated_taxmap.loc[:, sorted_ranks] = \
+        updated_taxmap.loc[:, sorted_ranks].apply(lambda x: x.name + x)
     if include_species_labels:
         updated_taxmap.loc[:, 'organism_name'] = updated_taxmap.loc[
                            :, 'organism_name'].apply(lambda x: 's__' + x)
-        sr.append('organism_name')
-    taxonomy = updated_taxmap.loc[:, sr].agg('; '.join, axis=1)
+        sorted_ranks.append('organism_name')
+    taxonomy = updated_taxmap.loc[:, sorted_ranks].agg('; '.join, axis=1)
     taxonomy.rename('Taxon', inplace=True)
     return taxonomy
 
@@ -171,20 +176,25 @@ def _compile_taxonomy_output(updated_taxmap, include_species_labels=False,
 def parse_silva_taxonomy(taxonomy_tree: TreeNode,
                          taxonomy_map: pd.DataFrame,
                          taxonomy_ranks: pd.DataFrame,
+                         rank_propagation: bool = True,
+                         ranks: list = None,
                          include_species_labels: bool = False) -> pd.Series:
     # Traverse the taxonomy hierarchy tree (taxonomy_tree) to obtain the
     # taxids. These will be used to look up the taxonomy and rank information
     # from the taxonomy_ranks file. Finally the taxonomy information is
     # mapped to each Accesioned sequence via the taxonomy_map. An option
     # to include the, potentially untrustworthy, species labels is provided.
+    if ranks is None:
+        ranks = DEFAULT_RANKS
+
     taxrank = _prep_taxranks(taxonomy_ranks)
     taxmap = _prep_taxmap(taxonomy_map)
     _validate_taxrank_taxmap_taxtree(taxrank, taxmap, taxonomy_tree)
     silva_tax_id_df = _build_base_silva_taxonomy(taxonomy_tree, taxrank,
-                                                 ALLOWED_RANKS)
+                                                 ALLOWED_RANKS,
+                                                 rank_propagation)
     updated_taxmap = pd.merge(taxmap, silva_tax_id_df, left_on='taxid',
                               right_index=True)
-    taxonomy = _compile_taxonomy_output(updated_taxmap,
-                                        include_species_labels,
-                                        SELECTED_RANKS)
+    taxonomy = _compile_taxonomy_output(updated_taxmap, ranks,
+                                        include_species_labels)
     return taxonomy

@@ -70,9 +70,16 @@ class TestGetSILVA(TestPluginBase):
                          'taxonomy map': tm2,
                          'taxonomy ranks': tr}
             return fake_dict
-
+        # default
         with patch('rescript.get_data._retrieve_data_from_silva',
                    new=_fake_data_on_demand):
             rescript.actions.get_silva_data(
                 version='132', target='SSURef_NR99', download_sequences=False)
+            self.assertTrue(True)
+        # test with user-selected ranks
+        with patch('rescript.get_data._retrieve_data_from_silva',
+                   new=_fake_data_on_demand):
+            rescript.actions.get_silva_data(
+                version='132', target='SSURef_NR99', ranks=['genus', 'phylum'],
+                download_sequences=False)
             self.assertTrue(True)
