@@ -7,7 +7,28 @@
 # ----------------------------------------------------------------------------
 
 import re
+
+from joblib import Parallel, delayed
 from q2_types.feature_data import DNAFASTAFormat, DNAIterator
+
+
+def worker(seq_obj, num_degenerates, homopolymer_length):
+    '''Process a single sequence and place it in a queue'''
+    degen = _filt_seq_with_degenerates(seq_obj, num_degenerates)
+    if not degen:
+        poly = _filter_homopolymer(seq_obj, homopolymer_length)
+        if not poly:  # if we make it here, write seq to file
+            return seq_obj
+
+
+def writer(out_result, q):
+    '''Get a result from the queue and write it out'''
+    with out_result.open() as out:
+        while True:
+            seq_obj = q.get()
+            if seq_obj is None:
+                break
+            seq_obj.write(out)
 
 
 def _filt_seq_with_degenerates(seq, num_degenerates):
@@ -25,11 +46,13 @@ def _filter_homopolymer(seq, homopolymer_length):
 def cull_seqs(sequences: DNAIterator, num_degenerates: int = 5,
               homopolymer_length: int = 8) -> DNAFASTAFormat:
     result = DNAFASTAFormat()
-    with result.open() as out_fasta:
-        for seq in sequences:
-            degen = _filt_seq_with_degenerates(seq, num_degenerates)
-            if not degen:
-                poly = _filter_homopolymer(seq, homopolymer_length)
-                if not poly:  # if we make it here, write seq to file
-                    seq.write(out_fasta)
+
+    parallel = Parallel(n_jobs=4, backend='loky')
+    seqs = parallel(delayed(worker)(seq, num_degenerates, homopolymer_length) for seq in sequences)
+
+    with result.open() as out:
+        for seq in seqs:
+            if seq:
+                seq.write(out)
+
     return result
