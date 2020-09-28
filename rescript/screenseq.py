@@ -7,7 +7,6 @@
 # ----------------------------------------------------------------------------
 
 import re
-from multiprocessing import cpu_count
 
 from joblib import Parallel, delayed
 from q2_types.feature_data import DNAFASTAFormat, DNAIterator
@@ -35,10 +34,9 @@ def _filter_seq(seq_obj, num_degenerates, homopolymer_length):
 
 
 def cull_seqs(sequences: DNAIterator, num_degenerates: int = 5,
-              homopolymer_length: int = 8) -> DNAFASTAFormat:
+              homopolymer_length: int = 8, n_jobs: int = 1) -> DNAFASTAFormat:
     result = DNAFASTAFormat()
 
-    n_jobs = cpu_count()
     parallel = Parallel(n_jobs=n_jobs, backend='loky')
     seqs = parallel(
         delayed(_filter_seq)(

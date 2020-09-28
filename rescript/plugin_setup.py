@@ -386,26 +386,30 @@ plugin.methods.register_function(
     function=cull_seqs,
     inputs={
         'sequences': FeatureData[Sequence | RNASequence]
-        },
+    },
     parameters={
         'num_degenerates': Int % Range(1, None),
-        'homopolymer_length': Int % Range(2, None)
-        },
+        'homopolymer_length': Int % Range(2, None),
+        'n_jobs': Int % Range(1, None)
+    },
     outputs=[('clean_sequences', FeatureData[Sequence])],
     input_descriptions={
         'sequences': 'DNA or RNA Sequences to be screened for removal based '
                      'on degenerate base and homopolymer screening criteria.'
-        },
+    },
     parameter_descriptions={
         'num_degenerates': 'Sequences with N, or more, degenerate bases will '
                            'be removed.',
         'homopolymer_length': 'Sequences containing a homopolymer sequence of '
                               'length N, or greater, will be removed.',
+        'n_jobs': 'Number of concurrent processes to use while processing '
+                  'sequences. More is faster but typically should not be '
+                  'higher than the number of available CPUs.'
     },
     output_descriptions={
         'clean_sequences': 'The resulting DNA sequences that pass degenerate '
                            'base and homopolymer screening criteria.'
-        },
+    },
     name='Removes sequences that contain at least the specified number of '
          'degenerate bases and/or homopolymers of a given length.',
     description=(
@@ -423,21 +427,21 @@ plugin.methods.register_function(
     function=degap_seqs,
     inputs={
         'aligned_sequences': FeatureData[AlignedSequence]
-        },
+    },
     parameters={
-                'min_length': Int % Range(1, None)
-                },
+        'min_length': Int % Range(1, None)
+    },
     outputs=[('degapped_sequences', FeatureData[Sequence])],
     input_descriptions={
         'aligned_sequences': 'Aligned DNA Sequences to be degapped.'
-        },
+    },
     parameter_descriptions={
         'min_length': 'Minimum length of sequence to be returned after '
                       'degapping.'},
     output_descriptions={
         'degapped_sequences': 'The resulting unaligned (degapped) DNA '
                               'sequences.'
-        },
+    },
     name='Remove gaps from DNA sequence alignments.',
     description=('This method converts aligned DNA sequences to unaligned DNA '
                  'sequences by removing gaps ("-") and missing data (".") '
@@ -640,15 +644,15 @@ plugin.pipelines.register_function(
 plugin.methods.register_function(
     function=parse_silva_taxonomy,
     inputs={
-            'taxonomy_tree': Phylogeny[Rooted],
-            'taxonomy_map': FeatureData[SILVATaxidMap],
-            'taxonomy_ranks': FeatureData[SILVATaxonomy],
-            },
+        'taxonomy_tree': Phylogeny[Rooted],
+        'taxonomy_map': FeatureData[SILVATaxidMap],
+        'taxonomy_ranks': FeatureData[SILVATaxonomy],
+    },
     parameters={
         'include_species_labels': Bool,
         'rank_propagation': Bool,
         'ranks': List[Str % Choices(ALLOWED_RANKS)]
-        },
+    },
     outputs=[('taxonomy', FeatureData[Taxonomy])],
     input_descriptions={
         'taxonomy_tree': 'SILVA hierarchical taxonomy tree. The SILVA '
@@ -668,7 +672,7 @@ plugin.methods.register_function(
                          ' filename typically takes the form of: '
                          '\'tax_slv_ssu_X.txt\', where \'X\' is the SILVA '
                          'version number.',
-        },
+    },
     parameter_descriptions={
         'include_species_labels': INCLUDE_SPECIES_LABELS_DESCRIPTION,
         'rank_propagation': RANK_PROPAGATE_DESCRIPTION,
@@ -676,7 +680,7 @@ plugin.methods.register_function(
     },
     output_descriptions={
         'taxonomy': 'The resulting fixed-rank formatted SILVA taxonomy.'
-        },
+    },
     name='Generates a SILVA fixed-rank taxonomy.',
     description=(
         'Parses several files from the SILVA reference database to produce a '
@@ -686,7 +690,7 @@ plugin.methods.register_function(
         'ranks in the resulting taxonomy) are: domain (d__), phylum (p__), '
         'class (c__), order (o__), family (f__), genus (g__), and species '
         '(s__). ' + SILVA_LICENSE_NOTE
-        ),
+    ),
     citations=[citations['Pruesse2007'],
                citations['Quast2013']]
 )
