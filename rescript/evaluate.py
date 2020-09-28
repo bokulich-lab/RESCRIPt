@@ -201,9 +201,10 @@ def _evaluate_seqs(sequences, labels, kmer_lengths=None, subsample_kmers=1.0):
         res = list(len_quantiles) + [len(uniqs), seq_entropy]
 
         n_jobs = min(len(kmer_lengths), cpu_count())
-        parallel = Parallel(n_jobs=n_jobs, backend='loky')
-        kmer_freqs = parallel(delayed(worker)(seqs, k, subsample_kmers) for k in kmer_lengths)
-        res.extend(kmer_freqs)
+        if n_jobs > 0:
+            parallel = Parallel(n_jobs=n_jobs, backend='loky')
+            kmer_freqs = parallel(delayed(worker)(seqs, k, subsample_kmers) for k in kmer_lengths)
+            res.extend(kmer_freqs)
         results[n] = res
     return results.round(2), lengths
 
