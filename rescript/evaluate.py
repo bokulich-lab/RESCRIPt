@@ -168,7 +168,7 @@ def evaluate_seqs(output_dir: str, sequences: DNAIterator, labels: list = None,
     plt.close('all')
 
 
-def worker(seqs, kmer_len, subsample_kmers):
+def _process_kmers(seqs, kmer_len, subsample_kmers):
     if subsample_kmers < 1:
         subsample_size = int(subsample_kmers * len(seqs))
         seqs = np.random.choice(seqs, subsample_size, replace=False)
@@ -203,7 +203,7 @@ def _evaluate_seqs(sequences, labels, kmer_lengths=None, subsample_kmers=1.0):
         n_jobs = min(len(kmer_lengths), cpu_count())
         if n_jobs > 0:
             parallel = Parallel(n_jobs=n_jobs, backend='loky')
-            kmer_freqs = parallel(delayed(worker)(seqs, k, subsample_kmers) for k in kmer_lengths)
+            kmer_freqs = parallel(delayed(_process_kmers)(seqs, k, subsample_kmers) for k in kmer_lengths)
             res.extend(kmer_freqs)
         results[n] = res
     return results.round(2), lengths
