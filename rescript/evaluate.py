@@ -173,7 +173,9 @@ def _process_kmers(seqs, kmer_len, subsample_kmers):
         subsample_size = int(subsample_kmers * len(seqs))
         seqs = np.random.choice(seqs, subsample_size, replace=False)
     vectorizer = HashingVectorizer(
-        alternate_sign=False, analyzer='char', ngram_range=[kmer_len, kmer_len])
+        alternate_sign=False,
+        analyzer='char',
+        ngram_range=[kmer_len, kmer_len])
     X = vectorizer.fit_transform(seqs)
     kmer_freq = X.sum(axis=0)
     return scipy.stats.entropy(kmer_freq, axis=1)[0]
@@ -203,7 +205,9 @@ def _evaluate_seqs(sequences, labels, kmer_lengths=None, subsample_kmers=1.0):
         n_jobs = min(len(kmer_lengths), cpu_count())
         if n_jobs > 0:
             parallel = Parallel(n_jobs=n_jobs, backend='loky')
-            kmer_freqs = parallel(delayed(_process_kmers)(seqs, k, subsample_kmers) for k in kmer_lengths)
+            kmer_freqs = parallel(
+                delayed(_process_kmers)(
+                    seqs, k, subsample_kmers) for k in kmer_lengths)
             res.extend(kmer_freqs)
         results[n] = res
     return results.round(2), lengths

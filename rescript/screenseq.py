@@ -40,7 +40,11 @@ def cull_seqs(sequences: DNAIterator, num_degenerates: int = 5,
 
     n_jobs = cpu_count()
     parallel = Parallel(n_jobs=n_jobs, backend='loky')
-    seqs = parallel(delayed(_filter_seq)(seq, num_degenerates, homopolymer_length) for seq in sequences)
+    seqs = parallel(
+        delayed(_filter_seq)(
+            seq,
+            num_degenerates,
+            homopolymer_length) for seq in sequences)
 
     with result.open() as out:
         for seq in seqs:
