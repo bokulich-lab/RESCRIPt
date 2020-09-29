@@ -58,14 +58,18 @@ def _assemble_silva_data_urls(version, target, download_sequences=True):
         target = 'SSURef_Nr99'
     insert = ref_map[target]
 
-    # now compile URLs
-    # naming inconsitancy, i.e. folder == 138_1, filenames == 138.1.
-    if version == '138.1':
-        base_url = 'https://www.arb-silva.de/fileadmin/silva_databases/'\
-                   'release_138_1/Exports/'
+    # Now compile URLs
+    base_url = 'https://www.arb-silva.de/fileadmin/silva_databases/'\
+               'release_{0}/Exports/'
+    # Check folder / file naming inconsistency.
+    # e.g. folder name for version 138.1 contains the string "138_1",
+    # while the filenames contain the string "138.1". We'll need to modify
+    # the variable `version` for the folder name.
+    # We'll add to this list as we encounter similar issues.
+    if version in ['138.1']:
+        base_url = base_url.format(version.replace('.', '_'))
     else:
-        base_url = 'https://www.arb-silva.de/fileadmin/silva_databases/'\
-                   'release_{0}/Exports/'.format(version)
+        base_url = base_url.format(version)
 
     # construct file urls
     base_url_seqs = base_url + 'SILVA_{0}_{1}_tax_silva.fasta.gz'.format(
@@ -83,7 +87,7 @@ def _assemble_silva_data_urls(version, target, download_sequences=True):
     tree_url = base_url_tax + '.tre'
     tax_url = base_url_tax + '.txt'
 
-    # if version == '138' or version == '138.1':
+    # add ".gz" for the following versions:
     if version in ['138', '138.1']:
         tree_url += '.gz'
         tax_url += '.gz'
