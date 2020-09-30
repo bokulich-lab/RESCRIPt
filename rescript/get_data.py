@@ -60,16 +60,13 @@ def _assemble_silva_data_urls(version, target, download_sequences=True):
 
     # Now compile URLs
     base_url = 'https://www.arb-silva.de/fileadmin/silva_databases/'\
-               'release_{0}/Exports/'
-    # Check folder / file naming inconsistency.
-    # e.g. folder name for version 138.1 contains the string "138_1",
-    # while the filenames contain the string "138.1". We'll need to modify
-    # the variable `version` for the folder name.
-    # We'll add to this list as we encounter similar issues.
-    if version in ['138.1']:
-        base_url = base_url.format(version.replace('.', '_'))
-    else:
-        base_url = base_url.format(version)
+               'release_{0}/Exports/'.format(version.replace('.', '_'))
+    # ^^ Note the '.format()' above. This handles folder / file naming
+    # inconsistency. e.g. folder name for version 138.1 contains the string
+    # "138_1", while the filenames within that directory contain the string
+    # "138.1". We'll need to modify the variable `version` and replace '.'
+    # with '_' for the folder name. May need to update this in the future,
+    # if we find more inconsistencies.
 
     # construct file urls
     base_url_seqs = base_url + 'SILVA_{0}_{1}_tax_silva.fasta.gz'.format(
