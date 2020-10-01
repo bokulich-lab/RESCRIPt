@@ -45,7 +45,7 @@ def cull_seqs(sequences: DNAIterator, num_degenerates: int = 5,
     manager = Manager()
     mylock = manager.Lock()
     parallel = Parallel(n_jobs=n_jobs, backend='loky')
-    seqs = parallel(
+    parallel(
         delayed(_filter_seq)(
             seq,
             num_degenerates,
