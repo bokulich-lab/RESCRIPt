@@ -404,7 +404,8 @@ plugin.methods.register_function(
                               'length N, or greater, will be removed.',
         'n_jobs': 'Number of concurrent processes to use while processing '
                   'sequences. More is faster but typically should not be '
-                  'higher than the number of available CPUs.'
+                  'higher than the number of available CPUs. Output sequence '
+                  'order may change when using multiple jobs.'
     },
     output_descriptions={
         'clean_sequences': 'The resulting DNA sequences that pass degenerate '
