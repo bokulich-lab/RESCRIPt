@@ -5,6 +5,7 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
+from multiprocessing import cpu_count
 
 import pandas as pd
 import numpy as np
@@ -13,6 +14,8 @@ import warnings
 import qiime2 as q2
 import q2templates
 from os.path import join
+
+from joblib import Parallel, delayed
 from q2_types.feature_data import DNAIterator
 from sklearn.feature_extraction.text import HashingVectorizer
 import seaborn as sns
@@ -165,6 +168,19 @@ def evaluate_seqs(output_dir: str, sequences: DNAIterator, labels: list = None,
     plt.close('all')
 
 
+def _process_kmers(seqs, kmer_len, subsample_kmers):
+    if subsample_kmers < 1:
+        subsample_size = int(subsample_kmers * len(seqs))
+        seqs = np.random.choice(seqs, subsample_size, replace=False)
+    vectorizer = HashingVectorizer(
+        alternate_sign=False,
+        analyzer='char',
+        ngram_range=[kmer_len, kmer_len])
+    X = vectorizer.fit_transform(seqs)
+    kmer_freq = X.sum(axis=0)
+    return scipy.stats.entropy(kmer_freq, axis=1)[0]
+
+
 def _evaluate_seqs(sequences, labels, kmer_lengths=None, subsample_kmers=1.0):
     if not kmer_lengths:
         kmer_lengths = []
@@ -185,15 +201,14 @@ def _evaluate_seqs(sequences, labels, kmer_lengths=None, subsample_kmers=1.0):
         uniqs = Counter(seqs).values()
         seq_entropy = scipy.stats.entropy(list(uniqs))
         res = list(len_quantiles) + [len(uniqs), seq_entropy]
-        for k in kmer_lengths:
-            if subsample_kmers < 1:
-                subsample_size = int(subsample_kmers * len(seqs))
-                seqs = np.random.choice(seqs, subsample_size, replace=False)
-            vectorizer = HashingVectorizer(
-                alternate_sign=False, analyzer='char', ngram_range=[k, k])
-            X = vectorizer.fit_transform(seqs)
-            kmer_freq = X.sum(axis=0)
-            res.append(scipy.stats.entropy(kmer_freq, axis=1)[0])
+
+        n_jobs = min(len(kmer_lengths), cpu_count())
+        if n_jobs > 0:
+            parallel = Parallel(n_jobs=n_jobs, backend='loky')
+            kmer_freqs = parallel(
+                delayed(_process_kmers)(
+                    seqs, k, subsample_kmers) for k in kmer_lengths)
+            res.extend(kmer_freqs)
         results[n] = res
     return results.round(2), lengths
 
