@@ -66,9 +66,10 @@ Problem? Suggestion? Technical errors and user support requests can be filed on 
 
 ## Citation
 
-A proper software announcement is forthcoming. In the meantime, if you use RESCRIPt in your research, please cite the Zenodo record:
+If you use RESCRIPt in your research, please cite the following pre-print:
 
-Nicholas Bokulich, Mike Robeson, Ben Kaehler, & Matthew Dillon. bokulich-lab/RESCRIPt. Zenodo. http://doi.org/10.5281/zenodo.3891931
+Michael S Robeson II, Devon R O'Rourke, Benjamin D Kaehler, Michal Ziemski, Matthew R Dillon, Jeffrey T Foster, Nicholas A Bokulich. RESCRIPt: Reproducible sequence taxonomy reference database management for the masses. bioRxiv 2020.10.05.326504; doi: https://doi.org/10.1101/2020.10.05.326504
+
 
 ## License
 
