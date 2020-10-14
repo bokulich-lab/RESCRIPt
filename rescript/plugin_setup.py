@@ -35,8 +35,10 @@ import rescript
 from rescript._utilities import _rank_handles
 from rescript.types._format import (
     SILVATaxonomyFormat, SILVATaxonomyDirectoryFormat, SILVATaxidMapFormat,
-    SILVATaxidMapDirectoryFormat, RNAFASTAFormat, RNASequencesDirectoryFormat)
-from rescript.types._type import SILVATaxonomy, SILVATaxidMap, RNASequence
+    SILVATaxidMapDirectoryFormat, RNAFASTAFormat, RNASequencesDirectoryFormat,
+    AlignedRNASequencesDirectoryFormat)
+from rescript.types._type import (SILVATaxonomy, SILVATaxidMap, RNASequence,
+                                  AlignedRNASequence)
 from rescript.types.methods import reverse_transcribe
 from rescript.ncbi import get_ncbi_data, _default_ranks, _allowed_ranks
 
@@ -428,14 +430,14 @@ plugin.methods.register_function(
 plugin.methods.register_function(
     function=degap_seqs,
     inputs={
-        'aligned_sequences': FeatureData[AlignedSequence]
+        'aligned_sequences': FeatureData[AlignedSequence | AlignedRNASequence]
     },
     parameters={
         'min_length': Int % Range(1, None)
     },
     outputs=[('degapped_sequences', FeatureData[Sequence])],
     input_descriptions={
-        'aligned_sequences': 'Aligned DNA Sequences to be degapped.'
+        'aligned_sequences': 'Aligned DNA / RNA Sequences to be degapped.'
     },
     parameter_descriptions={
         'min_length': 'Minimum length of sequence to be returned after '
@@ -444,11 +446,11 @@ plugin.methods.register_function(
         'degapped_sequences': 'The resulting unaligned (degapped) DNA '
                               'sequences.'
     },
-    name='Remove gaps from DNA sequence alignments.',
-    description=('This method converts aligned DNA sequences to unaligned DNA '
-                 'sequences by removing gaps ("-") and missing data (".") '
-                 'characters from the sequences. Essentially, \'unaligning\' '
-                 'the sequences.')
+    name='Remove gaps from DNA / RNA sequence alignments.',
+    description=('This method converts aligned DNA / RNA sequences to '
+                 'unaligned DNA sequences by removing gaps ("-") and missing '
+                 'data (".") characters from the sequences. Essentially, '
+                 '\'unaligning\' the sequences.')
 )
 
 
@@ -789,7 +791,8 @@ plugin.methods.register_function(
 
 
 # Registrations
-plugin.register_semantic_types(SILVATaxonomy, SILVATaxidMap, RNASequence)
+plugin.register_semantic_types(SILVATaxonomy, SILVATaxidMap, RNASequence,
+                               AlignedRNASequence)
 plugin.register_semantic_type_to_format(
     FeatureData[SILVATaxonomy],
     artifact_format=SILVATaxonomyDirectoryFormat)
@@ -799,7 +802,11 @@ plugin.register_semantic_type_to_format(
 plugin.register_semantic_type_to_format(
     FeatureData[RNASequence],
     artifact_format=RNASequencesDirectoryFormat)
+plugin.register_semantic_type_to_format(
+    FeatureData[AlignedRNASequence],
+    artifact_format=AlignedRNASequencesDirectoryFormat)
 plugin.register_formats(SILVATaxonomyFormat, SILVATaxonomyDirectoryFormat,
                         SILVATaxidMapFormat, SILVATaxidMapDirectoryFormat,
-                        RNAFASTAFormat, RNASequencesDirectoryFormat)
+                        RNAFASTAFormat, RNASequencesDirectoryFormat,
+                        AlignedRNASequencesDirectoryFormat)
 importlib.import_module('rescript.types._transformer')

@@ -16,3 +16,5 @@ SILVATaxidMap = SemanticType(
     'SILVATaxidMap', variant_of=FeatureData.field['type'])
 
 RNASequence = SemanticType('RNASequence', variant_of=FeatureData.field['type'])
+AlignedRNASequence = SemanticType('AlignedRNASequence',
+                                  variant_of=FeatureData.field['type'])

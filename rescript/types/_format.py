@@ -144,5 +144,13 @@ class RNAFASTAFormat(model.TextFileFormat):
         self._validate(record_count_map[level])
 
 
+class AlignedRNAFASTAFormat(RNAFASTAFormat):
+    pass
+
+
 RNASequencesDirectoryFormat = model.SingleFileDirectoryFormat(
     'RNASequencesDirectoryFormat', 'rna-sequences.fasta', RNAFASTAFormat)
+
+AlignedRNASequencesDirectoryFormat = model.SingleFileDirectoryFormat(
+    'AlignedRNASequencesDirectoryFormat', 'aligned-rna-sequences.fasta',
+    AlignedRNAFASTAFormat)

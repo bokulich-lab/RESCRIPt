@@ -7,11 +7,14 @@
 # ----------------------------------------------------------------------------
 
 import pandas as pd
-from q2_types.feature_data import DNAFASTAFormat, DNAIterator
+from q2_types.feature_data import (DNAFASTAFormat, DNAIterator,
+                                   AlignedDNAFASTAFormat, AlignedDNAIterator)
 
 from ..plugin_setup import plugin
-from ._format import SILVATaxonomyFormat, SILVATaxidMapFormat, RNAFASTAFormat
-from rescript._utilities import _rna_to_dna, _read_dna_fasta
+from ._format import (SILVATaxonomyFormat, SILVATaxidMapFormat, RNAFASTAFormat,
+                      AlignedRNAFASTAFormat)
+from rescript._utilities import (_rna_to_dna, _read_dna_fasta,
+                                 _rna_align_to_dna_align)
 
 
 def _read_dataframe(fh, header=0):
@@ -65,3 +68,15 @@ def _7(data: RNAFASTAFormat) -> DNAIterator:
     converted_dna = _rna_to_dna(str(data))
     generator = _read_dna_fasta(str(converted_dna))
     return DNAIterator(generator)
+
+
+@plugin.register_transformer
+def _8(data: AlignedRNAFASTAFormat) -> AlignedDNAFASTAFormat:
+    return _rna_align_to_dna_align(str(data))
+
+
+@plugin.register_transformer
+def _9(data: AlignedRNAFASTAFormat) -> AlignedDNAIterator:
+    converted_dna = _rna_align_to_dna_align(str(data))
+    generator = _read_dna_fasta(str(converted_dna))
+    return AlignedDNAIterator(generator)
