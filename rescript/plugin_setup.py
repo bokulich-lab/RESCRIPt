@@ -10,6 +10,8 @@ import importlib
 
 from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int,
                            Float, Visualization, Bool, TypeMap, Metadata)
+
+from .trim_alignment import trim_alignment
 from .merge import merge_taxa
 from .dereplicate import dereplicate
 from .evaluate import evaluate_taxonomy, evaluate_seqs
@@ -787,6 +789,37 @@ plugin.methods.register_function(
     description=('Filter taxonomy by list of IDs or search criteria.'),
 )
 
+plugin.pipelines.register_function(
+    function=trim_alignment,
+    inputs={'aligned_sequences': FeatureData[AlignedSequence], },
+    parameters={
+        'primer_fwd': Str,
+        'primer_rev': Str,
+        'position_start': Int % Range(1, None),
+        'position_end': Int % Range(1, None)
+    },
+    outputs=[('trimmed_sequences', FeatureData[AlignedSequence]), ],
+    input_descriptions={'aligned_sequences': 'Aligned DNA sequences.', },
+    parameter_descriptions={
+        'primer_fwd': 'Forward primer used to find the start position '
+                      'for alignment trimming.',
+        'primer_rev': 'Reverse primer used to find the end position '
+                      'for alignment trimming.',
+        'position_start': 'Position within the alignment where the trimming '
+                          'will begin. If not provided, alignment will not'
+                          'be trimmed at the beginning. If forward primer is'
+                          'specified this parameter will be ignored.',
+        'position_end': 'Position within the alignment where the trimming '
+                        'will end. If not provided, alignment will not be '
+                        'trimmed at the end. If reverse primer is specified '
+                        'this parameter will be ignored.'
+    },
+    output_descriptions={
+        'trimmed_sequences': 'Trimmed sequence alignment.', },
+    name='Trim alignment based on primer positions.',
+    description=('To be added.'),
+    citations=[]
+)
 
 # Registrations
 plugin.register_semantic_types(SILVATaxonomy, SILVATaxidMap, RNASequence)
