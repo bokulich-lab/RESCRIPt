@@ -28,7 +28,7 @@ def _trim_all_sequences(aligned_sequences: AlignedDNAFASTAFormat,
 
     result = AlignedDNAFASTAFormat()
     with result.open() as out_fasta:
-        for seq in aligned_sequences.view(DNAIterator):
+        for seq in aligned_sequences.view(AlignedDNAIterator):
             seq_trimmed = _trim_sequence(
                 seq,
                 trim_positions["pos_start"],
@@ -200,7 +200,7 @@ def _trim_alignment(expand_alignment_action,
 
     # if primers are provided use them
     # otherwise fall back to position-based slicing
-    if primer_fwd is not None or primer_rev is not None:
+    if primer_fwd or primer_rev:
         primers_fasta = _process_primers(primer_fwd, primer_rev)
         primers = qiime2.Artifact.import_data(
             'FeatureData[Sequence]', primers_fasta)
@@ -210,17 +210,16 @@ def _trim_alignment(expand_alignment_action,
             alignment=aligned_sequences, sequences=primers)[0]
 
         # find trim positions based on primer positions within alignment
-        primer_positions = _locate_primer_positions(alignment_with_primers)
+        trim_positions = _locate_primer_positions(alignment_with_primers)
     else:
         # find length of the alignment
-        aln_len = len(
-            next(
-                aligned_sequences.view(AlignedDNAIterator).generator))
+        seq_iter = aligned_sequences.view(AlignedDNAIterator).generator
+        aln_len = len(next(seq_iter))
 
-        primer_positions = _prepare_positions(
+        trim_positions = _prepare_positions(
             position_start, position_end, aln_len)
 
-    result = _trim_all_sequences(aligned_sequences, primer_positions)
+    result = _trim_all_sequences(aligned_sequences, trim_positions)
 
     return result
 
@@ -231,6 +230,16 @@ def trim_alignment(ctx,
                    primer_rev=None,
                    position_start=None,
                    position_end=None):
+    """
+    Trim an existing alignment based on provided primers or specific,
+    pre-defined positions. Primers take precedence over the positions,
+    i.e. if both are provided, positions will be ignored.
+
+    This action uses mafft_add action to add provided primers (if any)
+    to the existing alignment. Subsequently, start (5'-most) and end
+    (3'-most) position from fwd and rev primer located within the new
+    alignment is identified and used for slicing the original alignment.
+    """
     expand_alignment_action = ctx.get_action('alignment', 'mafft_add')
 
     result = _trim_alignment(

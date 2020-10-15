@@ -816,8 +816,16 @@ plugin.pipelines.register_function(
     },
     output_descriptions={
         'trimmed_sequences': 'Trimmed sequence alignment.', },
-    name='Trim alignment based on primer positions.',
-    description=('To be added.'),
+    name='Trim alignment based on provided primers or specific positions.',
+    description=(
+        "Trim an existing alignment based on provided primers or specific, p"
+        "re-defined positions. Primers take precedence over the positions,"
+        "i.e. if both are provided, positions will be ignored."
+        "When using primers in combination with a DNA alignment, a new "
+        "alignment will be generated to locate primer positions. "
+        "Subsequently, start (5'-most) and end (3'-most) position from fwd "
+        "and rev primer located within the new alignment is identified and "
+        "used for slicing the original alignment."),
     citations=[]
 )
 
