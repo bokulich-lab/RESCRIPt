@@ -10,6 +10,7 @@ import itertools
 
 import qiime2.plugin.model as model
 from qiime2.plugin import ValidationError
+from q2_types.feature_data import AlignedDNAFASTAFormat
 
 from rescript._utilities import _read_rna_fasta
 
@@ -144,7 +145,7 @@ class RNAFASTAFormat(model.TextFileFormat):
         self._validate(record_count_map[level])
 
 
-class AlignedRNAFASTAFormat(RNAFASTAFormat):
+class AlignedRNAFASTAFormat(AlignedDNAFASTAFormat):
     pass
 
 
