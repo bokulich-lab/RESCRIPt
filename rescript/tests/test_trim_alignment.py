@@ -60,7 +60,8 @@ class TestExtractAlignmentRegion(TestPluginBase):
         self.aligned_with_primers_fasta = AlignedDNAFASTAFormat(
             aligned_with_primers_fp, mode='r')
         self.aligned_mess_fasta = AlignedDNAFASTAFormat(
-            self.get_data_path('trim-test-alignment-with-primers-mess.fasta'), mode='r')
+            self.get_data_path(
+                'trim-test-alignment-with-primers-mess.fasta'), mode='r')
         self.aligned_with_fwd_fasta = AlignedDNAFASTAFormat(
             self.get_data_path('trim-test-alignment-fwd.fasta'), mode='r')
         self.aligned_with_rev_fasta = AlignedDNAFASTAFormat(
@@ -199,6 +200,11 @@ class TestExtractAlignmentRegion(TestPluginBase):
         exp_pos = {"start": None, "end": None}
         self.assertDictEqual(obs_pos, exp_pos)
 
+    # test locating positions in an alignment where wrong primers were used;
+    # here, two random primers were aligned and the reverse not only is
+    # aligned with gaps but also its start is upstream to the start of
+    # the forward primer - clearly something went wrong with the alignment;
+    # user should be warned
     def test_locate_positions_strange_alignment(self):
         with self.assertRaisesRegex(
                 ValueError, 'Reverse primer overlaps'):

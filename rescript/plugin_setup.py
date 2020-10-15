@@ -826,7 +826,6 @@ plugin.pipelines.register_function(
         "Subsequently, start (5'-most) and end (3'-most) position from fwd "
         "and rev primer located within the new alignment is identified and "
         "used for slicing the original alignment."),
-    citations=[]
 )
 
 # Registrations
