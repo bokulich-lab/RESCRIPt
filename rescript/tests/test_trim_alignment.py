@@ -52,13 +52,15 @@ class TestExtractAlignmentRegion(TestPluginBase):
         self.aligned_seqs_fasta = AlignedDNAFASTAFormat(
             aligned_seqs_fp, mode='r')
         self.primers_dict = {
-            "primer_fwd": "GGGAATCTTCCACAATGG",
-            "primer_rev": "GTGTTCTTCTCTAACAACAG"
+            "forward": "GGGAATCTTCCACAATGG",
+            "reverse": "GTGTTCTTCTCTAACAACAG"
         }
         self.aligned_with_primers = qiime2.Artifact.import_data(
             'FeatureData[AlignedSequence]', aligned_with_primers_fp)
         self.aligned_with_primers_fasta = AlignedDNAFASTAFormat(
             aligned_with_primers_fp, mode='r')
+        self.aligned_mess_fasta = AlignedDNAFASTAFormat(
+            self.get_data_path('trim-test-alignment-with-primers-mess.fasta'), mode='r')
         self.aligned_with_fwd_fasta = AlignedDNAFASTAFormat(
             self.get_data_path('trim-test-alignment-fwd.fasta'), mode='r')
         self.aligned_with_rev_fasta = AlignedDNAFASTAFormat(
@@ -117,25 +119,25 @@ class TestExtractAlignmentRegion(TestPluginBase):
     def test_prepare_positions(self):
         pos_start, pos_end, aln_len = 4, 16, 20
         obs_pos = _prepare_positions(pos_start, pos_end, aln_len)
-        exp_pos = {"pos_start": 3, "pos_end": 16}
+        exp_pos = {"start": 3, "end": 16}
         self.assertDictEqual(obs_pos, exp_pos)
 
     def test_prepare_positions_no_start(self):
         pos_start, pos_end, aln_len = None, 16, 20
         obs_pos = _prepare_positions(pos_start, pos_end, aln_len)
-        exp_pos = {"pos_start": None, "pos_end": 16}
+        exp_pos = {"start": None, "end": 16}
         self.assertDictEqual(obs_pos, exp_pos)
 
     def test_prepare_positions_no_end(self):
         pos_start, pos_end, aln_len = 4, None, 20
         obs_pos = _prepare_positions(pos_start, pos_end, aln_len)
-        exp_pos = {"pos_start": 3, "pos_end": None}
+        exp_pos = {"start": 3, "end": None}
         self.assertDictEqual(obs_pos, exp_pos)
 
     def test_prepare_positions_end_too_high(self):
         pos_start, pos_end, aln_len = 4, 24, 20
         obs_pos = _prepare_positions(pos_start, pos_end, aln_len)
-        exp_pos = {"pos_start": 3, "pos_end": 20}
+        exp_pos = {"start": 3, "end": 20}
         self.assertDictEqual(obs_pos, exp_pos)
 
     def test_prepare_positions_both_none(self):
@@ -155,102 +157,114 @@ class TestExtractAlignmentRegion(TestPluginBase):
 
     def test_process_primers(self):
         obs_primers = _process_primers(
-            self.primers_dict["primer_fwd"],
-            self.primers_dict["primer_rev"])
+            self.primers_dict["forward"],
+            self.primers_dict["reverse"])
         obs_primers = {seq.metadata['id']: str(seq)
                        for seq in obs_primers.view(DNAIterator)}
-        exp_primers = {"primer_fwd": "GGGAATCTTCCACAATGG",
-                       "primer_rev": "CTGTTGTTAGAGAAGAACAC"}
+        exp_primers = {"forward": "GGGAATCTTCCACAATGG",
+                       "reverse": "CTGTTGTTAGAGAAGAACAC"}
         self.assertDictEqual(obs_primers, exp_primers)
 
     def test_process_primers_only_fwd(self):
-        obs_primers = _process_primers(self.primers_dict["primer_fwd"], None)
+        obs_primers = _process_primers(self.primers_dict["forward"], None)
         obs_primers = {seq.metadata['id']: str(seq)
                        for seq in obs_primers.view(DNAIterator)}
-        exp_primers = {"primer_fwd": "GGGAATCTTCCACAATGG"}
+        exp_primers = {"forward": "GGGAATCTTCCACAATGG"}
         self.assertDictEqual(obs_primers, exp_primers)
 
     def test_process_primers_only_rev(self):
-        obs_primers = _process_primers(None, self.primers_dict["primer_rev"])
+        obs_primers = _process_primers(None, self.primers_dict["reverse"])
         obs_primers = {seq.metadata['id']: str(seq)
                        for seq in obs_primers.view(DNAIterator)}
-        exp_primers = {"primer_rev": "CTGTTGTTAGAGAAGAACAC"}
+        exp_primers = {"reverse": "CTGTTGTTAGAGAAGAACAC"}
         self.assertDictEqual(obs_primers, exp_primers)
 
     def test_locate_positions(self):
         obs_pos = _locate_primer_positions(self.aligned_with_primers_fasta)
-        exp_pos = {"pos_start": 7, "pos_end": 104}
+        exp_pos = {"start": 7, "end": 104}
         self.assertDictEqual(obs_pos, exp_pos)
 
     def test_locate_positions_only_fwd(self):
         obs_pos = _locate_primer_positions(self.aligned_with_fwd_fasta)
-        exp_pos = {"pos_start": 7, "pos_end": None}
+        exp_pos = {"start": 7, "end": None}
         self.assertDictEqual(obs_pos, exp_pos)
 
     def test_locate_positions_only_rev(self):
         obs_pos = _locate_primer_positions(self.aligned_with_rev_fasta)
-        exp_pos = {"pos_start": None, "pos_end": 104}
+        exp_pos = {"start": None, "end": 104}
         self.assertDictEqual(obs_pos, exp_pos)
 
     def test_locate_positions_no_primers(self):
         obs_pos = _locate_primer_positions(self.aligned_seqs_fasta)
-        exp_pos = {"pos_start": None, "pos_end": None}
+        exp_pos = {"start": None, "end": None}
         self.assertDictEqual(obs_pos, exp_pos)
 
+    def test_locate_positions_strange_alignment(self):
+        with self.assertRaisesRegex(
+                ValueError, 'Reverse primer overlaps'):
+            _locate_primer_positions(self.aligned_mess_fasta)
+
+    # test trimming with both, start and end, positions given
     def test_trim_all_sequences(self):
         obs = _trim_all_sequences(
             self.aligned_seqs,
-            {"pos_start": 7, "pos_end": 104})
+            {"start": 7, "end": 104})
         obs_seqs = {seq.metadata['id']: str(seq)
                     for seq in obs.view(DNAIterator)}
         self.assertDictEqual(obs_seqs, self.exp_seqs_both_primers)
 
+    # test trimming with only end position given
     def test_trim_all_sequences_no_fwd(self):
         obs = _trim_all_sequences(
             self.aligned_seqs,
-            {"pos_start": None, "pos_end": 104})
+            {"start": None, "end": 104})
         obs_seqs = {seq.metadata['id']: str(seq)
                     for seq in obs.view(DNAIterator)}
         self.assertDictEqual(obs_seqs, self.exp_seqs_only_rev)
 
+    # test trimming with only start position given
     def test_trim_all_sequences_no_rev(self):
         obs = _trim_all_sequences(
             self.aligned_seqs,
-            {"pos_start": 7, "pos_end": None})
+            {"start": 7, "end": None})
         obs_seqs = {seq.metadata['id']: str(seq)
                     for seq in obs.view(DNAIterator)}
         self.assertDictEqual(obs_seqs, self.exp_seqs_only_fwd)
 
+    # test trimming when both primers are given
     def test_trim_alignment(self):
         obs = _trim_alignment(
             self.fake_ctx.get_action(1),
             self.aligned_seqs_fasta,
-            self.primers_dict["primer_fwd"],
-            self.primers_dict["primer_rev"])
+            self.primers_dict["forward"],
+            self.primers_dict["reverse"])
         obs_seqs = {seq.metadata['id']: str(seq)
                     for seq in obs.view(DNAIterator)}
         self.assertDictEqual(obs_seqs, self.exp_seqs_both_primers)
 
+    # test trimming when only fwd primer is given
     def test_trim_alignment_only_fwd(self):
         obs = _trim_alignment(
             self.fake_ctx.get_action(2),
             self.aligned_seqs_fasta,
-            self.primers_dict["primer_fwd"],
+            self.primers_dict["forward"],
             None)
         obs_seqs = {seq.metadata['id']: str(seq)
                     for seq in obs.view(DNAIterator)}
         self.assertDictEqual(obs_seqs, self.exp_seqs_only_fwd)
 
+    # test trimming when only rev primer is given
     def test_trim_alignment_only_rev(self):
         obs = _trim_alignment(
             self.fake_ctx.get_action(3),
             self.aligned_seqs_fasta,
             None,
-            self.primers_dict["primer_rev"])
+            self.primers_dict["reverse"])
         obs_seqs = {seq.metadata['id']: str(seq)
                     for seq in obs.view(DNAIterator)}
         self.assertDictEqual(obs_seqs, self.exp_seqs_only_rev)
 
+    # test trimming when both positions are given
     def test_trim_alignment_by_positions(self):
         obs = _trim_alignment(
             self.fake_ctx.get_action(1),
@@ -260,6 +274,7 @@ class TestExtractAlignmentRegion(TestPluginBase):
                     for seq in obs.view(DNAIterator)}
         self.assertDictEqual(obs_seqs, self.exp_seqs_both_primers)
 
+    # test trimming when only start position is given
     def test_trim_alignment_by_position_left(self):
         obs = _trim_alignment(
             self.fake_ctx.get_action(2),
@@ -269,6 +284,7 @@ class TestExtractAlignmentRegion(TestPluginBase):
                     for seq in obs.view(DNAIterator)}
         self.assertDictEqual(obs_seqs, self.exp_seqs_only_fwd)
 
+    # test trimming when only end position is given
     def test_trim_alignment_by_position_right(self):
         obs = _trim_alignment(
             self.fake_ctx.get_action(3),

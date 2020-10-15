@@ -31,8 +31,8 @@ def _trim_all_sequences(aligned_sequences: AlignedDNAFASTAFormat,
         for seq in aligned_sequences.view(AlignedDNAIterator):
             seq_trimmed = _trim_sequence(
                 seq,
-                trim_positions["pos_start"],
-                trim_positions["pos_end"])
+                trim_positions["start"],
+                trim_positions["end"])
             seq_trimmed.write(out_fasta)
     return result
 
@@ -57,14 +57,18 @@ def _find_terminal_positions(primer_positions: dict) -> (int, int):
     pos_start, pos_end = None, None
     # when we found both primers
     if len(primer_positions) == 2:
-        pos_start = min([x["pos_start"] for x in primer_positions.values()])
-        pos_end = max([x["pos_end"] for x in primer_positions.values()])
+        if primer_positions["reverse"]["start"] < \
+                primer_positions["forward"]["end"]:
+            raise ValueError("Reverse primer overlaps or aligned upstream the "
+                             "forward primer. Are the primers correct?")
+        pos_start = min([x["start"] for x in primer_positions.values()])
+        pos_end = max([x["end"] for x in primer_positions.values()])
     # when only fwd primer was used
-    elif "primer_fwd" in primer_positions.keys():
-        pos_start = primer_positions["primer_fwd"]["pos_start"]
+    elif "forward" in primer_positions.keys():
+        pos_start = primer_positions["forward"]["start"]
     # when only rev primer was used
-    elif "primer_rev" in primer_positions.keys():
-        pos_end = primer_positions["primer_rev"]["pos_end"]
+    elif "reverse" in primer_positions.keys():
+        pos_end = primer_positions["reverse"]["end"]
     return pos_start, pos_end
 
 
@@ -84,24 +88,25 @@ def _locate_primer_positions(
 
     primers_aligned = dict()
     for aln_seq in alignment_with_primers.view(DNAIterator):
-        if aln_seq.metadata["id"] in ["primer_fwd", "primer_rev"]:
+        if aln_seq.metadata["id"] in ["forward", "reverse"]:
             primers_aligned[aln_seq.metadata["id"]] = (str(aln_seq))
 
     primer_positions = dict()
     for primer_id, primer_seq in primers_aligned.items():
         primer_positions[primer_id] = {
-            'pos_start': next(
+            'start': next(
                 (i for i, nt in enumerate(primer_seq) if nt != "-")),
-            'pos_end': len(primer_seq) - next(
+            'end': len(primer_seq) - next(
                 (i for i, nt in enumerate(primer_seq[::-1]) if nt != "-"))
         }
 
     pos_start, pos_end = _find_terminal_positions(primer_positions)
 
-    # TODO: probably some validation like in _prepare_positions
-    #  should happen here too
+    # not doing any validation like in _prepare_positions since none of
+    # the conditions checked there are possible to run into with the way
+    # _locate_primer_positions and _find_terminal_positions are implemented
 
-    return {"pos_start": pos_start, "pos_end": pos_end}
+    return {"start": pos_start, "end": pos_end}
 
 
 def _prepare_positions(position_start: Union[int, None],
@@ -135,7 +140,7 @@ def _prepare_positions(position_start: Union[int, None],
     if position_end and position_end > aln_len:
         position_end = aln_len
 
-    return {'pos_start': position_start, 'pos_end': position_end}
+    return {'start': position_start, 'end': position_end}
 
 
 def _process_primers(
@@ -154,13 +159,13 @@ def _process_primers(
     """
 
     primers = {
-        'primer_fwd': DNA(
+        'forward': DNA(
             primer_fwd, metadata={
-                'id': 'primer_fwd'})
+                'id': 'forward'})
         if primer_fwd else None,
-        'primer_rev': DNA(
+        'reverse': DNA(
             primer_rev, metadata={
-                'id': 'primer_rev'}).reverse_complement()
+                'id': 'reverse'}).reverse_complement()
         if primer_rev else None
     }
 
