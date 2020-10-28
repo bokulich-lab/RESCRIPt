@@ -1,8 +1,14 @@
+# ----------------------------------------------------------------------------
+# Copyright (c) 2020, QIIME 2 development team.
+#
+# Distributed under the terms of the Modified BSD License.
+#
+# The full license is in the file LICENSE, distributed with this software.
+# ----------------------------------------------------------------------------
+
 import random
 from typing import Union
-
 from q2_types.feature_data import (AlignedDNAFASTAFormat, DNAFASTAFormat)
-
 from rescript._utilities import _read_dna_fasta, _read_dna_alignment_fasta
 
 
