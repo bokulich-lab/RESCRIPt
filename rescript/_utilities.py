@@ -107,6 +107,10 @@ def _read_dna_fasta(path):
     return skbio.read(path, format='fasta', constructor=skbio.DNA)
 
 
+def _read_dna_alignment_fasta(path):
+    return skbio.TabularMSA.read(path, format='fasta', constructor=skbio.DNA)
+
+
 def _rna_to_dna(path):
     ff = DNAFASTAFormat()
     with ff.open() as outfasta:

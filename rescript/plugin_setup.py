@@ -8,9 +8,11 @@
 
 import importlib
 
+from qiime2.core.type import TypeMatch
 from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int,
                            Float, Visualization, Bool, TypeMap, Metadata)
 
+from .subsample import subsample_fasta
 from .trim_alignment import trim_alignment
 from .merge import merge_taxa
 from .dereplicate import dereplicate
@@ -826,6 +828,34 @@ plugin.pipelines.register_function(
         "Subsequently, start (5'-most) and end (3'-most) position from fwd "
         "and rev primer located within the new alignment is identified and "
         "used for slicing the original alignment."),
+)
+
+T = TypeMatch([AlignedSequence])
+plugin.methods.register_function(
+    function=subsample_fasta,
+    inputs={'sequences': FeatureData[T], },
+    parameters={
+        'subsample_size':
+            Float % Range(0, 1, inclusive_start=False, inclusive_end=True) |
+            Int % Range(1, None),
+        'random_seed': Int % Range(1, None)
+    },
+    outputs=[('sample_sequences', FeatureData[T]), ],
+    input_descriptions={'sequences': 'Sequences to subsample from.', },
+    parameter_descriptions={
+        'subsample_size': 'Size of the sample: if a number 0.0-1.0 is given '
+                          'a corresponding fraction of sequences will be '
+                          'sampled. If an integer >1 is given, a corresponding'
+                          'number of sequences will be sampled.',
+        'random_seed': 'Seed to be used for random sampling.'
+    },
+    output_descriptions={
+        'sample_sequences': 'Sample of original sequences.', },
+    name='Subsample an indicated number of sequences from a FASTA file.',
+    description=(
+        "Subsample a set of sequences (either plain or aligned DNA)"
+        "based on the number of desired sequences or a fraction of "
+        "original sequences."),
 )
 
 # Registrations
