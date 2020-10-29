@@ -830,7 +830,7 @@ plugin.pipelines.register_function(
         "used for slicing the original alignment."),
 )
 
-T = TypeMatch([AlignedSequence])
+T = TypeMatch([AlignedSequence, Sequence])
 plugin.methods.register_function(
     function=subsample_fasta,
     inputs={'sequences': FeatureData[T], },

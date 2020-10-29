@@ -9,7 +9,8 @@
 
 import qiime2
 from qiime2.plugin.testing import TestPluginBase
-from q2_types.feature_data import (AlignedDNAFASTAFormat, DNAIterator)
+from q2_types.feature_data import (AlignedDNAFASTAFormat, DNAIterator,
+                                   AlignedDNAIterator, DNAFASTAFormat)
 
 from rescript.subsample import subsample_fasta
 
@@ -21,15 +22,18 @@ class TestSubsampleSeq(TestPluginBase):
 
     def setUp(self):
         super().setUp()
-        input_fp = self.get_data_path('trim-test-alignment.fasta')
-        self.alignedseqs = AlignedDNAFASTAFormat(input_fp, mode='r')
+        aligned_input_fp = self.get_data_path('trim-test-alignment.fasta')
+        unaligned_input_fp = self.get_data_path('trim-test-sequences.fasta')
+        self.alignedseqs = AlignedDNAFASTAFormat(
+            aligned_input_fp, mode='r').view(AlignedDNAIterator)
+        self.seqs = DNAFASTAFormat(
+            unaligned_input_fp, mode='r').view(DNAIterator)
 
     def test_subsample_seqs_count(self):
         obs = subsample_fasta(
             self.alignedseqs, subsample_size=2, random_seed=42)
 
-        obs_seqs = {seq.metadata['id']: str(seq)
-                    for seq in obs.view(DNAIterator)}
+        obs_seqs = {seq.metadata['id']: str(seq) for seq in obs}
         exp_seqs = {'s1': '-----TAGGGAATCTTCCACAATGGGTGCAAACCTGATGGAGCAATG'
                           'CCGCGTGAGTGAAGANAGGTCTTCGGATCGTAAAGCTCTGTTGTTAG'
                           'AGAAGAACACGTGCTAGG--------',
@@ -42,8 +46,7 @@ class TestSubsampleSeq(TestPluginBase):
         obs = subsample_fasta(
             self.alignedseqs, subsample_size=0.8, random_seed=42)
 
-        obs_seqs = {seq.metadata['id']: str(seq)
-                    for seq in obs.view(DNAIterator)}
+        obs_seqs = {seq.metadata['id']: str(seq) for seq in obs}
         exp_seqs = {'s1': '-----TAGGGAATCTTCCACAATGGGTGCAAACCTGATGGAGCAATG'
                           'CCGCGTGAGTGAAGANAGGTCTTCGGATCGTAAAGCTCTGTTGTTAG'
                           'AGAAGAACACGTGCTAGG--------',
@@ -63,3 +66,16 @@ class TestSubsampleSeq(TestPluginBase):
                 ValueError, '.*sample size 6 is bigger.*sequences 5'):
             subsample_fasta(
                 self.alignedseqs, subsample_size=6, random_seed=42)
+
+    def test_subsample_seqs_count_unaligned(self):
+        obs = subsample_fasta(
+            self.seqs, subsample_size=2, random_seed=42)
+
+        obs_seqs = {seq.metadata['id']: str(seq) for seq in obs}
+        exp_seqs = {'s1': 'TAGGGAATCTTCCACAATGGGTGCAAACCTGATGGAGCAATGCCGCG'
+                          'TGAGTGAAGANAGGTCTTCGGATCGTAAAGCTCTGTTGTTAGAGAAG'
+                          'AACACGTGCTAGG',
+                    's5': 'AATGGGGAATATTGGACAATGGGCGAAAGCCTGATCCAGCCATGCCG'
+                          'CGTGTGTGAAGAAGGCCTTTTGGTTGTAAAGCACTTTAAGTGGGGAG'
+                          'GAAAAGCTTGTGGTTAA', }
+        self.assertEqual(obs_seqs, exp_seqs)
