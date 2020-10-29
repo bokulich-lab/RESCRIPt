@@ -41,7 +41,7 @@ def subsample_fasta(sequences: DNAIterator,
         for seq in seqs_iter_clone:
             id = seq.metadata['id']
             if id in ids_sample:
-                # ids_sample.remove(id)
+                ids_sample.remove(id)
                 yield seq
 
     return DNAIterator(sample_from_iterator())
