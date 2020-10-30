@@ -7,6 +7,7 @@
 # ----------------------------------------------------------------------------
 
 import pandas as pd
+<<<<<<< HEAD
 from q2_types.feature_data import (DNAFASTAFormat, DNAIterator,
                                    AlignedDNAFASTAFormat, AlignedDNAIterator)
 
@@ -15,6 +16,15 @@ from ._format import (SILVATaxonomyFormat, SILVATaxidMapFormat, RNAFASTAFormat,
                       AlignedRNAFASTAFormat)
 from rescript._utilities import (_rna_to_dna, _read_dna_fasta,
                                  _rna_align_to_dna_align)
+=======
+from q2_types.feature_data import (
+    DNAFASTAFormat, DNAIterator, AlignedDNAFASTAFormat)
+
+from ..plugin_setup import plugin
+from ._format import SILVATaxonomyFormat, SILVATaxidMapFormat, RNAFASTAFormat
+from rescript._utilities import (
+    _rna_to_dna, _read_dna_fasta, _dna_iterator_to_aligned_fasta)
+>>>>>>> master
 
 
 def _read_dataframe(fh, header=0):
@@ -71,6 +81,7 @@ def _7(data: RNAFASTAFormat) -> DNAIterator:
 
 
 @plugin.register_transformer
+<<<<<<< HEAD
 def _8(data: AlignedRNAFASTAFormat) -> AlignedDNAFASTAFormat:
     return _rna_align_to_dna_align(str(data))
 
@@ -80,3 +91,7 @@ def _9(data: AlignedRNAFASTAFormat) -> AlignedDNAIterator:
     converted_dna = _rna_align_to_dna_align(str(data))
     generator = _read_dna_fasta(str(converted_dna))
     return AlignedDNAIterator(generator)
+=======
+def _8(data: DNAIterator) -> AlignedDNAFASTAFormat:
+    return _dna_iterator_to_aligned_fasta(data)
+>>>>>>> master
