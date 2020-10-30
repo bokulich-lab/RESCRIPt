@@ -833,14 +833,14 @@ plugin.pipelines.register_function(
 T = TypeMatch([AlignedSequence, Sequence])
 plugin.methods.register_function(
     function=subsample_fasta,
-    inputs={'sequences': FeatureData[T], },
+    inputs={'sequences': FeatureData[T]},
     parameters={
         'subsample_size':
             Float % Range(0, 1, inclusive_start=False, inclusive_end=True),
         'random_seed': Int % Range(1, None)
     },
-    outputs=[('sample_sequences', FeatureData[T]), ],
-    input_descriptions={'sequences': 'Sequences to subsample from.', },
+    outputs=[('sample_sequences', FeatureData[T])],
+    input_descriptions={'sequences': 'Sequences to subsample from.'},
     parameter_descriptions={
         'subsample_size': 'Size of the random sample as a '
                           'fraction of the total count',
