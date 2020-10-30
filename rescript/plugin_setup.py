@@ -836,17 +836,14 @@ plugin.methods.register_function(
     inputs={'sequences': FeatureData[T], },
     parameters={
         'subsample_size':
-            Float % Range(0, 1, inclusive_start=False, inclusive_end=True) |
-            Int % Range(1, None),
+            Float % Range(0, 1, inclusive_start=False, inclusive_end=True),
         'random_seed': Int % Range(1, None)
     },
     outputs=[('sample_sequences', FeatureData[T]), ],
     input_descriptions={'sequences': 'Sequences to subsample from.', },
     parameter_descriptions={
-        'subsample_size': 'Size of the sample: if a number 0.0-1.0 is given '
-                          'a corresponding fraction of sequences will be '
-                          'sampled. If an integer >1 is given, a corresponding'
-                          'number of sequences will be sampled.',
+        'subsample_size': 'Size of the random sample as a '
+                          'fraction of the total count',
         'random_seed': 'Seed to be used for random sampling.'
     },
     output_descriptions={
@@ -854,8 +851,7 @@ plugin.methods.register_function(
     name='Subsample an indicated number of sequences from a FASTA file.',
     description=(
         "Subsample a set of sequences (either plain or aligned DNA)"
-        "based on the number of desired sequences or a fraction of "
-        "original sequences."),
+        "based on a fraction of original sequences."),
 )
 
 # Registrations
