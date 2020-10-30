@@ -29,7 +29,7 @@ from .filter_length import (filter_seqs_length_by_taxon, filter_seqs_length,
                             filter_taxa)
 from .orient import orient_seqs
 from q2_types.feature_data import (FeatureData, Taxonomy, Sequence,
-                                   AlignedSequence)
+                                   AlignedSequence, ProteinSequence)
 from q2_types.tree import Phylogeny, Rooted
 from q2_feature_classifier.classifier import (_parameter_descriptions,
                                               _classify_parameters)
@@ -42,7 +42,8 @@ from rescript.types._format import (
     SILVATaxidMapDirectoryFormat, RNAFASTAFormat, RNASequencesDirectoryFormat)
 from rescript.types._type import SILVATaxonomy, SILVATaxidMap, RNASequence
 from rescript.types.methods import reverse_transcribe
-from rescript.ncbi import get_ncbi_data, _default_ranks, _allowed_ranks
+from rescript.ncbi import (
+    get_ncbi_data, _default_ranks, _allowed_ranks, get_ncbi_data_protein)
 
 
 citations = Citations.load('citations.bib', package='rescript')
@@ -717,51 +718,80 @@ plugin.methods.register_function(
 )
 
 
+GET_NCBI_DATA_PARAMS = {
+    'query': Str,
+    'accession_ids': Metadata,
+    'ranks': List[Str % Choices(_allowed_ranks)],
+    'rank_propagation': Bool,
+    'logging_level': Str % Choices([
+        'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']),
+    'n_jobs': Int % Range(1, None)
+}
+GET_NCBI_DATA_PARAM_DESCRIPTIONS = {
+    'query': 'Query on the NCBI Nucleotide database',
+    'accession_ids': 'List of accession ids for sequences in the NCBI '
+                        'Nucleotide database.',
+    'ranks': 'List of taxonomic ranks for building a taxonomy from the '
+                "NCBI Taxonomy database. [default: '" +
+                "', '".join(_default_ranks) + "']",
+    'rank_propagation': 'Propagate known ranks to missing ranks if true',
+    'logging_level': 'Logging level, set to INFO for download progress or '
+                        'DEBUG for copious verbosity',
+    'n_jobs': 'Number of concurrent download connections. More is faster '
+                'until you run out of bandwidth.'
+}
+GET_NCBI_DATA_DISCLAIMER = (
+    '\n\nPlease be aware of the NCBI Disclaimer and Copyright notice '
+    '(https://www.ncbi.nlm.nih.gov/home/about/policies/), particularly '
+    '"run retrieval scripts on weekends or between 9 pm and 5 am Eastern '
+    'Time weekdays for any series of more than 100 requests". As a rough '
+    'guide, if you are downloading more than 125,000 sequences, only run '
+    'this method at those times.\n\nThe NCBI servers can be capricious '
+    'but reward polite persistence. If the download fails and gives you '
+    'a message that contains the words "Last exception was ReadTimeout", '
+    'you should probably try again, maybe with more connections. '
+    'If it fails for any other reason, please create an issue at '
+    'https://github.com/bokulich-lab/RESCRIPt.'
+)
+
 plugin.methods.register_function(
     function=get_ncbi_data,
     inputs={},
-    parameters={
-        'query': Str,
-        'accession_ids': Metadata,
-        'ranks': List[Str % Choices(_allowed_ranks)],
-        'rank_propagation': Bool,
-        'logging_level': Str % Choices([
-            'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']),
-        'n_jobs': Int % Range(1, None)},
+    parameters=GET_NCBI_DATA_PARAMS,
     outputs=[('sequences', FeatureData[Sequence]),
              ('taxonomy', FeatureData[Taxonomy])],
     input_descriptions={},
-    parameter_descriptions={
-        'query': 'Query on the NCBI Nucleotide database',
-        'accession_ids': 'List of accession ids for sequences in the NCBI '
-                         'Nucleotide database.',
-        'ranks': 'List of taxonomic ranks for building a taxonomy from the '
-                 "NCBI Taxonomy database. [default: '" +
-                 "', '".join(_default_ranks) + "']",
-        'rank_propagation': 'Propagate known ranks to missing ranks if true',
-        'logging_level': 'Logging level, set to INFO for download progress or '
-                         'DEBUG for copious verbosity',
-        'n_jobs': 'Number of concurrent download connections. More is faster '
-                  'until you run out of bandwidth.'},
+    parameter_descriptions=GET_NCBI_DATA_PARAM_DESCRIPTIONS,
     output_descriptions={
         'sequences': 'Sequences from the NCBI Nucleotide database',
         'taxonomy': 'Taxonomies from the NCBI Taxonomy database'},
     name='Download, parse, and import NCBI sequences and taxonomies',
     description=(
-        'Download and import sequences from the NCBI Nucleotide '
-        'database and download, parse, and import the corresponding '
-        'taxonomies from the NCBI Taxonomy database.\n\nPlease be aware of '
-        'the NCBI Disclaimer and Copyright notice '
-        '(https://www.ncbi.nlm.nih.gov/home/about/policies/), particularly '
-        '"run retrieval scripts on weekends or between 9 pm and 5 am Eastern '
-        'Time weekdays for any series of more than 100 requests". As a rough '
-        'guide, if you are downloading more than 125,000 sequences, only run '
-        'this method at those times.\n\nThe NCBI servers can be capricious '
-        'but reward polite persistence. If the download fails and gives you '
-        'a message that contains the words "Last exception was ReadTimeout", '
-        'you should probably try again, maybe with more connections. '
-        'If it fails for any other reason, please create an issue at '
-        'https://github.com/bokulich-lab/RESCRIPt.'),
+        'Download and import sequences from the NCBI Nucleotide database '
+        'and download, parse, and import the corresponding taxonomies '
+        'from the NCBI Taxonomy database.' + GET_NCBI_DATA_DISCLAIMER
+        ),
+    citations=[citations['ncbi2018database'], citations['benson2012genbank']]
+)
+
+
+plugin.methods.register_function(
+    function=get_ncbi_data_protein,
+    inputs={},
+    parameters=GET_NCBI_DATA_PARAMS,
+    outputs=[('sequences', FeatureData[ProteinSequence]),
+             ('taxonomy', FeatureData[Taxonomy])],
+    input_descriptions={},
+    parameter_descriptions=GET_NCBI_DATA_PARAM_DESCRIPTIONS,
+    output_descriptions={
+        'sequences': 'Sequences from the NCBI Protein database',
+        'taxonomy': 'Taxonomies from the NCBI Taxonomy database'},
+    name='Download, parse, and import NCBI protein sequences and taxonomies',
+    description=(
+        'Download and import sequences from the NCBI Protein database '
+        'and download, parse, and import the corresponding taxonomies '
+        'from the NCBI Taxonomy database.' + GET_NCBI_DATA_DISCLAIMER
+        ),
     citations=[citations['ncbi2018database'], citations['benson2012genbank']]
 )
 
