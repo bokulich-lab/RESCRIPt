@@ -119,15 +119,15 @@ def _rna_to_dna(path):
     return ff
 
 
-<<<<<<< HEAD
+def _dna_iterator_to_aligned_fasta(iterator):
+    ff = AlignedDNAFASTAFormat()
+    skbio.io.write(iter(iterator), format='fasta', into=str(ff))
+    return ff
+
+
 def _rna_align_to_dna_align(path):
     ff = AlignedDNAFASTAFormat()
     with ff.open() as outfasta:
         for seq in _read_rna_fasta(path):
             seq.reverse_transcribe().write(outfasta)
-=======
-def _dna_iterator_to_aligned_fasta(iterator):
-    ff = AlignedDNAFASTAFormat()
-    skbio.io.write(iter(iterator), format='fasta', into=str(ff))
->>>>>>> master
     return ff
