@@ -11,7 +11,7 @@ from re import sub
 import subprocess
 import skbio
 from collections import Counter
-from q2_types.feature_data import DNAFASTAFormat
+from q2_types.feature_data import DNAFASTAFormat, AlignedDNAFASTAFormat
 
 
 _rank_handles = {
@@ -107,9 +107,19 @@ def _read_dna_fasta(path):
     return skbio.read(path, format='fasta', constructor=skbio.DNA)
 
 
+def _read_dna_alignment_fasta(path):
+    return skbio.TabularMSA.read(path, format='fasta', constructor=skbio.DNA)
+
+
 def _rna_to_dna(path):
     ff = DNAFASTAFormat()
     with ff.open() as outfasta:
         for seq in _read_rna_fasta(path):
             seq.reverse_transcribe().write(outfasta)
+    return ff
+
+
+def _dna_iterator_to_aligned_fasta(iterator):
+    ff = AlignedDNAFASTAFormat()
+    skbio.io.write(iter(iterator), format='fasta', into=str(ff))
     return ff
