@@ -12,7 +12,7 @@ from q2_types.feature_data import DNAIterator
 
 def subsample_fasta(sequences: DNAIterator,
                     subsample_size: float = 0.1,
-                    random_seed: int = 42) -> DNAIterator:
+                    random_seed: int = 1) -> DNAIterator:
     # set seed for reproducibility
     random.seed(random_seed)
 
