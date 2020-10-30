@@ -11,12 +11,11 @@ from q2_types.feature_data import (
     DNAFASTAFormat, DNAIterator, AlignedDNAFASTAFormat, AlignedDNAIterator)
 
 from ..plugin_setup import plugin
-from ._format import(SILVATaxonomyFormat, SILVATaxidMapFormat, RNAFASTAFormat,
-                     AlignedRNAFASTAFormat)
+from ._format import (SILVATaxonomyFormat, SILVATaxidMapFormat, RNAFASTAFormat,
+                      AlignedRNAFASTAFormat)
 from rescript._utilities import (
     _rna_to_dna, _read_dna_fasta, _dna_iterator_to_aligned_fasta,
     _rna_align_to_dna_align)
-
 
 
 def _read_dataframe(fh, header=0):
