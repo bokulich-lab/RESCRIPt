@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2020, QIIME 2 development team.
+# Copyright (c) 2021, QIIME 2 development team.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -98,7 +98,7 @@ def _prep_taxmap(taxmap):
     taxmap.index.name = 'Feature ID'
     taxmap = taxmap.loc[:, ['organism_name', 'taxid']]
     taxmap.loc[:, 'organism_name'] = taxmap.loc[:, 'organism_name'].apply(
-                                            _get_clean_organism_name)
+        _get_clean_organism_name)
     return taxmap
 
 
@@ -116,7 +116,7 @@ def _prep_taxranks(taxrank):
     taxrank.set_index('taxid', inplace=True)
     # return only the last taxonomy from a given taxonomy path
     taxrank.loc[:, 'taxid_taxonomy'] = taxrank.loc[:, 'taxid_taxonomy'].apply(
-                                             _get_terminal_taxon)
+        _get_terminal_taxon)
     return taxrank
 
 
@@ -166,7 +166,7 @@ def _compile_taxonomy_output(updated_taxmap, ranks,
         updated_taxmap.loc[:, sorted_ranks].apply(lambda x: x.name + x)
     if include_species_labels:
         updated_taxmap.loc[:, 'organism_name'] = updated_taxmap.loc[
-                           :, 'organism_name'].apply(lambda x: 's__' + x)
+            :, 'organism_name'].apply(lambda x: 's__' + x)
         sorted_ranks.append('organism_name')
     taxonomy = updated_taxmap.loc[:, sorted_ranks].agg('; '.join, axis=1)
     taxonomy.rename('Taxon', inplace=True)

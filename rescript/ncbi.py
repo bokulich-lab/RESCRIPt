@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2020, QIIME 2 development team.
+# Copyright (c) 2021, QIIME 2 development team.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -74,7 +74,7 @@ def get_ncbi_data(
         query: str = None, accession_ids: Metadata = None,
         ranks: list = None, rank_propagation: bool = True,
         logging_level: str = None, n_jobs: int = 1
-        ) -> (DNAIterator, DataFrame):
+) -> (DNAIterator, DataFrame):
     if ranks is None:
         ranks = _default_ranks
     if query is None and accession_ids is None:
