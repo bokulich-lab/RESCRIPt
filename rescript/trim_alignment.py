@@ -220,7 +220,9 @@ def _trim_alignment(expand_alignment_action,
 
         # expand the existing alignment by addition of primers
         alignment_with_primers = expand_alignment_action(
-            alignment=aligned_sequences, sequences=primers)[0]
+            alignment=aligned_sequences,
+            sequences=primers,
+            addfragments=True)[0]
 
         # find trim positions based on primer positions within alignment
         trim_positions = _locate_primer_positions(alignment_with_primers)
