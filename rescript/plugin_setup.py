@@ -727,19 +727,28 @@ GET_NCBI_DATA_PARAMS = {
         'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']),
     'n_jobs': Int % Range(1, None)
 }
-GET_NCBI_DATA_PARAM_DESCRIPTIONS = {
-    'query': 'Query on the NCBI Nucleotide database',
-    'accession_ids': 'List of accession ids for sequences in the NCBI '
-                        'Nucleotide database.',
+GET_NCBI_DATA_PARAM_DESCRIPTIONS_COMMON = {
     'ranks': 'List of taxonomic ranks for building a taxonomy from the '
-                "NCBI Taxonomy database. [default: '" +
-                "', '".join(_default_ranks) + "']",
+             "NCBI Taxonomy database. [default: '" +
+             "', '".join(_default_ranks) + "']",
     'rank_propagation': 'Propagate known ranks to missing ranks if true',
     'logging_level': 'Logging level, set to INFO for download progress or '
                         'DEBUG for copious verbosity',
     'n_jobs': 'Number of concurrent download connections. More is faster '
-                'until you run out of bandwidth.'
+              'until you run out of bandwidth.'
 }
+GET_NCBI_DATA_PARAM_DESCRIPTIONS_DNA = {
+        'query': 'Query on the NCBI Nucleotide database',
+        'accession_ids': 'List of accession ids for sequences in the NCBI '
+                         'Nucleotide database.',
+        **GET_NCBI_DATA_PARAM_DESCRIPTIONS_COMMON
+    }
+GET_NCBI_DATA_PARAM_DESCRIPTIONS_PROTEIN = {
+        'query': 'Query on the NCBI Protein database',
+        'accession_ids': 'List of accession ids for sequences in the NCBI '
+                         'Protein database.',
+        **GET_NCBI_DATA_PARAM_DESCRIPTIONS_COMMON
+    }
 GET_NCBI_DATA_DISCLAIMER = (
     '\n\nPlease be aware of the NCBI Disclaimer and Copyright notice '
     '(https://www.ncbi.nlm.nih.gov/home/about/policies/), particularly '
@@ -761,7 +770,7 @@ plugin.methods.register_function(
     outputs=[('sequences', FeatureData[Sequence]),
              ('taxonomy', FeatureData[Taxonomy])],
     input_descriptions={},
-    parameter_descriptions=GET_NCBI_DATA_PARAM_DESCRIPTIONS,
+    parameter_descriptions=GET_NCBI_DATA_PARAM_DESCRIPTIONS_DNA,
     output_descriptions={
         'sequences': 'Sequences from the NCBI Nucleotide database',
         'taxonomy': 'Taxonomies from the NCBI Taxonomy database'},
@@ -770,7 +779,7 @@ plugin.methods.register_function(
         'Download and import sequences from the NCBI Nucleotide database '
         'and download, parse, and import the corresponding taxonomies '
         'from the NCBI Taxonomy database.' + GET_NCBI_DATA_DISCLAIMER
-        ),
+    ),
     citations=[citations['ncbi2018database'], citations['benson2012genbank']]
 )
 
@@ -782,7 +791,7 @@ plugin.methods.register_function(
     outputs=[('sequences', FeatureData[ProteinSequence]),
              ('taxonomy', FeatureData[Taxonomy])],
     input_descriptions={},
-    parameter_descriptions=GET_NCBI_DATA_PARAM_DESCRIPTIONS,
+    parameter_descriptions=GET_NCBI_DATA_PARAM_DESCRIPTIONS_PROTEIN,
     output_descriptions={
         'sequences': 'Sequences from the NCBI Protein database',
         'taxonomy': 'Taxonomies from the NCBI Taxonomy database'},
@@ -791,7 +800,7 @@ plugin.methods.register_function(
         'Download and import sequences from the NCBI Protein database '
         'and download, parse, and import the corresponding taxonomies '
         'from the NCBI Taxonomy database.' + GET_NCBI_DATA_DISCLAIMER
-        ),
+    ),
     citations=[citations['ncbi2018database'], citations['benson2012genbank']]
 )
 
