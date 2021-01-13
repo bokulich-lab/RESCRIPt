@@ -25,8 +25,7 @@ class TestDegapSeq(TestPluginBase):
         super().setUp()
         input_fp = self.get_data_path('degap-test-alignment.fasta')
         self.alignedseqs = AlignedDNAFASTAFormat(
-            input_fp, mode='r').view(
-            AlignedDNAIterator)
+            input_fp, mode='r').view(AlignedDNAIterator)
 
     def test_degap_seqs(self):
         #  remove all '-' and '.' chars.
