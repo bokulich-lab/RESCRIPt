@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2020, QIIME 2 development team.
+# Copyright (c) 2021, QIIME 2 development team.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -70,7 +70,7 @@ class TestParseSilvaTaxonomy(TestPluginBase):
         sx_1 = 'Glaciecola_sp._105'
         self.assertEqual(se_1, sx_1)
         se_2 = _keep_allowed_chars(
-               'Acetobacterium sp. enrichment culture clone DhR^2/LM-A07')
+            'Acetobacterium sp. enrichment culture clone DhR^2/LM-A07')
         sx_2 = 'Acetobacterium_sp._enrichment_culture_clone_DhR2/LM-A07'
         self.assertEqual(se_2, sx_2)
         se_3 = _keep_allowed_chars('Pseudomonas poae RE*1-1-14')
@@ -82,7 +82,7 @@ class TestParseSilvaTaxonomy(TestPluginBase):
 
     def test_get_terminal_taxon(self):
         term_tax = _get_terminal_taxon(
-                    'Archaea;Aenigmarchaeota;Aenigmarchaeia;Aenigmarchaeales;')
+            'Archaea;Aenigmarchaeota;Aenigmarchaeia;Aenigmarchaeales;')
         exp_term_tax = 'Aenigmarchaeales'
         self.assertEqual(term_tax, exp_term_tax)
 

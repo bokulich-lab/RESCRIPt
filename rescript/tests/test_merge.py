@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2020, QIIME 2 development team.
+# Copyright (c) 2021, QIIME 2 development team.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -182,7 +182,7 @@ class TestMergeTaxa(TestPluginBase):
                 '2562091': np.nan, '2562097': 0.9, '370253': 0.95,
                 '4361279': np.nan, '4369464': 0.99, 'unique': np.nan,
                 'unique1': 0.75, 'unique2': np.nan}
-            })], axis=1)
+        })], axis=1)
         multi_col, = self.merge_taxa([self.m1, self.m2, self.m3], 'len', '')
         multi_col = multi_col.view(pd.DataFrame).apply(
             lambda x: pd.to_numeric(x, errors='ignore'))

@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2020, QIIME 2 development team.
+# Copyright (c) 2021, QIIME 2 development team.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -149,7 +149,7 @@ def _validate_md5(exp_md5, file_md5, filename):
         raise ValueError('md5 sums do not match. Manually verify md5 sums '
                          'before proceeding.\nTarget file: {0}\nExpected md5: '
                          '{1}\nObserved md5: {2}\n'.format(
-                            filename, exp_md5, file_md5))
+                             filename, exp_md5, file_md5))
 
 
 # This function is specific for reading the SILVA md5 record files, which are
