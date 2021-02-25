@@ -22,7 +22,7 @@ from .evaluate import _taxonomic_depth, _process_labels
 def evaluate_fit_classifier(ctx,
                             sequences,
                             taxonomy,
-                            reads_per_batch=0,
+                            reads_per_batch='auto',
                             n_jobs=1,
                             confidence=0.7):
     '''
@@ -63,7 +63,7 @@ def evaluate_cross_validate(ctx,
                             taxonomy,
                             k=3,
                             random_state=0,
-                            reads_per_batch=0,
+                            reads_per_batch='auto',
                             n_jobs=1,
                             confidence=0.7):
     '''
