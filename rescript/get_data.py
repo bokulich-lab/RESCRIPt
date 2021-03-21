@@ -52,6 +52,7 @@ def _assemble_silva_data_urls(version, target, download_sequences=True):
     ref_map = {'SSURef_NR99': 'ssu_ref_nr',
                'SSURef_Nr99': 'ssu_ref_nr',
                'SSURef': 'ssu_ref',
+               'LSURef_NR99': 'lsu_ref_nr',
                'LSURef': 'lsu_ref'}
     # handle silly inconsistencies in filenames between versions
     if target == 'SSURef_NR99' and float(version) < 138:
