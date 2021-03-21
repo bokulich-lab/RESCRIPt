@@ -597,7 +597,9 @@ _SILVA_TARGETS = ['SSURef_NR99', 'SSURef', 'LSURef_NR99', 'LSURef']
 version_map, target_map, _ = TypeMap({
     (Str % Choices('128', '132'),
      Str % Choices('SSURef_NR99', 'SSURef', 'LSURef')): Visualization,
-    (Str % Choices('138', '138.1'),
+    (Str % Choices('138'),
+     Str % Choices('SSURef_NR99', 'SSURef')): Visualization,
+    (Str % Choices('138.1'),
      Str % Choices('SSURef_NR99', 'SSURef', 'LSURef_NR99',
                    'LSURef')): Visualization,
 })
