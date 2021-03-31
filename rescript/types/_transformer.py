@@ -98,10 +98,3 @@ def _12(data: RNAFASTAFormat) -> RNAIterator:
     generator = _read_nucleic_acid_fasta(str(converted_dna),
                                          constructor=skbio.RNA)
     return RNAIterator(generator)
-
-
-@plugin.register_transformer
-def _13(data: AlignedRNAFASTAFormat) -> AlignedRNAIterator:
-    generator = _read_nucleic_acid_alignment_fasta(str(converted_dna),
-                                                   constructor=skbio.RNA)
-    return AlignedRNAIterator(generator)

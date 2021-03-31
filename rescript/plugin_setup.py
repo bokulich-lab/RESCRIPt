@@ -859,22 +859,13 @@ plugin.methods.register_function(
 )
 
 # Registrations
-plugin.register_semantic_types(SILVATaxonomy, SILVATaxidMap, RNASequence,
-                               AlignedRNASequence)
+plugin.register_semantic_types(SILVATaxonomy, SILVATaxidMap)
 plugin.register_semantic_type_to_format(
     FeatureData[SILVATaxonomy],
     artifact_format=SILVATaxonomyDirectoryFormat)
 plugin.register_semantic_type_to_format(
     FeatureData[SILVATaxidMap],
     artifact_format=SILVATaxidMapDirectoryFormat)
-plugin.register_semantic_type_to_format(
-    FeatureData[RNASequence],
-    artifact_format=RNASequencesDirectoryFormat)
-plugin.register_semantic_type_to_format(
-    FeatureData[AlignedRNASequence],
-    artifact_format=AlignedRNASequencesDirectoryFormat)
 plugin.register_formats(SILVATaxonomyFormat, SILVATaxonomyDirectoryFormat,
-                        SILVATaxidMapFormat, SILVATaxidMapDirectoryFormat,
-                        RNAFASTAFormat, RNASequencesDirectoryFormat,
-                        AlignedRNASequencesDirectoryFormat)
+                        SILVATaxidMapFormat, SILVATaxidMapDirectoryFormat)
 importlib.import_module('rescript.types._transformer')
