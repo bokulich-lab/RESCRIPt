@@ -16,7 +16,6 @@ import warnings
 import qiime2
 from urllib.request import urlretrieve
 from urllib.error import HTTPError
-from .types._format import RNAFASTAFormat
 
 
 def get_silva_data(ctx,

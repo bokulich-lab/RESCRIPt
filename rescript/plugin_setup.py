@@ -29,7 +29,8 @@ from .filter_length import (filter_seqs_length_by_taxon, filter_seqs_length,
                             filter_taxa)
 from .orient import orient_seqs
 from q2_types.feature_data import (FeatureData, Taxonomy, Sequence,
-                                   AlignedSequence)
+                                   AlignedSequence, RNASequence,
+                                   AlignedRNASequence)
 from q2_types.tree import Phylogeny, Rooted
 from q2_feature_classifier.classifier import (_parameter_descriptions,
                                               _classify_parameters)
@@ -39,10 +40,8 @@ import rescript
 from rescript._utilities import _rank_handles
 from rescript.types._format import (
     SILVATaxonomyFormat, SILVATaxonomyDirectoryFormat, SILVATaxidMapFormat,
-    SILVATaxidMapDirectoryFormat, RNAFASTAFormat, RNASequencesDirectoryFormat,
-    AlignedRNASequencesDirectoryFormat)
-from rescript.types._type import (SILVATaxonomy, SILVATaxidMap, RNASequence,
-                                  AlignedRNASequence)
+    SILVATaxidMapDirectoryFormat)
+from rescript.types._type import (SILVATaxonomy, SILVATaxidMap)
 from rescript.types.methods import reverse_transcribe
 from rescript.ncbi import get_ncbi_data, _default_ranks, _allowed_ranks
 

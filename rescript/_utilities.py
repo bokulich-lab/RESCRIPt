@@ -11,7 +11,8 @@ from re import sub
 import subprocess
 import skbio
 from collections import Counter
-from q2_types.feature_data import DNAFASTAFormat, AlignedDNAFASTAFormat
+from q2_types.feature_data import (DNAFASTAFormat, AlignedDNAFASTAFormat,
+                                   RNAFASTAFormat, AlignedRNAFASTAFormat)
 
 
 _rank_handles = {
@@ -99,28 +100,25 @@ def run_command(cmd, verbose=True):
     subprocess.run(cmd, check=True)
 
 
-def _read_rna_fasta(path):
-    return skbio.read(path, format='fasta', constructor=skbio.RNA)
+def _read_nucleic_acid_fasta(path, constructor=skbio.DNA):
+    return skbio.read(path, format='fasta', constructor=constructor)
 
 
-def _read_dna_fasta(path):
-    return skbio.read(path, format='fasta', constructor=skbio.DNA)
-
-
-def _read_dna_alignment_fasta(path):
-    return skbio.TabularMSA.read(path, format='fasta', constructor=skbio.DNA)
+def _read_nucleic_acid_alignment_fasta(path, constructor=skbio.DNA):
+    return skbio.TabularMSA.read(path, format='fasta', constructor=constructor)
 
 
 def _rna_to_dna(path):
     ff = DNAFASTAFormat()
     with ff.open() as outfasta:
-        for seq in _read_rna_fasta(path):
+        for seq in _read_nucleic_acid_fasta(path, constructor=skbio.RNA):
             seq.reverse_transcribe().write(outfasta)
     return ff
 
 
-def _dna_iterator_to_aligned_fasta(iterator):
-    ff = AlignedDNAFASTAFormat()
+def _nucleic_acid_iter_to_aligned_fasta(iterator,
+                                        constructor=AlignedDNAFASTAFormat):
+    ff = constructor()
     skbio.io.write(iter(iterator), format='fasta', into=str(ff))
     return ff
 
@@ -128,6 +126,6 @@ def _dna_iterator_to_aligned_fasta(iterator):
 def _rna_align_to_dna_align(path):
     ff = AlignedDNAFASTAFormat()
     with ff.open() as outfasta:
-        for seq in _read_rna_fasta(path):
+        for seq in _read_nucleic_acid_fasta(path, constructor=skbio.RNA):
             seq.reverse_transcribe().write(outfasta)
     return ff
