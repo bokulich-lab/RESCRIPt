@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2020, QIIME 2 development team.
+# Copyright (c) 2021, QIIME 2 development team.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -25,8 +25,7 @@ class TestDegapSeq(TestPluginBase):
         super().setUp()
         input_fp = self.get_data_path('degap-test-alignment.fasta')
         self.alignedseqs = AlignedDNAFASTAFormat(
-                                input_fp, mode='r').view(
-                                AlignedDNAIterator)
+            input_fp, mode='r').view(AlignedDNAIterator)
 
     def test_degap_seqs(self):
         #  remove all '-' and '.' chars.
