@@ -15,15 +15,15 @@ import pkg_resources
 from qiime2.plugin import ValidationError
 from qiime2.plugin.testing import TestPluginBase
 from q2_types.feature_data import (
-    FeatureData, DNAFASTAFormat, DNAIterator,
-    AlignedDNAFASTAFormat, AlignedDNAIterator)
+    FeatureData, DNAFASTAFormat, DNAIterator, AlignedDNAFASTAFormat,
+    AlignedDNAIterator, RNAFASTAFormat, RNASequencesDirectoryFormat,
+    RNASequence)
 
-from rescript._utilities import _read_dna_fasta, _read_dna_alignment_fasta
+from rescript._utilities import (_read_nucleic_acid_fasta,
+                                _read_nucleic_acid_alignment_fasta)
 from rescript.types import (SILVATaxonomyFormat, SILVATaxonomyDirectoryFormat,
                             SILVATaxidMapFormat, SILVATaxidMapDirectoryFormat,
-                            SILVATaxonomy, SILVATaxidMap,
-                            RNAFASTAFormat, RNASequencesDirectoryFormat,
-                            RNASequence)
+                            SILVATaxonomy, SILVATaxidMap)
 
 
 class RescriptTypesTestPluginBase(TestPluginBase):
@@ -151,9 +151,6 @@ class TestRegistrations(RescriptTypesTestPluginBase):
     def test_silva_taxid_map_type_registration(self):
         self.assertRegisteredSemanticType(SILVATaxidMap)
 
-    def test_rna_sequence_type_registration(self):
-        self.assertRegisteredSemanticType(RNASequence)
-
     def test_silva_taxonomy_semantic_type_to_format_registration(self):
         self.assertSemanticTypeRegisteredToFormat(
             FeatureData[SILVATaxonomy], SILVATaxonomyDirectoryFormat)
@@ -161,10 +158,6 @@ class TestRegistrations(RescriptTypesTestPluginBase):
     def test_silva_taxid_map_semantic_type_to_format_registration(self):
         self.assertSemanticTypeRegisteredToFormat(
             FeatureData[SILVATaxidMap], SILVATaxidMapDirectoryFormat)
-
-    def test_rna_sequence_semantic_type_to_format_registration(self):
-        self.assertSemanticTypeRegisteredToFormat(
-            FeatureData[RNASequence], RNASequencesDirectoryFormat)
 
 
 class TestSILVATransformers(RescriptTypesTestPluginBase):
@@ -209,66 +202,3 @@ class TestSILVATransformers(RescriptTypesTestPluginBase):
         _, obs = self.transform_format(
             SILVATaxidMapFormat, pd.DataFrame, 'silva_taxamap.tsv')
         pdt.assert_frame_equal(self.taxmap, obs[:1], check_dtype=False)
-
-
-class TestRNAFASTAFormat(RescriptTypesTestPluginBase):
-
-    def test_rna_fasta_format_validate_positive(self):
-        filepath = self.get_data_path('derep-test-rna.fasta')
-        format = RNAFASTAFormat(filepath, mode='r')
-        # These should both just succeed
-        format.validate('min')
-        format.validate('max')
-
-    def test_rna_fasta_format_validate_negative_is_dna(self):
-        filepath = pkg_resources.resource_filename(
-            'rescript.tests', 'data/derep-test.fasta')
-        with self.assertRaisesRegex(ValueError, 'Invalid character.*\'T\''):
-            format = RNAFASTAFormat(filepath, mode='r')
-            format.validate('min')
-
-
-class TestRNATransformers(RescriptTypesTestPluginBase):
-
-    def setUp(self):
-        super().setUp()
-        dna_path = pkg_resources.resource_filename(
-            'rescript.tests', 'data/derep-test.fasta')
-        self.dna_seqs = DNAFASTAFormat(dna_path, mode='r').view(DNAIterator)
-
-    def test_rna_fasta_format_to_dna_fasta_format(self):
-        # transform RNA to DNA (reverse transcribe)
-        input, obs = self.transform_format(
-            RNAFASTAFormat, DNAFASTAFormat, 'derep-test-rna.fasta')
-        self.assertIsInstance(obs, DNAFASTAFormat)
-        # load expected DNA seqs (already reverse transcribed)
-        exp = self.dna_seqs
-        # convert to DNAIterator to iterate over seqs, confirm that
-        # reverse transcription occurred as expected.
-        obs = _read_dna_fasta(str(obs))
-        for observed, expected in zip(obs, exp):
-            self.assertEqual(observed, expected)
-
-    def test_rna_fasta_format_to_dna_iterator(self):
-        input, obs = self.transform_format(
-            RNAFASTAFormat, DNAIterator, 'derep-test-rna.fasta')
-        exp = self.dna_seqs
-        for observed, expected in zip(obs, exp):
-            self.assertEqual(observed, expected)
-
-
-class TestDNAIteratorTransformers(RescriptTypesTestPluginBase):
-    def setUp(self):
-        super().setUp()
-        self.aligned_dna_path = pkg_resources.resource_filename(
-            'rescript.tests', 'data/trim-test-alignment.fasta')
-        self.aligned_dna_seqs = AlignedDNAFASTAFormat(
-            self.aligned_dna_path, mode='r').view(AlignedDNAIterator)
-
-    def test_aligned_dna_iterator_to_dna_fasta(self):
-        transformer = self.get_transformer(DNAIterator, AlignedDNAFASTAFormat)
-        obs = transformer(self.aligned_dna_seqs)
-        obs = _read_dna_alignment_fasta(str(obs))
-        exp = _read_dna_alignment_fasta(self.aligned_dna_path)
-        for observed, expected in zip(obs, exp):
-            self.assertEqual(observed, expected)

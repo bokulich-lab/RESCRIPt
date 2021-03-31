@@ -11,8 +11,7 @@ from re import sub
 import subprocess
 import skbio
 from collections import Counter
-from q2_types.feature_data import (DNAFASTAFormat, AlignedDNAFASTAFormat,
-                                   RNAFASTAFormat, AlignedRNAFASTAFormat)
+from q2_types.feature_data import (DNAFASTAFormat, AlignedDNAFASTAFormat)
 
 
 _rank_handles = {

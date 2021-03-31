@@ -6,8 +6,6 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-import itertools
-
 import qiime2.plugin.model as model
 from qiime2.plugin import ValidationError
 

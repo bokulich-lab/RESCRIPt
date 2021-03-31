@@ -7,9 +7,10 @@
 # ----------------------------------------------------------------------------
 
 import pandas as pd
+import skbio
 from q2_types.feature_data import (
     DNAFASTAFormat, DNAIterator, AlignedDNAFASTAFormat, AlignedDNAIterator,
-    RNAFASTAFormat, RNAIterator, AlignedRNAFASTAFormat, AlignedRNAIterator)
+    RNAFASTAFormat, RNAIterator, AlignedRNAFASTAFormat)
 from ..plugin_setup import plugin
 from ._format import (SILVATaxonomyFormat, SILVATaxidMapFormat)
 
@@ -90,11 +91,12 @@ def _10(data: AlignedRNAFASTAFormat) -> AlignedDNAIterator:
 
 @plugin.register_transformer
 def _11(data: RNAIterator) -> AlignedRNAFASTAFormat:
-    return _nucleic_acid_iter_to_aligned_fasta(data,
-                                            constructor=AlignedRNAFASTAFormat)
+    return _nucleic_acid_iter_to_aligned_fasta(
+                                        data,
+                                        constructor=AlignedRNAFASTAFormat)
 
 
 def _12(data: RNAFASTAFormat) -> RNAIterator:
-    generator = _read_nucleic_acid_fasta(str(converted_dna),
+    generator = _read_nucleic_acid_fasta(str(data),
                                          constructor=skbio.RNA)
     return RNAIterator(generator)

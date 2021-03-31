@@ -30,7 +30,8 @@ from .filter_length import (filter_seqs_length_by_taxon, filter_seqs_length,
 from .orient import orient_seqs
 from q2_types.feature_data import (FeatureData, Taxonomy, Sequence,
                                    AlignedSequence, RNASequence,
-                                   AlignedRNASequence)
+                                   AlignedRNASequence, AlignedProteinSequence,
+                                   ProteinSequence)
 from q2_types.tree import Phylogeny, Rooted
 from q2_feature_classifier.classifier import (_parameter_descriptions,
                                               _classify_parameters)
@@ -430,15 +431,21 @@ plugin.methods.register_function(
 )
 
 
+aligned_seq_types, degap_seq_types = TypeMap({AlignedSequence: Sequence,
+                                             AlignedRNASequence: RNASequence,
+                                             AlignedProteinSequence:
+                                             ProteinSequence})
+
+
 plugin.methods.register_function(
     function=degap_seqs,
     inputs={
-        'aligned_sequences': FeatureData[AlignedSequence | AlignedRNASequence]
+        'aligned_sequences': FeatureData[aligned_seq_types]
     },
     parameters={
         'min_length': Int % Range(1, None)
     },
-    outputs=[('degapped_sequences', FeatureData[Sequence])],
+    outputs=[('degapped_sequences', FeatureData[degap_seq_types])],
     input_descriptions={
         'aligned_sequences': 'Aligned DNA / RNA Sequences to be degapped.'
     },

@@ -17,6 +17,8 @@ import qiime2
 from urllib.request import urlretrieve
 from urllib.error import HTTPError
 
+from q2_types.feature_data import RNAFASTAFormat
+
 
 def get_silva_data(ctx,
                    version='138.1',
