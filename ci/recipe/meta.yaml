@@ -19,6 +19,7 @@ requirements:
 
   run:
     - python {{ python }}
+    - requests
     - xmltodict
     - pandas >=0.25.3
     - scikit-learn
@@ -34,6 +35,6 @@ test:
     - qiime2.plugins.rescript
 
 about:
-  home: https://github.com/nbokulich/RESCRIPt
+  home: https://github.com/bokulich-lab/RESCRIPt
   license: BSD-3-Clause
   license_family: BSD

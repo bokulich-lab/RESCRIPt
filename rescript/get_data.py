@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2020, QIIME 2 development team.
+# Copyright (c) 2021, QIIME 2 development team.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -20,7 +20,7 @@ from .types._format import RNAFASTAFormat
 
 
 def get_silva_data(ctx,
-                   version='138',
+                   version='138.1',
                    target='SSURef_NR99',
                    include_species_labels=False,
                    rank_propagation=True,
@@ -52,18 +52,29 @@ def _assemble_silva_data_urls(version, target, download_sequences=True):
     ref_map = {'SSURef_NR99': 'ssu_ref_nr',
                'SSURef_Nr99': 'ssu_ref_nr',
                'SSURef': 'ssu_ref',
+               'LSURef_NR99': 'lsu_ref_nr',
                'LSURef': 'lsu_ref'}
     # handle silly inconsistencies in filenames between versions
-    if target == 'SSURef_NR99' and int(version) < 138:
+    if target == 'SSURef_NR99' and float(version) < 138:
         target = 'SSURef_Nr99'
     insert = ref_map[target]
-    # now compile URLs
+
+    # Now compile URLs
     base_url = 'https://www.arb-silva.de/fileadmin/silva_databases/'\
-               'release_{0}/Exports/'.format(version)
+               'release_{0}/Exports/'.format(version.replace('.', '_'))
+    # ^^ Note the '.format()' above. This handles folder / file naming
+    # inconsistency. e.g. folder name for version 138.1 contains the string
+    # "138_1", while the filenames within that directory contain the string
+    # "138.1". We'll need to modify the variable `version` and replace '.'
+    # with '_' for the folder name. May need to update this in the future,
+    # if we find more inconsistencies.
+
+    # construct file urls
     base_url_seqs = base_url + 'SILVA_{0}_{1}_tax_silva.fasta.gz'.format(
         version, target)
     base_url_taxmap = '{0}taxonomy/taxmap_slv_{1}_{2}'.format(
         base_url, insert, version)
+
     # More SILVA release inconsistencies
     if target == 'SSURef' and version == '132':
         base_url_taxmap += '-corrected.txt.gz'
@@ -73,7 +84,9 @@ def _assemble_silva_data_urls(version, target, download_sequences=True):
         base_url, insert.split('_')[0], version)
     tree_url = base_url_tax + '.tre'
     tax_url = base_url_tax + '.txt'
-    if version == '138':
+
+    # add ".gz" for the following versions:
+    if version in ['138', '138.1']:
         tree_url += '.gz'
         tax_url += '.gz'
 
@@ -137,7 +150,7 @@ def _validate_md5(exp_md5, file_md5, filename):
         raise ValueError('md5 sums do not match. Manually verify md5 sums '
                          'before proceeding.\nTarget file: {0}\nExpected md5: '
                          '{1}\nObserved md5: {2}\n'.format(
-                            filename, exp_md5, file_md5))
+                             filename, exp_md5, file_md5))
 
 
 # This function is specific for reading the SILVA md5 record files, which are

@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2020, QIIME 2 development team.
+# Copyright (c) 2021, QIIME 2 development team.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -14,9 +14,11 @@ import pkg_resources
 
 from qiime2.plugin import ValidationError
 from qiime2.plugin.testing import TestPluginBase
-from q2_types.feature_data import FeatureData, DNAFASTAFormat, DNAIterator
+from q2_types.feature_data import (
+    FeatureData, DNAFASTAFormat, DNAIterator,
+    AlignedDNAFASTAFormat, AlignedDNAIterator)
 
-from rescript._utilities import _read_dna_fasta
+from rescript._utilities import _read_dna_fasta, _read_dna_alignment_fasta
 from rescript.types import (SILVATaxonomyFormat, SILVATaxonomyDirectoryFormat,
                             SILVATaxidMapFormat, SILVATaxidMapDirectoryFormat,
                             SILVATaxonomy, SILVATaxidMap,
@@ -251,5 +253,22 @@ class TestRNATransformers(RescriptTypesTestPluginBase):
         input, obs = self.transform_format(
             RNAFASTAFormat, DNAIterator, 'derep-test-rna.fasta')
         exp = self.dna_seqs
+        for observed, expected in zip(obs, exp):
+            self.assertEqual(observed, expected)
+
+
+class TestDNAIteratorTransformers(RescriptTypesTestPluginBase):
+    def setUp(self):
+        super().setUp()
+        self.aligned_dna_path = pkg_resources.resource_filename(
+            'rescript.tests', 'data/trim-test-alignment.fasta')
+        self.aligned_dna_seqs = AlignedDNAFASTAFormat(
+            self.aligned_dna_path, mode='r').view(AlignedDNAIterator)
+
+    def test_aligned_dna_iterator_to_dna_fasta(self):
+        transformer = self.get_transformer(DNAIterator, AlignedDNAFASTAFormat)
+        obs = transformer(self.aligned_dna_seqs)
+        obs = _read_dna_alignment_fasta(str(obs))
+        exp = _read_dna_alignment_fasta(self.aligned_dna_path)
         for observed, expected in zip(obs, exp):
             self.assertEqual(observed, expected)

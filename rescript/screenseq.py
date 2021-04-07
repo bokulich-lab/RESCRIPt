@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2020, QIIME 2 development team.
+# Copyright (c) 2021, QIIME 2 development team.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -7,6 +7,9 @@
 # ----------------------------------------------------------------------------
 
 import re
+
+from joblib import Parallel, delayed
+from multiprocessing import Manager
 from q2_types.feature_data import DNAFASTAFormat, DNAIterator
 
 
@@ -22,14 +25,32 @@ def _filter_homopolymer(seq, homopolymer_length):
     return any(homopolymers)
 
 
+def _filter_seq(seq_obj, num_degenerates, homopolymer_length, lock, result_fp):
+    '''Process a single sequence'''
+    degen = _filt_seq_with_degenerates(seq_obj, num_degenerates)
+    if not degen:
+        poly = _filter_homopolymer(seq_obj, homopolymer_length)
+        if not poly:  # if we make it here, write seq to file
+            # acquire lock to prevent many processes writing at the same time
+            lock.acquire()
+            with open(result_fp, "a+") as out:
+                seq_obj.write(out)
+            lock.release()
+
+
 def cull_seqs(sequences: DNAIterator, num_degenerates: int = 5,
-              homopolymer_length: int = 8) -> DNAFASTAFormat:
+              homopolymer_length: int = 8, n_jobs: int = 1) -> DNAFASTAFormat:
     result = DNAFASTAFormat()
-    with result.open() as out_fasta:
-        for seq in sequences:
-            degen = _filt_seq_with_degenerates(seq, num_degenerates)
-            if not degen:
-                poly = _filter_homopolymer(seq, homopolymer_length)
-                if not poly:  # if we make it here, write seq to file
-                    seq.write(out_fasta)
+
+    manager = Manager()
+    mylock = manager.Lock()
+    parallel = Parallel(n_jobs=n_jobs, backend='loky')
+    parallel(
+        delayed(_filter_seq)(
+            seq,
+            num_degenerates,
+            homopolymer_length,
+            mylock,
+            str(result)) for seq in sequences)
+
     return result

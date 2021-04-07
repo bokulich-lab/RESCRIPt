@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2020, QIIME 2 development team.
+# Copyright (c) 2021, QIIME 2 development team.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -133,9 +133,9 @@ class TestNCBI(TestPluginBase):
         md = Metadata(df)
 
         acc_seq, acc_tax = self.get_ncbi_data(
-                accession_ids=md,
-                ranks=['subkingdom', 'subphylum', 'subclass', 'suborder',
-                       'subfamily', 'subgenus', 'subspecies'])
+            accession_ids=md,
+            ranks=['subkingdom', 'subphylum', 'subclass', 'suborder',
+                   'subfamily', 'subgenus', 'subspecies'])
         acc_seq = {s.metadata['id']: str(s) for s in acc_seq.view(DNAIterator)}
         seqs = {s.metadata['id']: str(s) for s in self.seqs.view(DNAIterator)}
         self.assertEqual(acc_seq, seqs)

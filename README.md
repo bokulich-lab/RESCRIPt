@@ -32,10 +32,10 @@ pip install git+https://github.com/bokulich-lab/RESCRIPt.git
 ```
 
 ### Option 2: Install within QIIME 2 environment
-First activate your QIIME 2 environment (ver 2020.8 or later) and install relevant dependencies:
+First activate your QIIME 2 environment (ver 2021.2 or later) and install relevant dependencies:
 
 ```
-conda activate qiime2-2020.8
+conda activate qiime2-2021.2
 conda install -c conda-forge -c bioconda -c qiime2 -c defaults xmltodict
 ```
 Install source:
@@ -66,9 +66,10 @@ Problem? Suggestion? Technical errors and user support requests can be filed on 
 
 ## Citation
 
-A proper software announcement is forthcoming. In the meantime, if you use RESCRIPt in your research, please cite the Zenodo record:
+If you use RESCRIPt in your research, please cite the following pre-print:
 
-Nicholas Bokulich, Mike Robeson, Ben Kaehler, & Matthew Dillon. bokulich-lab/RESCRIPt. Zenodo. http://doi.org/10.5281/zenodo.3891931
+Michael S Robeson II, Devon R O'Rourke, Benjamin D Kaehler, Michal Ziemski, Matthew R Dillon, Jeffrey T Foster, Nicholas A Bokulich. RESCRIPt: Reproducible sequence taxonomy reference database management for the masses. bioRxiv 2020.10.05.326504; doi: https://doi.org/10.1101/2020.10.05.326504
+
 
 ## License
 

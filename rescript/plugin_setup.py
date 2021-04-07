@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2020, QIIME 2 development team.
+# Copyright (c) 2021, QIIME 2 development team.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -8,8 +8,12 @@
 
 import importlib
 
+from qiime2.core.type import TypeMatch
 from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int,
                            Float, Visualization, Bool, TypeMap, Metadata)
+
+from .subsample import subsample_fasta
+from .trim_alignment import trim_alignment
 from .merge import merge_taxa
 from .dereplicate import dereplicate
 from .evaluate import evaluate_taxonomy, evaluate_seqs
@@ -51,6 +55,7 @@ plugin = Plugin(
     description=('Reference sequence annotation and curation pipeline.'),
     short_description=(
         'Pipeline for reference sequence annotation and curation.'),
+    citations=[citations['Robeson2020rescript']]
 )
 
 
@@ -386,26 +391,31 @@ plugin.methods.register_function(
     function=cull_seqs,
     inputs={
         'sequences': FeatureData[Sequence | RNASequence]
-        },
+    },
     parameters={
         'num_degenerates': Int % Range(1, None),
-        'homopolymer_length': Int % Range(2, None)
-        },
+        'homopolymer_length': Int % Range(2, None),
+        'n_jobs': Int % Range(1, None)
+    },
     outputs=[('clean_sequences', FeatureData[Sequence])],
     input_descriptions={
         'sequences': 'DNA or RNA Sequences to be screened for removal based '
                      'on degenerate base and homopolymer screening criteria.'
-        },
+    },
     parameter_descriptions={
         'num_degenerates': 'Sequences with N, or more, degenerate bases will '
                            'be removed.',
         'homopolymer_length': 'Sequences containing a homopolymer sequence of '
                               'length N, or greater, will be removed.',
+        'n_jobs': 'Number of concurrent processes to use while processing '
+                  'sequences. More is faster but typically should not be '
+                  'higher than the number of available CPUs. Output sequence '
+                  'order may change when using multiple jobs.'
     },
     output_descriptions={
         'clean_sequences': 'The resulting DNA sequences that pass degenerate '
                            'base and homopolymer screening criteria.'
-        },
+    },
     name='Removes sequences that contain at least the specified number of '
          'degenerate bases and/or homopolymers of a given length.',
     description=(
@@ -423,21 +433,21 @@ plugin.methods.register_function(
     function=degap_seqs,
     inputs={
         'aligned_sequences': FeatureData[AlignedSequence]
-        },
+    },
     parameters={
-                'min_length': Int % Range(1, None)
-                },
+        'min_length': Int % Range(1, None)
+    },
     outputs=[('degapped_sequences', FeatureData[Sequence])],
     input_descriptions={
         'aligned_sequences': 'Aligned DNA Sequences to be degapped.'
-        },
+    },
     parameter_descriptions={
         'min_length': 'Minimum length of sequence to be returned after '
                       'degapping.'},
     output_descriptions={
         'degapped_sequences': 'The resulting unaligned (degapped) DNA '
                               'sequences.'
-        },
+    },
     name='Remove gaps from DNA sequence alignments.',
     description=('This method converts aligned DNA sequences to unaligned DNA '
                  'sequences by removing gaps ("-") and missing data (".") '
@@ -581,14 +591,17 @@ RANK_DESCRIPTION = ('List of taxonomic ranks for building a taxonomy from the '
                     "[default: '" +
                     "', '".join(DEFAULT_RANKS) + "']")
 
-_SILVA_VERSIONS = ['128', '132', '138']
-_SILVA_TARGETS = ['SSURef_NR99', 'SSURef', 'LSURef']
+_SILVA_VERSIONS = ['128', '132', '138', '138.1']
+_SILVA_TARGETS = ['SSURef_NR99', 'SSURef', 'LSURef_NR99', 'LSURef']
 
 version_map, target_map, _ = TypeMap({
     (Str % Choices('128', '132'),
      Str % Choices('SSURef_NR99', 'SSURef', 'LSURef')): Visualization,
-    (Str % Choices('138'), Str % Choices('SSURef_NR99', 'SSURef')):
-        Visualization,
+    (Str % Choices('138'),
+     Str % Choices('SSURef_NR99', 'SSURef')): Visualization,
+    (Str % Choices('138.1'),
+     Str % Choices('SSURef_NR99', 'SSURef', 'LSURef_NR99',
+                   'LSURef')): Visualization,
 })
 
 
@@ -640,15 +653,15 @@ plugin.pipelines.register_function(
 plugin.methods.register_function(
     function=parse_silva_taxonomy,
     inputs={
-            'taxonomy_tree': Phylogeny[Rooted],
-            'taxonomy_map': FeatureData[SILVATaxidMap],
-            'taxonomy_ranks': FeatureData[SILVATaxonomy],
-            },
+        'taxonomy_tree': Phylogeny[Rooted],
+        'taxonomy_map': FeatureData[SILVATaxidMap],
+        'taxonomy_ranks': FeatureData[SILVATaxonomy],
+    },
     parameters={
         'include_species_labels': Bool,
         'rank_propagation': Bool,
         'ranks': List[Str % Choices(ALLOWED_RANKS)]
-        },
+    },
     outputs=[('taxonomy', FeatureData[Taxonomy])],
     input_descriptions={
         'taxonomy_tree': 'SILVA hierarchical taxonomy tree. The SILVA '
@@ -668,7 +681,7 @@ plugin.methods.register_function(
                          ' filename typically takes the form of: '
                          '\'tax_slv_ssu_X.txt\', where \'X\' is the SILVA '
                          'version number.',
-        },
+    },
     parameter_descriptions={
         'include_species_labels': INCLUDE_SPECIES_LABELS_DESCRIPTION,
         'rank_propagation': RANK_PROPAGATE_DESCRIPTION,
@@ -676,7 +689,7 @@ plugin.methods.register_function(
     },
     output_descriptions={
         'taxonomy': 'The resulting fixed-rank formatted SILVA taxonomy.'
-        },
+    },
     name='Generates a SILVA fixed-rank taxonomy.',
     description=(
         'Parses several files from the SILVA reference database to produce a '
@@ -686,7 +699,7 @@ plugin.methods.register_function(
         'ranks in the resulting taxonomy) are: domain (d__), phylum (p__), '
         'class (c__), order (o__), family (f__), genus (g__), and species '
         '(s__). ' + SILVA_LICENSE_NOTE
-        ),
+    ),
     citations=[citations['Pruesse2007'],
                citations['Quast2013']]
 )
@@ -781,6 +794,68 @@ plugin.methods.register_function(
     description=('Filter taxonomy by list of IDs or search criteria.'),
 )
 
+plugin.pipelines.register_function(
+    function=trim_alignment,
+    inputs={'aligned_sequences': FeatureData[AlignedSequence], },
+    parameters={
+        'primer_fwd': Str,
+        'primer_rev': Str,
+        'position_start': Int % Range(1, None),
+        'position_end': Int % Range(1, None)
+    },
+    outputs=[('trimmed_sequences', FeatureData[AlignedSequence]), ],
+    input_descriptions={'aligned_sequences': 'Aligned DNA sequences.', },
+    parameter_descriptions={
+        'primer_fwd': 'Forward primer used to find the start position '
+                      'for alignment trimming.',
+        'primer_rev': 'Reverse primer used to find the end position '
+                      'for alignment trimming.',
+        'position_start': 'Position within the alignment where the trimming '
+                          'will begin. If not provided, alignment will not'
+                          'be trimmed at the beginning. If forward primer is'
+                          'specified this parameter will be ignored.',
+        'position_end': 'Position within the alignment where the trimming '
+                        'will end. If not provided, alignment will not be '
+                        'trimmed at the end. If reverse primer is specified '
+                        'this parameter will be ignored.'
+    },
+    output_descriptions={
+        'trimmed_sequences': 'Trimmed sequence alignment.', },
+    name='Trim alignment based on provided primers or specific positions.',
+    description=(
+        "Trim an existing alignment based on provided primers or specific, p"
+        "re-defined positions. Primers take precedence over the positions,"
+        "i.e. if both are provided, positions will be ignored."
+        "When using primers in combination with a DNA alignment, a new "
+        "alignment will be generated to locate primer positions. "
+        "Subsequently, start (5'-most) and end (3'-most) position from fwd "
+        "and rev primer located within the new alignment is identified and "
+        "used for slicing the original alignment."),
+)
+
+T = TypeMatch([AlignedSequence, Sequence])
+plugin.methods.register_function(
+    function=subsample_fasta,
+    inputs={'sequences': FeatureData[T]},
+    parameters={
+        'subsample_size':
+            Float % Range(0, 1, inclusive_start=False, inclusive_end=True),
+        'random_seed': Int % Range(1, None)
+    },
+    outputs=[('sample_sequences', FeatureData[T])],
+    input_descriptions={'sequences': 'Sequences to subsample from.'},
+    parameter_descriptions={
+        'subsample_size': 'Size of the random sample as a '
+                          'fraction of the total count',
+        'random_seed': 'Seed to be used for random sampling.'
+    },
+    output_descriptions={
+        'sample_sequences': 'Sample of original sequences.', },
+    name='Subsample an indicated number of sequences from a FASTA file.',
+    description=(
+        "Subsample a set of sequences (either plain or aligned DNA)"
+        "based on a fraction of original sequences."),
+)
 
 # Registrations
 plugin.register_semantic_types(SILVATaxonomy, SILVATaxidMap, RNASequence)
