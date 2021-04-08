@@ -15,9 +15,10 @@ import pkg_resources
 from qiime2.plugin import ValidationError
 from qiime2.plugin.testing import TestPluginBase
 from q2_types.feature_data import (
-    FeatureData, DNAIterator, AlignedDNAFASTAFormat, AlignedDNAIterator)
+    FeatureData, DNAIterator, AlignedDNAFASTAFormat, AlignedDNAIterator,
+    DNAFASTAFormat, RNAFASTAFormat)
 
-from rescript._utilities import _read_dna_alignment_fasta
+from rescript._utilities import _read_dna_fasta, _read_dna_alignment_fasta
 from rescript.types import (SILVATaxonomyFormat, SILVATaxonomyDirectoryFormat,
                             SILVATaxidMapFormat, SILVATaxidMapDirectoryFormat,
                             SILVATaxonomy, SILVATaxidMap)
@@ -199,6 +200,36 @@ class TestSILVATransformers(RescriptTypesTestPluginBase):
         _, obs = self.transform_format(
             SILVATaxidMapFormat, pd.DataFrame, 'silva_taxamap.tsv')
         pdt.assert_frame_equal(self.taxmap, obs[:1], check_dtype=False)
+
+
+class TestRNATransformers(RescriptTypesTestPluginBase):
+
+    def setUp(self):
+        super().setUp()
+        dna_path = pkg_resources.resource_filename(
+            'rescript.tests', 'data/derep-test.fasta')
+        self.dna_seqs = DNAFASTAFormat(dna_path, mode='r').view(DNAIterator)
+
+    def test_rna_fasta_format_to_dna_fasta_format(self):
+        # transform RNA to DNA (reverse transcribe)
+        input, obs = self.transform_format(
+            RNAFASTAFormat, DNAFASTAFormat, 'derep-test-rna.fasta')
+        self.assertIsInstance(obs, DNAFASTAFormat)
+        # load expected DNA seqs (already reverse transcribed)
+        exp = self.dna_seqs
+        # convert to DNAIterator to iterate over seqs, confirm that
+        # reverse transcription occurred as expected.
+        obs = _read_dna_fasta(str(obs))
+        for observed, expected in zip(obs, exp):
+            self.assertEqual(observed, expected)
+
+    def test_rna_fasta_format_to_dna_iterator(self):
+        input, obs = self.transform_format(
+            RNAFASTAFormat, DNAIterator, 'derep-test-rna.fasta')
+        exp = self.dna_seqs
+        for observed, expected in zip(obs, exp):
+            self.assertEqual(observed, expected)
+
 
 
 class TestDNAIteratorTransformers(RescriptTypesTestPluginBase):
