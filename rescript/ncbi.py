@@ -339,7 +339,11 @@ def _get_query_chunk(
     data_chunk = _efetch_5000(params, request_lock, logging_level,
                               entrez_delay)
     if len(data_chunk) != min(5000, expected_num_records-chunk):
-        raise RuntimeError('Download did not finish. Reason unknown.')
+        logger = _get_logger(logging_level)
+        logger.warn(
+            'Expected ' + str(min(5000, expected_num_records-chunk)) +
+            ' sequences in this chunk, but got ' + str(len(data_chunk)) +
+            '. I do not know why, or which sequences are missing.')
     logger = _get_logger(logging_level)
     logger.info('got ' + str(len(data_chunk)) + ' sequences')
     return data_chunk
@@ -368,8 +372,18 @@ def get_nuc_for_query(
     seqs = {}
     taxids = {}
     for rec in records:
-        seqs[rec['TSeq_accver']] = rec['TSeq_sequence']
-        taxids[rec['TSeq_accver']] = rec['TSeq_taxid']
+        try:
+            seqs[rec['TSeq_accver']] = rec['TSeq_sequence']
+            taxids[rec['TSeq_accver']] = rec['TSeq_taxid']
+        except KeyError as e:
+            if str(e) == "'TSeq_accver'":
+                seqs[rec['TSeq_sid']] = rec['TSeq_sequence']
+                taxids[rec['TSeq_sid']] = rec['TSeq_taxid']
+                logger.warning(
+                    'Using ' + rec['TSeq_sid'] + ' as a sequence identifier, '
+                    'because it did not come down with an accession version.')
+            else:
+                raise
     return seqs, taxids
 
 
