@@ -231,7 +231,6 @@ class TestRNATransformers(RescriptTypesTestPluginBase):
             self.assertEqual(observed, expected)
 
 
-
 class TestDNAIteratorTransformers(RescriptTypesTestPluginBase):
     def setUp(self):
         super().setUp()
