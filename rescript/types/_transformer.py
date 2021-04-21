@@ -8,10 +8,10 @@
 
 import pandas as pd
 from q2_types.feature_data import (
-    DNAFASTAFormat, DNAIterator, AlignedDNAFASTAFormat)
+    DNAIterator, AlignedDNAFASTAFormat, RNAFASTAFormat, DNAFASTAFormat)
 
 from ..plugin_setup import plugin
-from ._format import SILVATaxonomyFormat, SILVATaxidMapFormat, RNAFASTAFormat
+from ._format import SILVATaxonomyFormat, SILVATaxidMapFormat
 from rescript._utilities import (
     _rna_to_dna, _read_dna_fasta, _dna_iterator_to_aligned_fasta)
 
@@ -57,11 +57,13 @@ def _5(ff: SILVATaxidMapFormat) -> (pd.DataFrame):
         return df
 
 
+# TODO: this should probably be moved to q2-types
 @plugin.register_transformer
 def _6(data: RNAFASTAFormat) -> DNAFASTAFormat:
     return _rna_to_dna(str(data))
 
 
+# TODO: this should probably be moved to q2-types
 @plugin.register_transformer
 def _7(data: RNAFASTAFormat) -> DNAIterator:
     converted_dna = _rna_to_dna(str(data))
@@ -69,6 +71,7 @@ def _7(data: RNAFASTAFormat) -> DNAIterator:
     return DNAIterator(generator)
 
 
+# TODO: this should probably be moved to q2-types
 @plugin.register_transformer
 def _8(data: DNAIterator) -> AlignedDNAFASTAFormat:
     return _dna_iterator_to_aligned_fasta(data)

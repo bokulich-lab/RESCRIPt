@@ -6,9 +6,8 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-from q2_types.feature_data import DNAFASTAFormat
+from q2_types.feature_data import DNAFASTAFormat, RNAFASTAFormat
 
-from rescript.types._format import RNAFASTAFormat
 from rescript._utilities import _rna_to_dna
 
 

@@ -16,14 +16,13 @@ from qiime2.plugin import ValidationError
 from qiime2.plugin.testing import TestPluginBase
 from q2_types.feature_data import (
     FeatureData, DNAFASTAFormat, DNAIterator,
-    AlignedDNAFASTAFormat, AlignedDNAIterator)
+    AlignedDNAFASTAFormat, AlignedDNAIterator,
+    RNAFASTAFormat)
 
 from rescript._utilities import _read_dna_fasta, _read_dna_alignment_fasta
 from rescript.types import (SILVATaxonomyFormat, SILVATaxonomyDirectoryFormat,
                             SILVATaxidMapFormat, SILVATaxidMapDirectoryFormat,
-                            SILVATaxonomy, SILVATaxidMap,
-                            RNAFASTAFormat, RNASequencesDirectoryFormat,
-                            RNASequence)
+                            SILVATaxonomy, SILVATaxidMap)
 
 
 class RescriptTypesTestPluginBase(TestPluginBase):
@@ -151,9 +150,6 @@ class TestRegistrations(RescriptTypesTestPluginBase):
     def test_silva_taxid_map_type_registration(self):
         self.assertRegisteredSemanticType(SILVATaxidMap)
 
-    def test_rna_sequence_type_registration(self):
-        self.assertRegisteredSemanticType(RNASequence)
-
     def test_silva_taxonomy_semantic_type_to_format_registration(self):
         self.assertSemanticTypeRegisteredToFormat(
             FeatureData[SILVATaxonomy], SILVATaxonomyDirectoryFormat)
@@ -161,10 +157,6 @@ class TestRegistrations(RescriptTypesTestPluginBase):
     def test_silva_taxid_map_semantic_type_to_format_registration(self):
         self.assertSemanticTypeRegisteredToFormat(
             FeatureData[SILVATaxidMap], SILVATaxidMapDirectoryFormat)
-
-    def test_rna_sequence_semantic_type_to_format_registration(self):
-        self.assertSemanticTypeRegisteredToFormat(
-            FeatureData[RNASequence], RNASequencesDirectoryFormat)
 
 
 class TestSILVATransformers(RescriptTypesTestPluginBase):
@@ -223,7 +215,8 @@ class TestRNAFASTAFormat(RescriptTypesTestPluginBase):
     def test_rna_fasta_format_validate_negative_is_dna(self):
         filepath = pkg_resources.resource_filename(
             'rescript.tests', 'data/derep-test.fasta')
-        with self.assertRaisesRegex(ValueError, 'Invalid character.*\'T\''):
+        with self.assertRaisesRegex(ValidationError,
+                                    'Invalid character.*\'T\''):
             format = RNAFASTAFormat(filepath, mode='r')
             format.validate('min')
 
