@@ -9,10 +9,9 @@
 
 import qiime2
 from qiime2.plugin.testing import TestPluginBase
-from q2_types.feature_data import DNAFASTAFormat, DNAIterator
+from q2_types.feature_data import DNAFASTAFormat, DNAIterator, RNAFASTAFormat
 
 from rescript.screenseq import cull_seqs
-from rescript.types._format import RNAFASTAFormat
 
 
 import_data = qiime2.Artifact.import_data

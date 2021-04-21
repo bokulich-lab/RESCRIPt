@@ -32,10 +32,10 @@ pip install git+https://github.com/bokulich-lab/RESCRIPt.git
 ```
 
 ### Option 2: Install within QIIME 2 environment
-First activate your QIIME 2 environment (ver 2021.2 or later) and install relevant dependencies:
+First activate your QIIME 2 environment (ver 2021.4 or later) and install relevant dependencies:
 
 ```
-conda activate qiime2-2021.2
+conda activate qiime2-2021.4
 conda install -c conda-forge -c bioconda -c qiime2 -c defaults xmltodict
 ```
 Install source:
