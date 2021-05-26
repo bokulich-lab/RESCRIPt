@@ -27,7 +27,9 @@ class TestGetSILVA(TestPluginBase):
             for target in _SILVA_TARGETS:
                 # don't test incompatible version/target settings (these are
                 # prevented in the user interface by TypeMap)
-                if target == 'LSURef' and version == '138':
+                if target == 'LSURef' or 'LSURef_NR99' and version == '138':
+                    continue
+                elif target == 'LSURef_NR99' and version == '128' or '132':
                     continue
                 obs = _assemble_silva_data_urls(version, target)
                 # validate URLs

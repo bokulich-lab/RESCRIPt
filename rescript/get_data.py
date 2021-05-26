@@ -16,7 +16,7 @@ import warnings
 import qiime2
 from urllib.request import urlretrieve
 from urllib.error import HTTPError
-from .types._format import RNAFASTAFormat
+from q2_types.feature_data import RNAFASTAFormat
 
 
 def get_silva_data(ctx,
@@ -52,6 +52,7 @@ def _assemble_silva_data_urls(version, target, download_sequences=True):
     ref_map = {'SSURef_NR99': 'ssu_ref_nr',
                'SSURef_Nr99': 'ssu_ref_nr',
                'SSURef': 'ssu_ref',
+               'LSURef_NR99': 'lsu_ref_nr',
                'LSURef': 'lsu_ref'}
     # handle silly inconsistencies in filenames between versions
     if target == 'SSURef_NR99' and float(version) < 138:

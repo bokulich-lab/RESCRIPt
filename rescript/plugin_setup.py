@@ -29,7 +29,8 @@ from .filter_length import (filter_seqs_length_by_taxon, filter_seqs_length,
                             filter_taxa)
 from .orient import orient_seqs
 from q2_types.feature_data import (FeatureData, Taxonomy, Sequence,
-                                   AlignedSequence, ProteinSequence)
+                                   AlignedSequence, ProteinSequence,
+                                   RNASequence)
 from q2_types.tree import Phylogeny, Rooted
 from q2_feature_classifier.classifier import (_parameter_descriptions,
                                               _classify_parameters)
@@ -39,8 +40,8 @@ import rescript
 from rescript._utilities import _rank_handles
 from rescript.types._format import (
     SILVATaxonomyFormat, SILVATaxonomyDirectoryFormat, SILVATaxidMapFormat,
-    SILVATaxidMapDirectoryFormat, RNAFASTAFormat, RNASequencesDirectoryFormat)
-from rescript.types._type import SILVATaxonomy, SILVATaxidMap, RNASequence
+    SILVATaxidMapDirectoryFormat)
+from rescript.types._type import SILVATaxonomy, SILVATaxidMap
 from rescript.types.methods import reverse_transcribe
 from rescript.ncbi import (
     get_ncbi_data, _default_ranks, _allowed_ranks, get_ncbi_data_protein)
@@ -593,13 +594,16 @@ RANK_DESCRIPTION = ('List of taxonomic ranks for building a taxonomy from the '
                     "', '".join(DEFAULT_RANKS) + "']")
 
 _SILVA_VERSIONS = ['128', '132', '138', '138.1']
-_SILVA_TARGETS = ['SSURef_NR99', 'SSURef', 'LSURef']
+_SILVA_TARGETS = ['SSURef_NR99', 'SSURef', 'LSURef_NR99', 'LSURef']
 
 version_map, target_map, _ = TypeMap({
     (Str % Choices('128', '132'),
      Str % Choices('SSURef_NR99', 'SSURef', 'LSURef')): Visualization,
-    (Str % Choices('138', '138.1'), Str % Choices('SSURef_NR99', 'SSURef')):
-        Visualization,
+    (Str % Choices('138'),
+     Str % Choices('SSURef_NR99', 'SSURef')): Visualization,
+    (Str % Choices('138.1'),
+     Str % Choices('SSURef_NR99', 'SSURef', 'LSURef_NR99',
+                   'LSURef')): Visualization,
 })
 
 
@@ -894,17 +898,13 @@ plugin.methods.register_function(
 )
 
 # Registrations
-plugin.register_semantic_types(SILVATaxonomy, SILVATaxidMap, RNASequence)
+plugin.register_semantic_types(SILVATaxonomy, SILVATaxidMap)
 plugin.register_semantic_type_to_format(
     FeatureData[SILVATaxonomy],
     artifact_format=SILVATaxonomyDirectoryFormat)
 plugin.register_semantic_type_to_format(
     FeatureData[SILVATaxidMap],
     artifact_format=SILVATaxidMapDirectoryFormat)
-plugin.register_semantic_type_to_format(
-    FeatureData[RNASequence],
-    artifact_format=RNASequencesDirectoryFormat)
 plugin.register_formats(SILVATaxonomyFormat, SILVATaxonomyDirectoryFormat,
-                        SILVATaxidMapFormat, SILVATaxidMapDirectoryFormat,
-                        RNAFASTAFormat, RNASequencesDirectoryFormat)
+                        SILVATaxidMapFormat, SILVATaxidMapDirectoryFormat)
 importlib.import_module('rescript.types._transformer')
