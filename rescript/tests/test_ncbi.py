@@ -10,6 +10,7 @@ import pickle
 from os.path import exists
 from unittest import mock
 
+import pandas as pd
 from requests.exceptions import (
     HTTPError, ChunkedEncodingError, ConnectionError, ReadTimeout)
 from xml.parsers.expat import ExpatError
@@ -19,7 +20,7 @@ from qiime2 import Metadata
 from qiime2.plugin.testing import TestPluginBase
 from qiime2.plugins import rescript
 from pandas import DataFrame
-from q2_types.feature_data import DNAIterator
+from q2_types.feature_data import DNAIterator, ProteinIterator
 import rescript.ncbi as ncbi
 
 import_data = qiime2.Artifact.import_data
@@ -86,6 +87,12 @@ class TestNCBI(TestPluginBase):
             'FeatureData[Taxonomy]', self.get_data_path('ncbi-taxa.tsv'))
         self.non_standard_taxa = import_data(
             'FeatureData[Taxonomy]', self.get_data_path('ns-ncbi-taxa.tsv'))
+        self.seqs_protein = import_data(
+            'FeatureData[ProteinSequence]',
+            self.get_data_path('ncbi-seqs-protein.fasta'))
+        self.taxa_protein = import_data(
+            'FeatureData[Taxonomy]',
+            self.get_data_path('ncbi-taxa-protein.tsv'))
         ncbi_responses = self.get_data_path('ncbi-responses.pkl')
         with open(ncbi_responses, 'rb') as fh:
             self.responses = pickle.load(fh)
@@ -241,3 +248,33 @@ class TestNCBI(TestPluginBase):
             [s.metadata['id'] for s in seq.view(DNAIterator)],
             ['JQ430715.1']
         )
+
+    def test_get_ncbi_protein_accession(self):
+        df = DataFrame(index=['WP_007780002.1', 'OHO15667.1'])
+        df.index.name = 'id'
+        md = Metadata(df)
+
+        exp_seqs = {s.metadata['id']: str(s)
+                    for s in self.seqs_protein.view(ProteinIterator)}
+        exp_taxa = self.taxa_protein.view(pd.Series).to_dict()
+
+        with mock.patch(
+                'rescript.ncbi._get_ncbi_data',
+                return_value=(exp_seqs, exp_taxa)):
+            seqs, taxa = rescript.methods.get_ncbi_data_protein(
+                accession_ids=md, rank_propagation=False
+            )
+
+        obs_seqs = {
+            s.metadata['id']: str(s) for s in seqs.view(ProteinIterator)}
+        obs_taxa = taxa.view(pd.Series).to_dict()
+
+        self.assertDictEqual(obs_seqs, exp_seqs)
+        self.assertDictEqual(obs_taxa, exp_taxa)
+
+    def test_get_ncbi_protein_no_ids(self):
+        with self.assertRaisesRegex(
+                ValueError, 'Query or accession_ids must be supplied'):
+            rescript.methods.get_ncbi_data_protein(
+                accession_ids=None, query=None
+            )

@@ -29,8 +29,8 @@ from .filter_length import (filter_seqs_length_by_taxon, filter_seqs_length,
                             filter_taxa)
 from .orient import orient_seqs
 from q2_types.feature_data import (FeatureData, Taxonomy, Sequence,
-                                   AlignedSequence, ProteinSequence,
-                                   RNASequence)
+                                   AlignedSequence, RNASequence,
+                                   ProteinSequence)
 from q2_types.tree import Phylogeny, Rooted
 from q2_feature_classifier.classifier import (_parameter_descriptions,
                                               _classify_parameters)
