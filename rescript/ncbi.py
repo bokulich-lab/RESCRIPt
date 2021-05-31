@@ -17,8 +17,8 @@ from requests.exceptions import (
 from xml.parsers.expat import ExpatError
 from xmltodict import parse
 from pandas import DataFrame
-from q2_types.feature_data import DNAIterator
-from skbio import DNA
+from q2_types.feature_data import DNAIterator, ProteinIterator
+from skbio import DNA, Protein
 from qiime2 import Metadata
 from collections import OrderedDict
 from joblib import Parallel, delayed
@@ -80,36 +80,68 @@ def get_ncbi_data(
     if query is None and accession_ids is None:
         raise ValueError('Query or accession_ids must be supplied')
 
+    seqs, taxa = _get_ncbi_data(query, accession_ids, ranks, rank_propagation,
+                                logging_level, n_jobs, 'nuccore')
+
+    seqs = DNAIterator(DNA(v, metadata={'id': k}) for k, v in seqs.items())
+    taxa = DataFrame(taxa, index=['Taxon']).T
+    taxa.index.name = 'Feature ID'
+
+    return seqs, taxa
+
+
+def get_ncbi_data_protein(
+        query: str = None, accession_ids: Metadata = None,
+        ranks: list = None, rank_propagation: bool = True,
+        logging_level: str = None, n_jobs: int = 1
+        ) -> (ProteinIterator, DataFrame):
+    if ranks is None:
+        ranks = _default_ranks
+    if query is None and accession_ids is None:
+        raise ValueError('Query or accession_ids must be supplied')
+
+    seqs, taxa = _get_ncbi_data(query, accession_ids, ranks, rank_propagation,
+                                logging_level, n_jobs, 'protein')
+
+    seqs = ProteinIterator(
+        Protein(v, metadata={'id': k}) for k, v in seqs.items())
+    taxa = DataFrame(taxa, index=['Taxon']).T
+    taxa.index.name = 'Feature ID'
+
+    return seqs, taxa
+
+
+def _get_ncbi_data(query: str = None, accession_ids: Metadata = None,
+                   ranks: list = None, rank_propagation: bool = True,
+                   logging_level: str = None, n_jobs: int = 1,
+                   db: str = 'nuccore'):
     manager = LokyManager()
     manager.start()
     request_lock = manager.Lock()
 
     if query:
-        seqs, taxids = get_nuc_for_query(
-            query, logging_level, n_jobs, request_lock, _entrez_delay)
+        seqs, taxids = get_data_for_query(
+            query, logging_level, n_jobs, request_lock, _entrez_delay, db)
 
     if accession_ids:
         accs = accession_ids.get_ids()
         if query and seqs:
             accs = accs - seqs.keys()
             if accs:
-                acc_seqs, acc_taxids = get_nuc_for_accs(
-                    accs, logging_level, n_jobs, request_lock, _entrez_delay)
+                acc_seqs, acc_taxids = get_data_for_accs(
+                    accs, logging_level, n_jobs, request_lock,
+                    _entrez_delay, db)
                 seqs.update(acc_seqs)
                 taxids.update(acc_taxids)
         else:
-            seqs, taxids = get_nuc_for_accs(
-                accs, logging_level, n_jobs, request_lock, _entrez_delay)
+            seqs, taxids = get_data_for_accs(
+                accs, logging_level, n_jobs, request_lock, _entrez_delay, db)
 
     taxa, bad_accs = get_taxonomies(taxids, ranks, rank_propagation,
                                     logging_level, n_jobs, request_lock,
                                     _entrez_delay)
     for acc in bad_accs:
         del seqs[acc]
-
-    seqs = DNAIterator(DNA(v, metadata={'id': k}) for k, v in seqs.items())
-    taxa = DataFrame(taxa, index=['Taxon']).T
-    taxa.index.name = 'Feature ID'
 
     return seqs, taxa
 
@@ -315,12 +347,12 @@ def _get_for_ids(params, ids, logging_level, n_jobs, request_lock,
     return data
 
 
-def get_nuc_for_accs(accs, logging_level, n_jobs, request_lock,
-                     entrez_delay=0.334):
+def get_data_for_accs(accs, logging_level, n_jobs, request_lock,
+                      entrez_delay=0.334, db='nuccore'):
     if len(accs) > 125000:
         _large_warning(logging_level)
     params = dict(
-        db='nuccore', rettype='fasta', retmode='xml', **_entrez_params
+        db=db, rettype='fasta', retmode='xml', **_entrez_params
     )
     records = _get_for_ids(params, accs, logging_level, n_jobs, request_lock,
                            True, entrez_delay)
@@ -349,10 +381,10 @@ def _get_query_chunk(
     return data_chunk
 
 
-def get_nuc_for_query(
-        query, logging_level, n_jobs, request_lock, entrez_delay=0.334):
+def get_data_for_query(query, logging_level, n_jobs, request_lock,
+                       entrez_delay=0.334, db='nuccore'):
     params = dict(
-        db='nuccore', term=query, usehistory='y', retmax=0, **_entrez_params
+        db=db, term=query, usehistory='y', retmax=0, **_entrez_params
     )
     params, expected_num_records = _esearch(params, logging_level,
                                             entrez_delay)

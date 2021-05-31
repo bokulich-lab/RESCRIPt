@@ -14,10 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: set up python 3.6
+    - name: set up python 3.8
       uses: actions/setup-python@v1
       with:
-        python-version: 3.6
+        python-version: 3.8
     - name: install dependencies
       run: python -m pip install --upgrade pip
     - name: lint
@@ -44,5 +44,5 @@ jobs:
         package-name: rescript
         additional-tests: pytest --pyargs rescript
         # TODO: update this to `release` when tagging release
-        build-target: staging
+        build-target: staged
         library-token: ${{ secrets.LIBRARY_TOKEN }}

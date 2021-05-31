@@ -8,10 +8,10 @@
 
 import pandas as pd
 from q2_types.feature_data import (
-    DNAFASTAFormat, DNAIterator, AlignedDNAFASTAFormat)
+    DNAFASTAFormat, DNAIterator, AlignedDNAFASTAFormat, RNAFASTAFormat)
 
 from ..plugin_setup import plugin
-from ._format import SILVATaxonomyFormat, SILVATaxidMapFormat, RNAFASTAFormat
+from ._format import SILVATaxonomyFormat, SILVATaxidMapFormat
 from rescript._utilities import (
     _rna_to_dna, _read_dna_fasta, _dna_iterator_to_aligned_fasta)
 
