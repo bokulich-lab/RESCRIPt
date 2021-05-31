@@ -85,6 +85,10 @@ class TestNCBI(TestPluginBase):
             'FeatureData[Sequence]', self.get_data_path('ncbi-seqs.fasta'))
         self.taxa = import_data(
             'FeatureData[Taxonomy]', self.get_data_path('ncbi-taxa.tsv'))
+        self.y_seq = import_data(
+            'FeatureData[Sequence]', self.get_data_path('bakers-yeast.fasta'))
+        self.y_tax = import_data(
+            'FeatureData[Taxonomy]', self.get_data_path('bakers-yeast.tsv'))
         self.non_standard_taxa = import_data(
             'FeatureData[Taxonomy]', self.get_data_path('ns-ncbi-taxa.tsv'))
         self.seqs_protein = import_data(
@@ -162,6 +166,17 @@ class TestNCBI(TestPluginBase):
         taxa = self.taxa.view(DataFrame).to_dict()
         self.assertEqual(que_tax, taxa)
 
+    def test_get_ncbi_no_accver(self):
+        que_seq, que_tax = self.get_ncbi_data(query='pdb|6S47|AA')
+
+        que_seq = {s.metadata['id']: str(s) for s in que_seq.view(DNAIterator)}
+        seqs = {s.metadata['id']: str(s) for s in self.y_seq.view(DNAIterator)}
+        self.assertEqual(que_seq, seqs)
+
+        que_tax = que_tax.view(DataFrame).to_dict()
+        taxa = self.y_tax.view(DataFrame).to_dict()
+        self.assertEqual(que_tax, taxa)
+
     def test_get_ncbi_data_query_mushroom_one(self):
         seq, tax = self.get_ncbi_data(query='MT345279.1')
 
@@ -229,12 +244,9 @@ class TestNCBI(TestPluginBase):
             seq, tax = self.get_ncbi_data(
                 query='M27461.1 OR DI201845.1 OR JQ430715.1')
         for warning in log.output:
-            if '81077' in warning and 'problematic taxids' not in warning:
+            if '12908' in warning and 'problematic taxids' not in warning:
                 self.assertTrue('TypeError' in warning)
-            elif '12908' in warning and 'problematic taxids' not in warning:
-                self.assertTrue('KeyError' in warning)
             else:
-                self.assertTrue('DI201845.1' in warning)
                 self.assertTrue('M27461.1' in warning)
 
         tax = tax.view(DataFrame)
@@ -245,8 +257,8 @@ class TestNCBI(TestPluginBase):
         )
 
         self.assertEqual(
-            [s.metadata['id'] for s in seq.view(DNAIterator)],
-            ['JQ430715.1']
+            {s.metadata['id'] for s in seq.view(DNAIterator)},
+            {'DI201845.1', 'JQ430715.1'}
         )
 
     def test_get_ncbi_protein_accession(self):
