@@ -458,6 +458,46 @@ plugin.methods.register_function(
 )
 
 
+plugin.methods.register_function(
+    function=replace_taxonomy,
+    inputs={
+        'taxonomy': FeatureData[Taxonomy]
+    },
+    parameters={
+        'taxonomy_replacements': Metadata
+    },
+    outputs=[('edited_taxonomy', FeatureData[Taxonomy])],
+    input_descriptions={
+        'taxonomy': 'Taxonomy strings data to be edited.'
+    },
+    parameter_descriptions={
+        'taxonomy_replacements': 'A two-column tab-delimitad file in which '
+                                 'the rank-lineage string of the first '
+                                 'column is replaced by the rank-lineage '
+                                 'string of the scond column. For  '
+                                 'example, replacing all instances of '
+                                 '\'g__Escherichia\' with '
+                                 '\'g__Escherichia-Shigella\'. All items '
+                                 'in the first column must be unique!'},
+    output_descriptions={
+        'replaced_taxonomy': 'Taxonomy in which the original rank-lineage '
+                             'strings were replaced by user-supplied '
+                             'rank-lineage strings.'
+    },
+    name='Replaces existing taxonomy strings with those provided',
+    description=('This method allows the user to edit taxonomy strings. '
+                 'This is often used to fix inconsistently applied '
+                 'nomenclature for identical seqeunces. For example, '
+                 'the genera \'Escherichia\', \'Shigella\', \'Salmonella\' '
+                 ', and \'Escherichia-Shigella\' are '
+                 'often interchengably used as the genus label for the same '
+                 'organism. This action will allow the user to replace all of '
+                 'the these labels with a single consitant label, e.g. '
+                 'Escherichia-Shigella. This will result in better '
+                 'downstream taxonomy classification efforts.')
+)
+
+
 FILTER_PARAMS = {
     'global_min': Int % Range(1, None),
     'global_max': Int % Range(1, None)}
