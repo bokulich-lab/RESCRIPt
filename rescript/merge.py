@@ -71,6 +71,9 @@ def merge_taxa(data: pd.DataFrame,
     else:
         result['Taxon'] = result['Taxon'].apply(lambda x: ';'.join(x))
 
+    # fill unassigned taxa, if any
+    result['Taxon'].replace('', 'Unassigned', inplace=True)
+
     # gotta please the type validator gods
     result.index.name = 'Feature ID'
 
