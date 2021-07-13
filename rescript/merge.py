@@ -22,7 +22,8 @@ MODE_ERROR_SCORE = (
 def merge_taxa(data: pd.DataFrame,
                mode: str = 'len',
                rank_handle_regex: str = '^[dkpcofgs]__',
-               new_rank_handle: str = None) -> pd.DataFrame:
+               new_rank_handle: str = None,
+               unclassified_label: str = 'Unassigned') -> pd.DataFrame:
     # Convert taxonomies to list; optionally remove rank handle
     for d in data:
         d['Taxon'] = d['Taxon'].apply(
@@ -72,7 +73,7 @@ def merge_taxa(data: pd.DataFrame,
         result['Taxon'] = result['Taxon'].apply(lambda x: ';'.join(x))
 
     # fill unassigned taxa, if any
-    result['Taxon'].replace('', 'Unassigned', inplace=True)
+    result['Taxon'].replace('', unclassified_label, inplace=True)
 
     # gotta please the type validator gods
     result.index.name = 'Feature ID'

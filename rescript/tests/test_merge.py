@@ -383,7 +383,8 @@ class TestMergeTaxa(TestPluginBase):
                            'Bacillaceae;Bacillus;',
                 '370253':  'Unassigned',
                 '4361279': 'Bacteria;Proteobacteria;'
-                           'Betaproteobacteria;Burkholderiales;Oxalobacteraceae;;',
+                           'Betaproteobacteria;Burkholderiales;'
+                           'Oxalobacteraceae;;',
                 '4369464': 'Bacteria;Proteobacteria;Alphaproteobacteria;'
                            'Rhizobiales;Rhizobiaceae;Rhizobium;leguminosarum',
                 'unique1': 'Bacteria;;;;;;blah',

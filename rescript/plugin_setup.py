@@ -222,7 +222,9 @@ plugin.methods.register_function(
     parameters={
         'mode': Str % Choices(['len', 'lca', 'score', 'super', 'majority']),
         'rank_handle_regex': Str,
-        'new_rank_handle': Str % Choices(list(_rank_handles.keys()))},
+        'new_rank_handle': Str % Choices(list(_rank_handles.keys())),
+        'unclassified_label': Str
+    },
     outputs=[('merged_data', FeatureData[Taxonomy])],
     input_descriptions={
         'data': 'Two or more feature taxonomies to be merged.'},
@@ -247,7 +249,11 @@ plugin.methods.register_function(
             'parameter will prepend rank handles whether or not they already '
             'exist in the taxonomy, so should ALWAYS be used in conjunction '
             'with `rank_handle_regex` if rank handles exist in any of the '
-            'inputs.')},
+            'inputs.'),
+        'unclassified_label': 'Specifies what label should be used for '
+                              'taxonomies that could not be resolved (when '
+                              'LCA modes are used).'
+    },
     name='Compare taxonomies and select the longest, highest scoring, or find '
          'the least common ancestor.',
     description='Compare taxonomy annotations and choose the best one. Can '
