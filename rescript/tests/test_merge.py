@@ -71,7 +71,7 @@ class TestMergeTaxa(TestPluginBase):
                            'f__Rhizobiaceae; g__Rhizobium; s__leguminosarum',
                 # test merging unique feature (only found in dataframe b)
                 'unique1': 'k__Bacteria; p__; c__; o__; f__; g__; s__blah'},
-            'consensus': {
+            'Consensus': {
                 '370253': 0.95,
                 '2562097': 0.9,
                 '2562091': 0.85,
@@ -202,11 +202,11 @@ class TestMergeTaxa(TestPluginBase):
         pdt.assert_frame_equal(
             one_col.view(pd.DataFrame), exp, check_names=False)
         exp = pd.concat([exp, pd.DataFrame({
-            'confidence': {
+            'Confidence': {
                 '2562091': 1.0, '2562097': np.nan, '370253': np.nan,
                 '4361279': 0.9, '4369464': np.nan, 'unique': 0.76,
                 'unique1': np.nan, 'unique2': 0.77},
-            'consensus': {
+            'Consensus': {
                 '2562091': np.nan, '2562097': 0.9, '370253': 0.95,
                 '4361279': np.nan, '4369464': 0.99, 'unique': np.nan,
                 'unique1': 0.75, 'unique2': np.nan}
@@ -237,10 +237,10 @@ class TestMergeTaxa(TestPluginBase):
                 'unique': 'Bacteria;;;;;;blah',
                 'unique1': 'Bacteria;;;;;;blah',
                 'unique2': 'Bacteria;;;;;;blah'},
-            'confidence': {'2562091': 1.0, '2562097': np.nan, '370253': 1.0,
+            'Confidence': {'2562091': 1.0, '2562097': np.nan, '370253': 1.0,
                            '4361279': 0.9, '4369464': np.nan, 'unique': 0.76,
                            'unique1': np.nan, 'unique2': 0.77},
-            'consensus': {'2562091': np.nan, '2562097': 0.9, '370253': np.nan,
+            'Consensus': {'2562091': np.nan, '2562097': 0.9, '370253': np.nan,
                           '4361279': np.nan, '4369464': 0.99, 'unique': np.nan,
                           'unique1': 0.75, 'unique2': np.nan}})
         result = result.view(pd.DataFrame).apply(
@@ -272,10 +272,10 @@ class TestMergeTaxa(TestPluginBase):
                 'unique': 'k__Bacteria;p__;c__;o__;f__;g__;s__blah',
                 'unique1': 'k__Bacteria;p__;c__;o__;f__;g__;s__blah',
                 'unique2': 'k__Bacteria;p__;c__;o__;f__;g__;s__blah'},
-            'confidence': {'2562091': 1.0, '2562097': np.nan, '370253': 1.0,
+            'Confidence': {'2562091': 1.0, '2562097': np.nan, '370253': 1.0,
                            '4361279': 0.9, '4369464': np.nan, 'unique': 0.76,
                            'unique1': np.nan, 'unique2': 0.77},
-            'consensus': {'2562091': np.nan, '2562097': 0.9, '370253': np.nan,
+            'Consensus': {'2562091': np.nan, '2562097': 0.9, '370253': np.nan,
                           '4361279': np.nan, '4369464': 0.99, 'unique': np.nan,
                           'unique1': 0.75, 'unique2': np.nan}})
         result = result.view(pd.DataFrame).apply(
@@ -307,13 +307,13 @@ class TestMergeTaxa(TestPluginBase):
                 'unique': 'k__Bacteria;p__;c__;o__;f__;g__;s__blah',
                 'unique1': 'k__Bacteria;p__;c__;o__;f__;g__;s__blah',
                 'unique2': 'k__Bacteria;p__;c__;o__;f__;g__;s__blah'},
-            'confidence': {
+            'Confidence': {
                 '2562091': 1.0, '2562097': 0.99, '370253': 1.0, '4361279': 0.9,
                 '4369464': 0, 'unique': 0.76, 'unique1': 0, 'unique2': 0.77},
-            'consensus': {
+            'Consensus': {
                 '2562091': 0, '2562097': 0, '370253': 0, '4361279': 0,
                 '4369464': 0.99, 'unique': 0, 'unique1': 0.75, 'unique2': 0},
-            'score': {
+            'Score': {
                 '2562091': 1.0, '2562097': 0.99, '370253': 1.0, '4361279': 0.9,
                 '4369464': 0.99, 'unique': 0.76, 'unique1': 0.75,
                 'unique2': 0.77}})

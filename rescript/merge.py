@@ -26,8 +26,12 @@ def merge_taxa(data: pd.DataFrame,
                unclassified_label: str = 'Unassigned') -> pd.DataFrame:
     # Convert taxonomies to list; optionally remove rank handle
     for d in data:
+        # Convert taxonomies to list; optionally remove rank handle
         d['Taxon'] = d['Taxon'].apply(
             lambda x: _taxon_to_list(x, rank_handle=rank_handle_regex))
+
+        # Capitalize column names for sorting consistency
+        d.columns = [x.capitalize() for x in d.columns]
 
     # consensus and other dataset-specific data are meaningless after LCA
     # or majority so we will just drop them and apply functions across rows.
@@ -54,7 +58,7 @@ def merge_taxa(data: pd.DataFrame,
             func, fill_value, overwrite = _find_top_score, 0, True
             for d in data:
                 try:
-                    d['score'] = pd.to_numeric(d.iloc[:, 1])
+                    d['Score'] = pd.to_numeric(d.iloc[:, 1])
                 # if single-column frame is encountered, raise error
                 except IndexError:
                     raise IndexError(MODE_ERROR_SCORE)
@@ -63,6 +67,9 @@ def merge_taxa(data: pd.DataFrame,
         for d in data:
             result = result.T.combine(
                 d.T, func, fill_value=fill_value, overwrite=overwrite).T
+            reordered_cols = ['Taxon'] + [x for x in result.columns
+                                          if x != 'Taxon']
+            result = result[reordered_cols]
 
     # Insert new rank handles if selected
     if new_rank_handle is not None:
