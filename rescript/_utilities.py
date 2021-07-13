@@ -72,7 +72,7 @@ def _rank_length(t1, t2):
 
 
 def _find_top_score(t1, t2):
-    return t1 if t1['score'] > t2['score'] else t2
+    return t1 if t1['Score'] > t2['Score'] else t2
 
 
 def _taxon_to_list(taxon, rank_handle):
