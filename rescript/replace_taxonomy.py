@@ -6,23 +6,14 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-from qiime2.plugin import Metadata
+from qiime2.plugin import MetadataColumn, Categorical
 import pandas as pd
 import re
 
 
 def make_substitutions_dict(taxonomy_replacement_map):
-    if taxonomy_replacement_map.column_count < 1:
-        raise ValueError("Metadata file should only contain one column of "
-                         "taxonomy replacement strings, none found.")
-    elif taxonomy_replacement_map.column_count > 1:
-        raise ValueError("Metadata file should only contain one column of "
-                         "taxonomy replacement strings, found %d columns."
-                         % taxonomy_replacement_map.column_count)
-    else:
-        replacements = taxonomy_replacement_map.to_dataframe().iloc[:, 0]
-        replacement_dict = replacements.to_dict()
-        return replacement_dict
+    replacement_dict = taxonomy_replacement_map.to_series().to_dict()
+    return replacement_dict
 
 
 def make_regex(substitutions):
@@ -32,7 +23,7 @@ def make_regex(substitutions):
 
 
 def replace_taxonomy(taxonomy: pd.Series,
-                     taxonomy_replacement_map: Metadata
+                     taxonomy_replacement_map: MetadataColumn[Categorical]
                      ) -> pd.Series:
 
     rd = make_substitutions_dict(taxonomy_replacement_map)

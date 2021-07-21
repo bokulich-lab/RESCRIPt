@@ -10,7 +10,8 @@ import importlib
 
 from qiime2.core.type import TypeMatch
 from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int,
-                           Float, Visualization, Bool, TypeMap, Metadata)
+                           Float, Visualization, Bool, TypeMap, Metadata,
+                           MetadataColumn, Categorical)
 
 from .subsample import subsample_fasta
 from .trim_alignment import trim_alignment
@@ -471,7 +472,7 @@ plugin.methods.register_function(
         'taxonomy': FeatureData[Taxonomy]
     },
     parameters={
-        'taxonomy_replacement_map': Metadata
+        'taxonomy_replacement_map': MetadataColumn[Categorical]
     },
     outputs=[('edited_taxonomy', FeatureData[Taxonomy])],
     input_descriptions={
