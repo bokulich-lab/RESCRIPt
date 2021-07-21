@@ -480,10 +480,10 @@ plugin.methods.register_function(
         'taxonomy': 'Taxonomy strings data to be edited.'
     },
     parameter_descriptions={
-        'taxonomy_replacement_map': 'A two-column tab-delimitad file in which '
-                                    'the rank-lineage string of the first '
+        'taxonomy_replacement_map': 'A tab-delimitad metadata file in which '
+                                    'the rank-lineage string in the \'id\' '
                                     'column is replaced by the rank-lineage '
-                                    'string of the scond column. For  '
+                                    'string of the provided column name. For '
                                     'example, replacing all instances of '
                                     '\'g__Escherichia;\' with '
                                     '\'g__Escherichia-Shigella;\'. All items '
