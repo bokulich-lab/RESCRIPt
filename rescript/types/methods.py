@@ -6,10 +6,11 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-from q2_types.feature_data import DNAFASTAFormat, RNAFASTAFormat
-from rescript._utilities import _rna_to_dna
+from q2_types.feature_data import RNAIterator, DNAIterator
+from rescript._utilities import _rna_to_dna_iterator
 
 
 # This exposes the transformer as its own method
-def reverse_transcribe(rna_sequences: RNAFASTAFormat) -> DNAFASTAFormat:
-    return _rna_to_dna(str(rna_sequences))
+def reverse_transcribe(rna_sequences: RNAIterator) -> DNAIterator:
+    generator = _rna_to_dna_iterator(rna_sequences)
+    return DNAIterator(generator)
