@@ -7,13 +7,14 @@
 # ----------------------------------------------------------------------------
 
 import pandas as pd
+import skbio
 from q2_types.feature_data import (
     DNAFASTAFormat, DNAIterator, AlignedDNAFASTAFormat, RNAFASTAFormat)
 
 from ..plugin_setup import plugin
 from ._format import SILVATaxonomyFormat, SILVATaxidMapFormat
-from rescript._utilities import (
-    _rna_to_dna, _read_dna_fasta, _dna_iterator_to_aligned_fasta)
+from rescript._utilities import (_rna_to_dna, _rna_to_dna_iterator,
+                                 _read_fasta, _dna_iterator_to_aligned_fasta)
 
 
 def _read_dataframe(fh, header=0):
@@ -59,13 +60,15 @@ def _5(ff: SILVATaxidMapFormat) -> (pd.DataFrame):
 
 @plugin.register_transformer
 def _6(data: RNAFASTAFormat) -> DNAFASTAFormat:
-    return _rna_to_dna(str(data))
+    iterator = _read_fasta(str(data), constructor=skbio.RNA)
+    ff = _rna_to_dna(iterator)
+    return ff
 
 
 @plugin.register_transformer
 def _7(data: RNAFASTAFormat) -> DNAIterator:
-    converted_dna = _rna_to_dna(str(data))
-    generator = _read_dna_fasta(str(converted_dna))
+    iterator = _read_fasta(str(data), constructor=skbio.RNA)
+    generator = _rna_to_dna_iterator(iterator)
     return DNAIterator(generator)
 
 

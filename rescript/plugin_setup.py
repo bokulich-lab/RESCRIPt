@@ -30,7 +30,7 @@ from .filter_length import (filter_seqs_length_by_taxon, filter_seqs_length,
 from .orient import orient_seqs
 from q2_types.feature_data import (FeatureData, Taxonomy, Sequence,
                                    AlignedSequence, RNASequence,
-                                   ProteinSequence)
+                                   AlignedRNASequence, ProteinSequence)
 from q2_types.tree import Phylogeny, Rooted
 from q2_feature_classifier.classifier import (_parameter_descriptions,
                                               _classify_parameters)
@@ -222,7 +222,9 @@ plugin.methods.register_function(
     parameters={
         'mode': Str % Choices(['len', 'lca', 'score', 'super', 'majority']),
         'rank_handle_regex': Str,
-        'new_rank_handle': Str % Choices(list(_rank_handles.keys()))},
+        'new_rank_handle': Str % Choices(list(_rank_handles.keys())),
+        'unclassified_label': Str
+    },
     outputs=[('merged_data', FeatureData[Taxonomy])],
     input_descriptions={
         'data': 'Two or more feature taxonomies to be merged.'},
@@ -247,7 +249,11 @@ plugin.methods.register_function(
             'parameter will prepend rank handles whether or not they already '
             'exist in the taxonomy, so should ALWAYS be used in conjunction '
             'with `rank_handle_regex` if rank handles exist in any of the '
-            'inputs.')},
+            'inputs.'),
+        'unclassified_label': 'Specifies what label should be used for '
+                              'taxonomies that could not be resolved (when '
+                              'LCA modes are used).'
+    },
     name='Compare taxonomies and select the longest, highest scoring, or find '
          'the least common ancestor.',
     description='Compare taxonomy annotations and choose the best one. Can '
@@ -747,18 +753,22 @@ plugin.methods.register_function(
 )
 
 
+rt_short_description = 'Reverse transcribe RNA to DNA sequences.'
+rt_inputs, rt_outputs = TypeMap({AlignedRNASequence: AlignedSequence,
+                                 RNASequence: Sequence})
 plugin.methods.register_function(
     function=reverse_transcribe,
-    inputs={'rna_sequences': FeatureData[RNASequence]},
+    inputs={'rna_sequences': FeatureData[rt_inputs]},
     parameters={},
-    outputs=[('dna_sequences', FeatureData[Sequence])],
+    outputs=[('dna_sequences', FeatureData[rt_outputs])],
     input_descriptions={
         'rna_sequences': 'RNA Sequences to reverse transcribe to DNA.'},
     parameter_descriptions={},
     output_descriptions={
         'dna_sequences': 'Reverse-transcribed DNA sequences.'},
-    name='Reverse transcribe RNA to DNA sequences.',
-    description=('Reverse transcribe RNA to DNA sequences.')
+    name=rt_short_description,
+    description=(rt_short_description + ' Accepts aligned or unaligned RNA '
+                 'sequences as input.')
 )
 
 

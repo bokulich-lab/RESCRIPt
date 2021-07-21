@@ -71,7 +71,7 @@ class TestMergeTaxa(TestPluginBase):
                            'f__Rhizobiaceae; g__Rhizobium; s__leguminosarum',
                 # test merging unique feature (only found in dataframe b)
                 'unique1': 'k__Bacteria; p__; c__; o__; f__; g__; s__blah'},
-            'consensus': {
+            'Consensus': {
                 '370253': 0.95,
                 '2562097': 0.9,
                 '2562091': 0.85,
@@ -90,10 +90,38 @@ class TestMergeTaxa(TestPluginBase):
         m3.index.name = 'Feature ID'
         self.m3 = import_data('FeatureData[Taxonomy]', pd.DataFrame(m3))
 
+        m4 = pd.DataFrame({
+            'Taxon': {
+                '370253': 'k__Protozoa; p__; c__; o__; f__; g__; s__blah',
+                '2562097': 'k__Bacteria; p__Firmicutes; c__Bacilli; '
+                           'o__Bacillales; f__Bacillaceae; g__Bacillus; s__',
+                '2562091': 'k__Bacteria; p__Actinobacteria; c__Acidimicrobiia;'
+                           ' o__Acidimicrobiales; f__',
+                '4361279': 'k__Bacteria; p__Proteobacteria; '
+                           'c__Betaproteobacteria; o__Burkholderiales',
+                '4369464': 'k__Bacteria; p__Proteobacteria; '
+                           'c__Alphaproteobacteria; o__Rhizobiales; '
+                           'f__Rhizobiaceae; g__Rhizobium; s__leguminosarum',
+                # test merging unique feature (only found in dataframe b)
+                'unique1': 'k__Bacteria; p__; c__; o__; f__; g__; s__blah'
+            },
+            'consensus': {
+                '370253': 0.3,
+                '2562097': 0.9,
+                '2562091': 0.85,
+                '4361279': 0.87,
+                '4369464': 0.99,
+                'unique1': 0.75
+            }
+        })
+        m4.index.name = 'Feature ID'
+        self.m4 = import_data('FeatureData[Taxonomy]', pd.DataFrame(m2))
+
         # same as above, but these are single-column series
         self.s1 = import_data('FeatureData[Taxonomy]', m1['Taxon'])
         self.s2 = import_data('FeatureData[Taxonomy]', m2['Taxon'])
         self.s3 = import_data('FeatureData[Taxonomy]', m3['Taxon'])
+        self.s4 = import_data('FeatureData[Taxonomy]', m4['Taxon'])
 
     def test_merge_taxa_lca(self):
         one_col, = self.merge_taxa([self.s1, self.s2, self.s3], 'lca', '')
@@ -174,11 +202,11 @@ class TestMergeTaxa(TestPluginBase):
         pdt.assert_frame_equal(
             one_col.view(pd.DataFrame), exp, check_names=False)
         exp = pd.concat([exp, pd.DataFrame({
-            'confidence': {
+            'Confidence': {
                 '2562091': 1.0, '2562097': np.nan, '370253': np.nan,
                 '4361279': 0.9, '4369464': np.nan, 'unique': 0.76,
                 'unique1': np.nan, 'unique2': 0.77},
-            'consensus': {
+            'Consensus': {
                 '2562091': np.nan, '2562097': 0.9, '370253': 0.95,
                 '4361279': np.nan, '4369464': 0.99, 'unique': np.nan,
                 'unique1': 0.75, 'unique2': np.nan}
@@ -209,10 +237,10 @@ class TestMergeTaxa(TestPluginBase):
                 'unique': 'Bacteria;;;;;;blah',
                 'unique1': 'Bacteria;;;;;;blah',
                 'unique2': 'Bacteria;;;;;;blah'},
-            'confidence': {'2562091': 1.0, '2562097': np.nan, '370253': 1.0,
+            'Confidence': {'2562091': 1.0, '2562097': np.nan, '370253': 1.0,
                            '4361279': 0.9, '4369464': np.nan, 'unique': 0.76,
                            'unique1': np.nan, 'unique2': 0.77},
-            'consensus': {'2562091': np.nan, '2562097': 0.9, '370253': np.nan,
+            'Consensus': {'2562091': np.nan, '2562097': 0.9, '370253': np.nan,
                           '4361279': np.nan, '4369464': 0.99, 'unique': np.nan,
                           'unique1': 0.75, 'unique2': np.nan}})
         result = result.view(pd.DataFrame).apply(
@@ -244,10 +272,10 @@ class TestMergeTaxa(TestPluginBase):
                 'unique': 'k__Bacteria;p__;c__;o__;f__;g__;s__blah',
                 'unique1': 'k__Bacteria;p__;c__;o__;f__;g__;s__blah',
                 'unique2': 'k__Bacteria;p__;c__;o__;f__;g__;s__blah'},
-            'confidence': {'2562091': 1.0, '2562097': np.nan, '370253': 1.0,
+            'Confidence': {'2562091': 1.0, '2562097': np.nan, '370253': 1.0,
                            '4361279': 0.9, '4369464': np.nan, 'unique': 0.76,
                            'unique1': np.nan, 'unique2': 0.77},
-            'consensus': {'2562091': np.nan, '2562097': 0.9, '370253': np.nan,
+            'Consensus': {'2562091': np.nan, '2562097': 0.9, '370253': np.nan,
                           '4361279': np.nan, '4369464': 0.99, 'unique': np.nan,
                           'unique1': 0.75, 'unique2': np.nan}})
         result = result.view(pd.DataFrame).apply(
@@ -279,13 +307,13 @@ class TestMergeTaxa(TestPluginBase):
                 'unique': 'k__Bacteria;p__;c__;o__;f__;g__;s__blah',
                 'unique1': 'k__Bacteria;p__;c__;o__;f__;g__;s__blah',
                 'unique2': 'k__Bacteria;p__;c__;o__;f__;g__;s__blah'},
-            'confidence': {
+            'Confidence': {
                 '2562091': 1.0, '2562097': 0.99, '370253': 1.0, '4361279': 0.9,
                 '4369464': 0, 'unique': 0.76, 'unique1': 0, 'unique2': 0.77},
-            'consensus': {
+            'Consensus': {
                 '2562091': 0, '2562097': 0, '370253': 0, '4361279': 0,
                 '4369464': 0.99, 'unique': 0, 'unique1': 0.75, 'unique2': 0},
-            'score': {
+            'Score': {
                 '2562091': 1.0, '2562097': 0.99, '370253': 1.0, '4361279': 0.9,
                 '4369464': 0.99, 'unique': 0.76, 'unique1': 0.75,
                 'unique2': 0.77}})
@@ -344,6 +372,27 @@ class TestMergeTaxa(TestPluginBase):
         multi_col, = self.merge_taxa([self.m1, self.m2, self.m3], 'super')
         pdt.assert_frame_equal(
             multi_col.view(pd.DataFrame), exp, check_names=False)
+
+    def test_merge_taxa_super_lca_with_unassigned(self):
+        result, = self.merge_taxa([self.s1, self.s4], 'super')
+        exp = pd.DataFrame({
+            'Taxon': {
+                '2562091': 'Bacteria;Actinobacteria;Acidimicrobiia;'
+                           'Acidimicrobiales;Microthrixaceae;;',
+                '2562097': 'Bacteria;Firmicutes;Bacilli;Bacillales;'
+                           'Bacillaceae;Bacillus;',
+                '370253':  'Unassigned',
+                '4361279': 'Bacteria;Proteobacteria;'
+                           'Betaproteobacteria;Burkholderiales;'
+                           'Oxalobacteraceae;;',
+                '4369464': 'Bacteria;Proteobacteria;Alphaproteobacteria;'
+                           'Rhizobiales;Rhizobiaceae;Rhizobium;leguminosarum',
+                'unique1': 'Bacteria;;;;;;blah',
+                'unique2': 'Bacteria;;;;;;blah'
+            }
+        })
+        pdt.assert_frame_equal(
+            result.view(pd.DataFrame), exp, check_names=False)
 
     # majority is super without superstring collapsing
     def test_merge_taxa_super_lca_majority(self):

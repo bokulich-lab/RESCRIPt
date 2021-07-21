@@ -72,7 +72,7 @@ def _rank_length(t1, t2):
 
 
 def _find_top_score(t1, t2):
-    return t1 if t1['score'] > t2['score'] else t2
+    return t1 if t1['Score'] > t2['Score'] else t2
 
 
 def _taxon_to_list(taxon, rank_handle):
@@ -99,24 +99,24 @@ def run_command(cmd, verbose=True):
     subprocess.run(cmd, check=True)
 
 
-def _read_rna_fasta(path):
-    return skbio.read(path, format='fasta', constructor=skbio.RNA)
-
-
-def _read_dna_fasta(path):
-    return skbio.read(path, format='fasta', constructor=skbio.DNA)
+def _read_fasta(path, constructor=skbio.DNA):
+    return skbio.read(path, format='fasta', constructor=constructor)
 
 
 def _read_dna_alignment_fasta(path):
     return skbio.TabularMSA.read(path, format='fasta', constructor=skbio.DNA)
 
 
-def _rna_to_dna(path):
+def _rna_to_dna(iterator):
     ff = DNAFASTAFormat()
-    with ff.open() as outfasta:
-        for seq in _read_rna_fasta(path):
-            seq.reverse_transcribe().write(outfasta)
+    generator = _rna_to_dna_iterator(iterator)
+    skbio.io.write(iter(generator), format='fasta', into=str(ff))
     return ff
+
+
+def _rna_to_dna_iterator(iterator):
+    for seq in iterator:
+        yield seq.reverse_transcribe()
 
 
 def _dna_iterator_to_aligned_fasta(iterator):

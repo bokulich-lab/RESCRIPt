@@ -18,7 +18,7 @@ from q2_types.feature_data import (
     FeatureData, DNAIterator, AlignedDNAFASTAFormat, AlignedDNAIterator,
     DNAFASTAFormat, RNAFASTAFormat)
 
-from rescript._utilities import _read_dna_fasta, _read_dna_alignment_fasta
+from rescript._utilities import _read_fasta, _read_dna_alignment_fasta
 from rescript.types import (SILVATaxonomyFormat, SILVATaxonomyDirectoryFormat,
                             SILVATaxidMapFormat, SILVATaxidMapDirectoryFormat,
                             SILVATaxonomy, SILVATaxidMap)
@@ -219,7 +219,7 @@ class TestRNATransformers(RescriptTypesTestPluginBase):
         exp = self.dna_seqs
         # convert to DNAIterator to iterate over seqs, confirm that
         # reverse transcription occurred as expected.
-        obs = _read_dna_fasta(str(obs))
+        obs = _read_fasta(str(obs))
         for observed, expected in zip(obs, exp):
             self.assertEqual(observed, expected)
 
