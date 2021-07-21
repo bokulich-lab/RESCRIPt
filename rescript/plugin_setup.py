@@ -728,7 +728,7 @@ plugin.methods.register_function(
         'dna_sequences': 'Reverse-transcribed DNA sequences.'},
     name=rt_short_description,
     description=(rt_short_description + ' Accepts aligned or unaligned RNA '
-                 'sequences as input')
+                 'sequences as input.')
 )
 
 
