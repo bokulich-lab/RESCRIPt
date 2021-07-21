@@ -472,7 +472,8 @@ plugin.methods.register_function(
         'taxonomy': FeatureData[Taxonomy]
     },
     parameters={
-        'taxonomy_replacement_map': MetadataColumn[Categorical]
+        'taxonomy_replacement_map': MetadataColumn[Categorical],
+        'num_expected_ranks': Int % Range(1, None),
     },
     outputs=[('edited_taxonomy', FeatureData[Taxonomy])],
     input_descriptions={
@@ -486,7 +487,10 @@ plugin.methods.register_function(
                                     'example, replacing all instances of '
                                     '\'g__Escherichia;\' with '
                                     '\'g__Escherichia-Shigella;\'. All items '
-                                    'in the first column must be unique!'},
+                                    'in the first column must be unique!',
+        'num_expected_ranks' : 'The number of ranks expected in the output. '
+                               'This ensures that all taxa have the same '
+                               'number of ranks.'},
     output_descriptions={
         'edited_taxonomy': 'Taxonomy in which the original rank-lineage '
                            'strings were replaced by user-supplied '

@@ -22,8 +22,16 @@ def make_regex(substitutions):
     return regex
 
 
+def lineages_with_invalid_number_of_ranks(updated_tax_series,
+                                          num_expected_ranks):
+    l = [label for label,lineage in updated_tax_series.items()
+         if len(lineage.split(';')) != num_expected_ranks]
+    return l
+
+
 def replace_taxonomy(taxonomy: pd.Series,
-                     taxonomy_replacement_map: MetadataColumn[Categorical]
+                     taxonomy_replacement_map: MetadataColumn[Categorical],
+                     num_expected_ranks: int=7,
                      ) -> pd.Series:
 
     rd = make_substitutions_dict(taxonomy_replacement_map)
@@ -33,4 +41,10 @@ def replace_taxonomy(taxonomy: pd.Series,
                                         mr.sub(lambda match:
                                                rd[match.group(0)], taxonomy))
 
-    return updated_tax_series
+    irl = lineages_with_invalid_number_of_ranks(updated_tax_series,
+                                                num_expected_ranks)
+    if irl == []:
+        return updated_tax_series
+    else:
+        raise ValueError("The following lineages do not contain "
+                         "the expected number of ranks:", irl)
