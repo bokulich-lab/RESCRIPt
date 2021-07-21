@@ -21,6 +21,7 @@ from .screenseq import cull_seqs
 from .degap import degap_seqs
 from .parse_silva_taxonomy import (parse_silva_taxonomy, ALLOWED_RANKS,
                                    DEFAULT_RANKS)
+from .replace_taxonomy import replace_taxonomy
 from .get_data import get_silva_data
 from .cross_validate import (evaluate_cross_validate,
                              evaluate_classifications,
@@ -470,25 +471,25 @@ plugin.methods.register_function(
         'taxonomy': FeatureData[Taxonomy]
     },
     parameters={
-        'taxonomy_replacements': Metadata
+        'taxonomy_replacement_map': Metadata
     },
     outputs=[('edited_taxonomy', FeatureData[Taxonomy])],
     input_descriptions={
         'taxonomy': 'Taxonomy strings data to be edited.'
     },
     parameter_descriptions={
-        'taxonomy_replacements': 'A two-column tab-delimitad file in which '
-                                 'the rank-lineage string of the first '
-                                 'column is replaced by the rank-lineage '
-                                 'string of the scond column. For  '
-                                 'example, replacing all instances of '
-                                 '\'g__Escherichia\' with '
-                                 '\'g__Escherichia-Shigella\'. All items '
-                                 'in the first column must be unique!'},
+        'taxonomy_replacement_map': 'A two-column tab-delimitad file in which '
+                                    'the rank-lineage string of the first '
+                                    'column is replaced by the rank-lineage '
+                                    'string of the scond column. For  '
+                                    'example, replacing all instances of '
+                                    '\'g__Escherichia;\' with '
+                                    '\'g__Escherichia-Shigella;\'. All items '
+                                    'in the first column must be unique!'},
     output_descriptions={
-        'replaced_taxonomy': 'Taxonomy in which the original rank-lineage '
-                             'strings were replaced by user-supplied '
-                             'rank-lineage strings.'
+        'edited_taxonomy': 'Taxonomy in which the original rank-lineage '
+                           'strings were replaced by user-supplied '
+                           'rank-lineage strings.'
     },
     name='Replaces existing taxonomy strings with those provided',
     description=('This method allows the user to edit taxonomy strings. '

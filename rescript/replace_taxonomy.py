@@ -6,31 +6,40 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-from q2_types.feature_data import TSVTaxonomyFormat
 from qiime2.plugin import Metadata
+import pandas as pd
 import re
 
 
-def make_substitutions_dict(taxonomy_replacements):
-    # Check that all items in first metadata column or series are unique and
-    #     warn the user if not the case. Print repeated values.
-    # Then convert tab-delim file into dictionary.
-    return substitutions
+def make_substitutions_dict(taxonomy_replacement_map):
+    if taxonomy_replacement_map.column_count < 1:
+        raise ValueError("Metadata file should only contain one column of "
+                         "taxonomy replacement strings, none found.")
+    elif taxonomy_replacement_map.column_count > 1:
+        raise ValueError("Metadata file should only contain one column of "
+                         "taxonomy replacement strings, found %d columns."
+                         % taxonomy_replacement_map.column_count)
+    else:
+        replacements = taxonomy_replacement_map.to_dataframe().iloc[:, 0]
+        replacement_dict = replacements.to_dict()
+        return replacement_dict
+
 
 def make_regex(substitutions):
     strings = substitutions.keys()
     regex = re.compile('|'.join(map(re.escape, strings)))
     return regex
 
-def replace_taxonomy(taxonomy: TSVTaxonomyFormat,
-                     taxonomy_replacements: TSVTaxonomyFormat) ->
-                     TSVTaxonomyFormat:
 
-    sd = make_substitutions_dict(taxonomy_replacements)
-    strings = sd.keys()
-    regex = re.compile('|'.join(map(re.escape, strings)))
-    mr = make_regex(sd)
+def replace_taxonomy(taxonomy: pd.Series,
+                     taxonomy_replacement_map: Metadata
+                     ) -> pd.Series:
 
-    updated_tax_series = tax_series.apply(lambda taxonomy:
-                            mr.sub(lambda match: sd[match.group(0)], taxonomy))
+    rd = make_substitutions_dict(taxonomy_replacement_map)
+    mr = make_regex(rd)
+
+    updated_tax_series = taxonomy.apply(lambda taxonomy:
+                                        mr.sub(lambda match:
+                                               rd[match.group(0)], taxonomy))
+
     return updated_tax_series
