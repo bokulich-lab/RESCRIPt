@@ -488,9 +488,9 @@ plugin.methods.register_function(
                                     '\'g__Escherichia;\' with '
                                     '\'g__Escherichia-Shigella;\'. All items '
                                     'in the first column must be unique!',
-        'num_expected_ranks' : 'The number of ranks expected in the output. '
-                               'This ensures that all taxa have the same '
-                               'number of ranks.'},
+        'num_expected_ranks': 'The number of ranks expected in the output. '
+                              'This ensures that all taxa have the same '
+                              'number of ranks.'},
     output_descriptions={
         'edited_taxonomy': 'Taxonomy in which the original rank-lineage '
                            'strings were replaced by user-supplied '

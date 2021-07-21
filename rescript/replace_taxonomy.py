@@ -24,14 +24,14 @@ def make_regex(substitutions):
 
 def lineages_with_invalid_number_of_ranks(updated_tax_series,
                                           num_expected_ranks):
-    l = [label for label,lineage in updated_tax_series.items()
-         if len(lineage.split(';')) != num_expected_ranks]
-    return l
+    invalid_lineages = [label for label, lineage in updated_tax_series.items()
+                        if len(lineage.split(';')) != num_expected_ranks]
+    return invalid_lineages
 
 
 def replace_taxonomy(taxonomy: pd.Series,
                      taxonomy_replacement_map: MetadataColumn[Categorical],
-                     num_expected_ranks: int=7,
+                     num_expected_ranks: int = 7,
                      ) -> pd.Series:
 
     rd = make_substitutions_dict(taxonomy_replacement_map)
