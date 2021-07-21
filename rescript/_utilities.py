@@ -99,24 +99,24 @@ def run_command(cmd, verbose=True):
     subprocess.run(cmd, check=True)
 
 
-def _read_rna_fasta(path):
-    return skbio.read(path, format='fasta', constructor=skbio.RNA)
-
-
-def _read_dna_fasta(path):
-    return skbio.read(path, format='fasta', constructor=skbio.DNA)
+def _read_fasta(path, constructor=skbio.DNA):
+    return skbio.read(path, format='fasta', constructor=constructor)
 
 
 def _read_dna_alignment_fasta(path):
     return skbio.TabularMSA.read(path, format='fasta', constructor=skbio.DNA)
 
 
-def _rna_to_dna(path):
+def _rna_to_dna(iterator):
     ff = DNAFASTAFormat()
-    with ff.open() as outfasta:
-        for seq in _read_rna_fasta(path):
-            seq.reverse_transcribe().write(outfasta)
+    generator = _rna_to_dna_iterator(iterator)
+    skbio.io.write(iter(generator), format='fasta', into=str(ff))
     return ff
+
+
+def _rna_to_dna_iterator(iterator):
+    for seq in iterator:
+        yield seq.reverse_transcribe()
 
 
 def _dna_iterator_to_aligned_fasta(iterator):

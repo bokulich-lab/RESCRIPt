@@ -32,3 +32,14 @@ class TestReverseTranscribe(RescriptTypesTestPluginBase):
         exp = self.dna_seqs
         for observed, expected in zip(obs.view(DNAIterator), exp):
             self.assertEqual(observed, expected)
+
+    def test_reverse_transcribe_aligned_rna(self):
+        rna_seqs = qiime2.Artifact.import_data(
+            'FeatureData[AlignedRNASequence]',
+            self.get_data_path('rna-with-gaps.fasta'))
+        obs, = rescript.actions.reverse_transcribe(rna_seqs)
+        exp = qiime2.Artifact.import_data(
+            'FeatureData[AlignedSequence]',
+            self.get_data_path('dna-with-gaps.fasta')).view(DNAIterator)
+        for observed, expected in zip(obs.view(DNAIterator), exp):
+            self.assertEqual(observed, expected)

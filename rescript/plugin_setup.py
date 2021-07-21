@@ -30,7 +30,7 @@ from .filter_length import (filter_seqs_length_by_taxon, filter_seqs_length,
 from .orient import orient_seqs
 from q2_types.feature_data import (FeatureData, Taxonomy, Sequence,
                                    AlignedSequence, RNASequence,
-                                   ProteinSequence)
+                                   AlignedRNASequence, ProteinSequence)
 from q2_types.tree import Phylogeny, Rooted
 from q2_feature_classifier.classifier import (_parameter_descriptions,
                                               _classify_parameters)
@@ -713,18 +713,22 @@ plugin.methods.register_function(
 )
 
 
+rt_short_description = 'Reverse transcribe RNA to DNA sequences.'
+rt_inputs, rt_outputs = TypeMap({AlignedRNASequence: AlignedSequence,
+                                 RNASequence: Sequence})
 plugin.methods.register_function(
     function=reverse_transcribe,
-    inputs={'rna_sequences': FeatureData[RNASequence]},
+    inputs={'rna_sequences': FeatureData[rt_inputs]},
     parameters={},
-    outputs=[('dna_sequences', FeatureData[Sequence])],
+    outputs=[('dna_sequences', FeatureData[rt_outputs])],
     input_descriptions={
         'rna_sequences': 'RNA Sequences to reverse transcribe to DNA.'},
     parameter_descriptions={},
     output_descriptions={
         'dna_sequences': 'Reverse-transcribed DNA sequences.'},
-    name='Reverse transcribe RNA to DNA sequences.',
-    description=('Reverse transcribe RNA to DNA sequences.')
+    name=rt_short_description,
+    description=(rt_short_description + ' Accepts aligned or unaligned RNA '
+                 'sequences as input.')
 )
 
 
