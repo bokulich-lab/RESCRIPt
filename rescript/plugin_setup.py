@@ -472,7 +472,8 @@ plugin.methods.register_function(
         'taxonomy': FeatureData[Taxonomy]
     },
     parameters={
-        'taxonomy_replacement_map': MetadataColumn[Categorical],
+        'replacement_map': MetadataColumn[Categorical],
+        'regex': Bool,
         'num_expected_ranks': Int % Range(1, None),
     },
     outputs=[('edited_taxonomy', FeatureData[Taxonomy])],
@@ -480,14 +481,14 @@ plugin.methods.register_function(
         'taxonomy': 'Taxonomy strings data to be edited.'
     },
     parameter_descriptions={
-        'taxonomy_replacement_map': 'A tab-delimitad metadata file in which '
-                                    'the rank-lineage string in the \'id\' '
-                                    'column is replaced by the rank-lineage '
-                                    'string of the provided column name. For '
-                                    'example, replacing all instances of '
-                                    '\'g__Escherichia;\' with '
-                                    '\'g__Escherichia-Shigella;\'. All items '
-                                    'in the first column must be unique!',
+        'replacement_map': 'A tab-delimitad metadata file in which '
+                           'the rank-lineage string in the \'id\' '
+                           'column is replaced by the rank-lineage '
+                           'string of the provided column name. All '
+                           'items in the \'id\' column must be '
+                           'unique!',
+        'regex': 'Toggle regular expressions. If \'False\' only full '
+                 'string matching is performed.',
         'num_expected_ranks': 'The number of ranks expected in the output. '
                               'This ensures that all taxa have the same '
                               'number of ranks.'},
@@ -499,14 +500,7 @@ plugin.methods.register_function(
     name='Replaces existing taxonomy strings with those provided',
     description=('This method allows the user to edit taxonomy strings. '
                  'This is often used to fix inconsistently applied '
-                 'nomenclature for identical seqeunces. For example, '
-                 'the genera \'Escherichia\', \'Shigella\', \'Salmonella\' '
-                 ', and \'Escherichia-Shigella\' are '
-                 'often interchengably used as the genus label for the same '
-                 'organism. This action will allow the user to replace all of '
-                 'the these labels with a single consitant label, e.g. '
-                 'Escherichia-Shigella. This will result in better '
-                 'downstream taxonomy classification efforts.')
+                 'nomenclature for identical seqeunces.')
 )
 
 

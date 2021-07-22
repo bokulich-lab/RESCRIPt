@@ -8,18 +8,6 @@
 
 from qiime2.plugin import MetadataColumn, Categorical
 import pandas as pd
-import re
-
-
-def make_substitutions_dict(taxonomy_replacement_map):
-    replacement_dict = taxonomy_replacement_map.to_series().to_dict()
-    return replacement_dict
-
-
-def make_regex(substitutions):
-    strings = substitutions.keys()
-    regex = re.compile('|'.join(map(re.escape, strings)))
-    return regex
 
 
 def lineages_with_invalid_number_of_ranks(updated_tax_series,
@@ -30,16 +18,13 @@ def lineages_with_invalid_number_of_ranks(updated_tax_series,
 
 
 def replace_taxonomy(taxonomy: pd.Series,
-                     taxonomy_replacement_map: MetadataColumn[Categorical],
+                     replacement_map: MetadataColumn[Categorical],
+                     regex: bool = True,
                      num_expected_ranks: int = 7,
                      ) -> pd.Series:
 
-    rd = make_substitutions_dict(taxonomy_replacement_map)
-    mr = make_regex(rd)
-
-    updated_tax_series = taxonomy.apply(lambda taxonomy:
-                                        mr.sub(lambda match:
-                                               rd[match.group(0)], taxonomy))
+    updated_tax_series = taxonomy.replace(replacement_map.to_series(
+                                                    ).to_dict(), regex=regex)
 
     irl = lineages_with_invalid_number_of_ranks(updated_tax_series,
                                                 num_expected_ranks)
