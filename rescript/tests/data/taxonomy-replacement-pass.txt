@@ -1,0 +1,5 @@
+id	replacements
+g__Salmonella	g__Escherichia-Shigella
+g__Escherichia;	g__Escherichia-Shigella;
+g__Shigella	g__Escherichia-Shigella
+d__Bacteria;	d__SUPER_DUPER_BACTERIA;
