@@ -30,7 +30,7 @@ class TestReplaceTaxonomy(TestPluginBase):
         replc = self.get_data_path('taxonomy-replacement-pass.txt')
         md_replc = Metadata.load(replc)
         md_replc_col = md_replc.get_column('replacements')
-        obs_series = replace_taxonomy(self.taxonomy, md_replc_col, True, 7)
+        obs_series = replace_taxonomy(self.taxonomy, md_replc_col, True)
         obs_dict = obs_series.to_dict()
 
         exp_dict = {'Sal01': ('d__SUPER_DUPER_BACTERIA; p__Proteobacteria; '

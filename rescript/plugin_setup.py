@@ -474,7 +474,6 @@ plugin.methods.register_function(
     parameters={
         'replacement_map': MetadataColumn[Categorical],
         'regex': Bool,
-        'num_expected_ranks': Int % Range(1, None),
     },
     outputs=[('edited_taxonomy', FeatureData[Taxonomy])],
     input_descriptions={
@@ -488,10 +487,7 @@ plugin.methods.register_function(
                            'items in the \'id\' column must be '
                            'unique!',
         'regex': 'Toggle regular expressions. If \'False\' only full '
-                 'string matching is performed.',
-        'num_expected_ranks': 'The number of ranks expected in the output. '
-                              'This ensures that all taxa have the same '
-                              'number of ranks.'},
+                 'string matching is performed.'},
     output_descriptions={
         'edited_taxonomy': 'Taxonomy in which the original rank-lineage '
                            'strings were replaced by user-supplied '
