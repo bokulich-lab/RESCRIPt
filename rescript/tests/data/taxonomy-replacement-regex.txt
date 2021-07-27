@@ -1,0 +1,6 @@
+id	replacements
+p__.*; c__	p__LAME-PYHLA; c__
+s__uncultured	s__UNCIVILIZED
+g__Escherichia.*; s__	g__Escherichia-Shigella; s__
+g__Salmonella	g__Escherichia-Shigella
+g__Shigella	g__Escherichia-Shigella
