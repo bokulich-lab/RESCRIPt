@@ -133,7 +133,5 @@ class TestReplaceTaxonomy(TestPluginBase):
                                'f__Enterobacteriaceae; '
                                'g__Escherichia-Shigella; s__')}
 
-        print(obs_dict)
-        print(exp_dict)
         self.maxDiff = None
         self.assertEqual(obs_dict, exp_dict)
