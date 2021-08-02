@@ -473,7 +473,7 @@ plugin.methods.register_function(
     },
     parameters={
         'replacement_map': MetadataColumn[Categorical],
-        'regex': Bool,
+        'use_regex': Bool,
     },
     outputs=[('edited_taxonomy', FeatureData[Taxonomy])],
     input_descriptions={
@@ -486,8 +486,8 @@ plugin.methods.register_function(
                            'string of the provided column name. All '
                            'items in the \'id\' column must be '
                            'unique!',
-        'regex': 'Toggle regular expressions. If \'False\' only full '
-                 'string matching is performed.'},
+        'use_regex': 'Toggle regular expressions. By default, only litereal '
+                     'substring matching is performed.'},
     output_descriptions={
         'edited_taxonomy': 'Taxonomy in which the original rank-lineage '
                            'strings were replaced by user-supplied '
