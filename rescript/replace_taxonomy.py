@@ -10,14 +10,38 @@ from qiime2.plugin import MetadataColumn, Categorical
 import warnings
 import pandas as pd
 import re
+from qiime2.plugin import List
+
+
+def make_search_replace_dict(search_strings, replacement_strings):
+    ssl = len(search_strings)
+    rsl = len(replacement_strings)
+
+    if ssl == rsl:
+        sr_dict = dict(zip(search_strings, replacement_strings))
+        return sr_dict
+    else:
+        raise ValueError('Search list is not the same length as the '
+                         'replacement list! The search and replacement '
+                         'lists contain %i and %i items, respectively.'
+                         % (ssl, rsl))
 
 
 def replace_taxonomy(taxonomy: pd.Series,
-                     replacement_map: MetadataColumn[Categorical],
+                     replacement_map: MetadataColumn[Categorical] = None,
+                     search_strings: List = None,
+                     replacement_strings: List = None,
                      use_regex: bool = False,
                      ) -> pd.Series:
 
-    rm_dict = replacement_map.to_series().to_dict()
+    if search_strings and replacement_strings:
+        rm_dict = make_search_replace_dict(search_strings, replacement_strings)
+    elif replacement_map:
+        rm_dict = replacement_map.to_series().to_dict()
+    else:
+        raise ValueError('Either a replacement-map or both search-strings '
+                         'and replacement-stings must be supplied.')
+
     # `use_regex` will basically toggle between using, or not, `re.escape`
     # prior to passing to `re.compile`. This will allow the user to
     # search and replace substrings w/o having to be knowledgable about

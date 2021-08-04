@@ -473,6 +473,8 @@ plugin.methods.register_function(
     },
     parameters={
         'replacement_map': MetadataColumn[Categorical],
+        'search_strings': List[Str],
+        'replacement_strings': List[Str],
         'use_regex': Bool,
     },
     outputs=[('edited_taxonomy', FeatureData[Taxonomy])],
@@ -486,6 +488,15 @@ plugin.methods.register_function(
                            'string of the provided column name. All '
                            'items in the \'id\' column must be '
                            'unique!',
+        'search_strings': 'Only used in conjuntion with '
+                          '\'replacement-strings\'. This is a list of '
+                          'strings to find, then replaced with '
+                          '\'replace-ment-strings\'. This must contain the '
+                          'same number of search items as replacement items.',
+        'replacement_strings': 'Only used in conjuntion with '
+                               '\'search-strings\'. This must contain the '
+                               'same number of replacement items as search '
+                               'items.',
         'use_regex': 'Toggle regular expressions. By default, only litereal '
                      'substring matching is performed.'},
     output_descriptions={
@@ -496,7 +507,9 @@ plugin.methods.register_function(
     name='Replaces existing taxonomy strings with those provided',
     description=('This method allows the user to edit taxonomy strings. '
                  'This is often used to fix inconsistently applied '
-                 'nomenclature for identical seqeunces.')
+                 'nomenclature for identical seqeunces. If a raplacement map '
+                 'and search/replacement strings are provided, the strings '
+                 'will take precendence.')
 )
 
 
