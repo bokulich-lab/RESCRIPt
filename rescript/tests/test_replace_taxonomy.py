@@ -30,7 +30,9 @@ class TestReplaceTaxonomy(TestPluginBase):
         replc = self.get_data_path('taxonomy-replacement-pass.txt')
         md_replc = Metadata.load(replc)
         md_replc_col = md_replc.get_column('replacements')
-        obs_series = replace_taxonomy(self.taxonomy, md_replc_col, True)
+        obs_series = replace_taxonomy(taxonomy=self.taxonomy,
+                                      replacement_map=md_replc_col,
+                                      use_regex=True)
         obs_dict = obs_series.to_dict()
 
         exp_dict = {'Sal01': ('d__SUPER_DUPER_BACTERIA; p__Proteobacteria; '
@@ -66,7 +68,9 @@ class TestReplaceTaxonomy(TestPluginBase):
         replc = self.get_data_path('taxonomy-replacement-full-strings.txt')
         md_replc = Metadata.load(replc)
         md_replc_col = md_replc.get_column('replacements')
-        obs_series = replace_taxonomy(self.taxonomy, md_replc_col, False)
+        obs_series = replace_taxonomy(taxonomy=self.taxonomy,
+                                      replacement_map=md_replc_col,
+                                      use_regex=False)
         obs_dict = obs_series.to_dict()
 
         exp_dict = {'Sal01': ('d__Bacteria; p__Proteobacteria; '
@@ -104,7 +108,9 @@ class TestReplaceTaxonomy(TestPluginBase):
         replc = self.get_data_path('taxonomy-replacement-regex.txt')
         md_replc = Metadata.load(replc)
         md_replc_col = md_replc.get_column('replacements')
-        obs_series = replace_taxonomy(self.taxonomy, md_replc_col, True)
+        obs_series = replace_taxonomy(taxonomy=self.taxonomy,
+                                      replacement_map=md_replc_col,
+                                      use_regex=True)
         obs_dict = obs_series.to_dict()
 
         exp_dict = {'Sal01': ('d__Bacteria; p__LAME-PYHLA; '
