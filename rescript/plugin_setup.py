@@ -485,18 +485,23 @@ plugin.methods.register_function(
         'replacement_map': 'A tab-delimitad metadata file in which '
                            'the rank-lineage string in the \'id\' '
                            'column is replaced by the rank-lineage '
-                           'string of the provided column name. All '
+                           'string in a second named column. All '
                            'items in the \'id\' column must be '
                            'unique!',
         'search_strings': 'Only used in conjuntion with '
-                          '\'replacement-strings\'. This is a list of '
-                          'strings to find, then replaced with '
-                          '\'replace-ment-strings\'. This must contain the '
-                          'same number of search items as replacement items.',
+                          '\'replacement-strings\'. Each string in this list '
+                          'is searched for and replaced with a string in the '
+                          'list of \'replace-ment-strings\'. '
+                          'That is the first string in \'search-strings\' is '
+                          ' replaced with the first string in '
+                          '\'replacement-strings\', and so on. The number of '
+                          '\'search-strings\' must be equal to the number of '
+                          'replacement strings.',
         'replacement_strings': 'Only used in conjuntion with '
                                '\'search-strings\'. This must contain the '
-                               'same number of replacement items as search '
-                               'items.',
+                               'same number of replacement strings as search '
+                               'strings. See \'search-strings\' parameter '
+                               'text for more details.',
         'use_regex': 'Toggle regular expressions. By default, only litereal '
                      'substring matching is performed.'},
     output_descriptions={
@@ -505,11 +510,19 @@ plugin.methods.register_function(
                            'rank-lineage strings.'
     },
     name='Replaces existing taxonomy strings with those provided',
-    description=('This method allows the user to edit taxonomy strings. '
-                 'This is often used to fix inconsistently applied '
-                 'nomenclature for identical seqeunces. If a raplacement map '
-                 'and search/replacement strings are provided, the strings '
-                 'will take precendence.')
+    description=('A method that allows the user to edit taxonomy strings. '
+                 'This is often used to fix inconsistent and/or '
+                 'inccorect taxonomic annotations. The user can either '
+                 'provide two separate lists of strings, i.e. '
+                 '\'search-strings\', and \'replacement-strings\', '
+                 'on the command line, or a single tab-delimited '
+                 'replacement map file containing a list of these strings. '
+                 'In both cases the number of search strings must match the '
+                 'number of replacement strings. That is the first string '
+                 'in \'search-strings\' is replaced with the first string '
+                 'in \'replacement-strings\', and so on. Finally,if both '
+                 'search/replacement strings and a map file are provided, '
+                 'the strings will take precendence.')
 )
 
 

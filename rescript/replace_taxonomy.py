@@ -35,8 +35,10 @@ def replace_taxonomy(taxonomy: pd.Series,
                      ) -> pd.Series:
 
     if search_strings and replacement_strings:
+        print('Processing strings from command line.')
         rm_dict = make_search_replace_dict(search_strings, replacement_strings)
     elif replacement_map:
+        print('Processing strings from taxonomy map file.')
         rm_dict = replacement_map.to_series().to_dict()
     else:
         raise ValueError('Either a replacement-map or both search-strings '

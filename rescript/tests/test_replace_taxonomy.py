@@ -32,7 +32,7 @@ class TestReplaceTaxonomy(TestPluginBase):
         md_replc_col = md_replc.get_column('replacements')
         obs_series = replace_taxonomy(taxonomy=self.taxonomy,
                                       replacement_map=md_replc_col,
-                                      use_regex=True)
+                                      use_regex=False)
         obs_dict = obs_series.to_dict()
 
         exp_dict = {'Sal01': ('d__SUPER_DUPER_BACTERIA; p__Proteobacteria; '
@@ -135,6 +135,138 @@ class TestReplaceTaxonomy(TestPluginBase):
                                'f__Enterobacteriaceae; '
                                'g__Escherichia-Shigella; s__'),
                     'Shig01': ('d__Bacteria; p__LAME-PYHLA; '
+                               'c__Gammaproteobacteria; o__Enterobacterales; '
+                               'f__Enterobacteriaceae; '
+                               'g__Escherichia-Shigella; s__')}
+
+        self.maxDiff = None
+        self.assertEqual(obs_dict, exp_dict)
+
+    def test_replace_taxonomy_pass_regex_cl(self):
+        ss = ['p__.*; c__', 's__uncultured', 'g__Escherichia.*; s__',
+              'g__\\[Salmonella\\]', 'g__Shigella']
+        rs = ['p__LAME-PYHLA; c__', 's__UNCIVILIZED',
+              'g__Escherichia-Shigella; s__', 'g__Escherichia-Shigella',
+              'g__Escherichia-Shigella']
+        obs_series = replace_taxonomy(taxonomy=self.taxonomy,
+                                      search_strings=ss,
+                                      replacement_strings=rs,
+                                      use_regex=True)
+        obs_dict = obs_series.to_dict()
+
+        exp_dict = {'Sal01': ('d__Bacteria; p__LAME-PYHLA; '
+                              'c__Gammaproteobacteria; o__Enterobacterales; '
+                              'f__Enterobacteriaceae; '
+                              'g__Escherichia-Shigella; '
+                              's__Salmonella_enterica'),
+                    'Sal02': ('d__Bacteria; p__LAME-PYHLA; '
+                              'c__Gammaproteobacteria; o__Enterobacterales; '
+                              'f__Enterobacteriaceae; '
+                              'g__Escherichia-Shigella; '
+                              's__Salmonella_enterica'),
+                    'UncultSal': ('d__Bacteria; '
+                                  'p__LAME-PYHLA; '
+                                  'c__Gammaproteobacteria; '
+                                  'o__Enterobacterales; '
+                                  'f__Enterobacteriaceae; '
+                                  'g__Escherichia-Shigella; '
+                                  's__UNCIVILIZED_Salmonella'),
+                    'Esch01': ('d__Bacteria; p__LAME-PYHLA; '
+                               'c__Gammaproteobacteria; o__Enterobacterales; '
+                               'f__Enterobacteriaceae; '
+                               'g__Escherichia-Shigella; s__'),
+                    'Shig01': ('d__Bacteria; p__LAME-PYHLA; '
+                               'c__Gammaproteobacteria; o__Enterobacterales; '
+                               'f__Enterobacteriaceae; '
+                               'g__Escherichia-Shigella; s__')}
+
+        self.maxDiff = None
+        self.assertEqual(obs_dict, exp_dict)
+
+    def test_replace_taxonomy_pass_cl(self):
+        ss = ['g__[Salmonella]', 'g__Escherichia;', 'g__Shigella',
+              'd__Bacteria;']
+        rs = ['g__Escherichia-Shigella', 'g__Escherichia-Shigella;',
+              'g__Escherichia-Shigella', 'd__SUPER_DUPER_BACTERIA;']
+        obs_series = replace_taxonomy(taxonomy=self.taxonomy,
+                                      search_strings=ss,
+                                      replacement_strings=rs,
+                                      use_regex=False)
+        obs_dict = obs_series.to_dict()
+
+        exp_dict = {'Sal01': ('d__SUPER_DUPER_BACTERIA; p__Proteobacteria; '
+                              'c__Gammaproteobacteria; o__Enterobacterales; '
+                              'f__Enterobacteriaceae; '
+                              'g__Escherichia-Shigella; '
+                              's__Salmonella_enterica'),
+                    'Sal02': ('d__SUPER_DUPER_BACTERIA; p__Proteobacteria; '
+                              'c__Gammaproteobacteria; o__Enterobacterales; '
+                              'f__Enterobacteriaceae; '
+                              'g__Escherichia-Shigella; '
+                              's__Salmonella_enterica'),
+                    'UncultSal': ('d__SUPER_DUPER_BACTERIA; '
+                                  'p__Proteobacteria; '
+                                  'c__Gammaproteobacteria; '
+                                  'o__Enterobacterales; '
+                                  'f__Enterobacteriaceae; '
+                                  'g__Escherichia-Shigella; '
+                                  's__uncultured_Salmonella'),
+                    'Esch01': ('d__SUPER_DUPER_BACTERIA; p__Proteobacteria; '
+                               'c__Gammaproteobacteria; o__Enterobacterales; '
+                               'f__Enterobacteriaceae; '
+                               'g__Escherichia-Shigella; s__'),
+                    'Shig01': ('d__SUPER_DUPER_BACTERIA; p__Proteobacteria; '
+                               'c__Gammaproteobacteria; o__Enterobacterales; '
+                               'f__Enterobacteriaceae; '
+                               'g__Escherichia-Shigella; s__')}
+
+        self.maxDiff = None
+        self.assertEqual(obs_dict, exp_dict)
+
+    def test_replace_taxonomy_unequal_string_lists_fail_cl(self):
+        ss = ['g__[Salmonella]', 'g__Escherichia;', 'g__Shigella']
+        rs = ['g__Escherichia-Shigella', 'g__Escherichia-Shigella;',
+              'g__Escherichia-Shigella', 'd__SUPER_DUPER_BACTERIA;']
+        self.assertRaises(ValueError, replace_taxonomy, taxonomy=self.taxonomy,
+                          search_strings=ss, replacement_strings=rs)
+
+    def test_cl_string_precedence_over_map_file(self):
+        ss = ['g__[Salmonella]', 'g__Escherichia;', 'g__Shigella',
+              'd__Bacteria;']
+        rs = ['g__Escherichia-Shigella', 'g__Escherichia-Shigella;',
+              'g__Escherichia-Shigella', 'd__SUPER_DUPER_BACTERIA;']
+        replc = self.get_data_path('taxonomy-replacement-full-strings.txt')
+        md_replc = Metadata.load(replc)
+        md_replc_col = md_replc.get_column('replacements')
+        obs_series = replace_taxonomy(taxonomy=self.taxonomy,
+                                      replacement_map=md_replc_col,
+                                      search_strings=ss,
+                                      replacement_strings=rs,
+                                      use_regex=False)
+        obs_dict = obs_series.to_dict()
+
+        exp_dict = {'Sal01': ('d__SUPER_DUPER_BACTERIA; p__Proteobacteria; '
+                              'c__Gammaproteobacteria; o__Enterobacterales; '
+                              'f__Enterobacteriaceae; '
+                              'g__Escherichia-Shigella; '
+                              's__Salmonella_enterica'),
+                    'Sal02': ('d__SUPER_DUPER_BACTERIA; p__Proteobacteria; '
+                              'c__Gammaproteobacteria; o__Enterobacterales; '
+                              'f__Enterobacteriaceae; '
+                              'g__Escherichia-Shigella; '
+                              's__Salmonella_enterica'),
+                    'UncultSal': ('d__SUPER_DUPER_BACTERIA; '
+                                  'p__Proteobacteria; '
+                                  'c__Gammaproteobacteria; '
+                                  'o__Enterobacterales; '
+                                  'f__Enterobacteriaceae; '
+                                  'g__Escherichia-Shigella; '
+                                  's__uncultured_Salmonella'),
+                    'Esch01': ('d__SUPER_DUPER_BACTERIA; p__Proteobacteria; '
+                               'c__Gammaproteobacteria; o__Enterobacterales; '
+                               'f__Enterobacteriaceae; '
+                               'g__Escherichia-Shigella; s__'),
+                    'Shig01': ('d__SUPER_DUPER_BACTERIA; p__Proteobacteria; '
                                'c__Gammaproteobacteria; o__Enterobacterales; '
                                'f__Enterobacteriaceae; '
                                'g__Escherichia-Shigella; s__')}
