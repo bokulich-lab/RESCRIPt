@@ -34,10 +34,14 @@ def edit_taxonomy(taxonomy: pd.Series,
                   use_regex: bool = False,
                   ) -> pd.Series:
 
-    if search_strings and replacement_strings:
+    if search_strings and replacement_strings and replacement_map:
+        rm_dict = replacement_map.to_series().to_dict()
+        cl_dict = make_search_replace_dict(search_strings, replacement_strings)
+        rm_dict.update(cl_dict)
+    elif search_strings and replacement_strings and not replacement_map:
         print('Processing strings from command line.')
         rm_dict = make_search_replace_dict(search_strings, replacement_strings)
-    elif replacement_map:
+    elif replacement_map and not all([search_strings, replacement_strings]):
         print('Processing strings from taxonomy map file.')
         rm_dict = replacement_map.to_series().to_dict()
     else:
