@@ -144,7 +144,7 @@ class TestReplaceTaxonomy(TestPluginBase):
 
     def test_edit_taxonomy_pass_regex_cl(self):
         ss = ['p__.*; c__', 's__uncultured', 'g__Escherichia.*; s__',
-              'g__\\[Salmonella\\]', 'g__Shigella']
+              r'g__\[Salmonella\]', 'g__Shigella']
         rs = ['p__LAME-PYHLA; c__', 's__UNCIVILIZED',
               'g__Escherichia-Shigella; s__', 'g__Escherichia-Shigella',
               'g__Escherichia-Shigella']
@@ -182,6 +182,59 @@ class TestReplaceTaxonomy(TestPluginBase):
 
         self.maxDiff = None
         self.assertEqual(obs_dict, exp_dict)
+
+    def test_edit_taxonomy_pass_regex_map_and_cl(self):
+        # tests that patterns are handled identically wheater or not they
+        # are supplied by the command line or mapping file.
+        # will work if using r'<regex>' or `\\` to esccape characters.
+        ss = ['p__.*; c__', 's__uncultured', 'g__Escherichia.*; s__',
+              r'g__\[Salmonella\]', 'g__Shigella']
+        rs = ['p__LAME-PYHLA; c__', 's__UNCIVILIZED',
+              'g__Escherichia-Shigella; s__', 'g__Escherichia-Shigella',
+              'g__Escherichia-Shigella']
+        obs_series_cl = edit_taxonomy(taxonomy=self.taxonomy,
+                                      search_strings=ss,
+                                      replacement_strings=rs,
+                                      use_regex=True)
+        obs_dict_cl = obs_series_cl.to_dict()
+
+        replc = self.get_data_path('taxonomy-replacement-regex.txt')
+        md_replc = Metadata.load(replc)
+        md_replc_col = md_replc.get_column('replacements')
+        obs_series_map = edit_taxonomy(taxonomy=self.taxonomy,
+                                       replacement_map=md_replc_col,
+                                       use_regex=True)
+        obs_dict_map = obs_series_map.to_dict()
+
+        exp_dict = {'Sal01': ('d__Bacteria; p__LAME-PYHLA; '
+                              'c__Gammaproteobacteria; o__Enterobacterales; '
+                              'f__Enterobacteriaceae; '
+                              'g__Escherichia-Shigella; '
+                              's__Salmonella_enterica'),
+                    'Sal02': ('d__Bacteria; p__LAME-PYHLA; '
+                              'c__Gammaproteobacteria; o__Enterobacterales; '
+                              'f__Enterobacteriaceae; '
+                              'g__Escherichia-Shigella; '
+                              's__Salmonella_enterica'),
+                    'UncultSal': ('d__Bacteria; '
+                                  'p__LAME-PYHLA; '
+                                  'c__Gammaproteobacteria; '
+                                  'o__Enterobacterales; '
+                                  'f__Enterobacteriaceae; '
+                                  'g__Escherichia-Shigella; '
+                                  's__UNCIVILIZED_Salmonella'),
+                    'Esch01': ('d__Bacteria; p__LAME-PYHLA; '
+                               'c__Gammaproteobacteria; o__Enterobacterales; '
+                               'f__Enterobacteriaceae; '
+                               'g__Escherichia-Shigella; s__'),
+                    'Shig01': ('d__Bacteria; p__LAME-PYHLA; '
+                               'c__Gammaproteobacteria; o__Enterobacterales; '
+                               'f__Enterobacteriaceae; '
+                               'g__Escherichia-Shigella; s__')}
+
+        self.maxDiff = None
+        self.assertEqual(obs_dict_cl, exp_dict)
+        self.assertEqual(obs_dict_map, exp_dict)
 
     def test_edit_taxonomy_pass_cl(self):
         ss = ['g__[Salmonella]', 'g__Escherichia;', 'g__Shigella',
