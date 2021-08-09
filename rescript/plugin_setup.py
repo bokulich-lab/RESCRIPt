@@ -519,9 +519,7 @@ plugin.methods.register_function(
                  'In both cases the number of search strings must match the '
                  'number of replacement strings. That is the first string '
                  'in \'search-strings\' is replaced with the first string '
-                 'in \'replacement-strings\', and so on. Finally,if both '
-                 'search/replacement strings and a map file are provided, '
-                 'the strings will take precendence.')
+                 'in \'replacement-strings\', and so on.')
 )
 
 
