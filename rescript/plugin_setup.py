@@ -22,7 +22,7 @@ from .screenseq import cull_seqs
 from .degap import degap_seqs
 from .parse_silva_taxonomy import (parse_silva_taxonomy, ALLOWED_RANKS,
                                    DEFAULT_RANKS)
-from .replace_taxonomy import replace_taxonomy
+from .edit_taxonomy import edit_taxonomy
 from .get_data import get_silva_data
 from .cross_validate import (evaluate_cross_validate,
                              evaluate_classifications,
@@ -467,7 +467,7 @@ plugin.methods.register_function(
 
 
 plugin.methods.register_function(
-    function=replace_taxonomy,
+    function=edit_taxonomy,
     inputs={
         'taxonomy': FeatureData[Taxonomy]
     },
@@ -483,11 +483,10 @@ plugin.methods.register_function(
     },
     parameter_descriptions={
         'replacement_map': 'A tab-delimitad metadata file in which '
-                           'the rank-lineage string in the \'id\' '
-                           'column is replaced by the rank-lineage '
-                           'string in a second named column. All '
-                           'items in the \'id\' column must be '
-                           'unique!',
+                           'the strings in the \'id\' column are '
+                           'replaced by the \'replacement-strings\' in '
+                           'the second column. All strings in the '
+                           '\'id\' column must be unique!',
         'search_strings': 'Only used in conjuntion with '
                           '\'replacement-strings\'. Each string in this list '
                           'is searched for and replaced with a string in the '

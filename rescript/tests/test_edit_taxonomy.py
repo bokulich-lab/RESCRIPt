@@ -13,7 +13,7 @@ from qiime2 import Metadata
 from q2_types.feature_data import TSVTaxonomyFormat
 import pandas as pd
 
-from rescript.replace_taxonomy import replace_taxonomy
+from rescript.edit_taxonomy import edit_taxonomy
 
 import_data = qiime2.Artifact.import_data
 
@@ -26,13 +26,13 @@ class TestReplaceTaxonomy(TestPluginBase):
         tax_fp = self.get_data_path('escherichia_shigella_taxonomy.txt')
         self.taxonomy = TSVTaxonomyFormat(tax_fp, mode='r').view(pd.Series)
 
-    def test_replace_taxonomy_pass(self):
+    def test_edit_taxonomy_pass(self):
         replc = self.get_data_path('taxonomy-replacement-pass.txt')
         md_replc = Metadata.load(replc)
         md_replc_col = md_replc.get_column('replacements')
-        obs_series = replace_taxonomy(taxonomy=self.taxonomy,
-                                      replacement_map=md_replc_col,
-                                      use_regex=False)
+        obs_series = edit_taxonomy(taxonomy=self.taxonomy,
+                                   replacement_map=md_replc_col,
+                                   use_regex=False)
         obs_dict = obs_series.to_dict()
 
         exp_dict = {'Sal01': ('d__SUPER_DUPER_BACTERIA; p__Proteobacteria; '
@@ -64,13 +64,13 @@ class TestReplaceTaxonomy(TestPluginBase):
         self.maxDiff = None
         self.assertEqual(obs_dict, exp_dict)
 
-    def test_replace_taxonomy_pass_full_string(self):
+    def test_edit_taxonomy_pass_full_string(self):
         replc = self.get_data_path('taxonomy-replacement-full-strings.txt')
         md_replc = Metadata.load(replc)
         md_replc_col = md_replc.get_column('replacements')
-        obs_series = replace_taxonomy(taxonomy=self.taxonomy,
-                                      replacement_map=md_replc_col,
-                                      use_regex=False)
+        obs_series = edit_taxonomy(taxonomy=self.taxonomy,
+                                   replacement_map=md_replc_col,
+                                   use_regex=False)
         obs_dict = obs_series.to_dict()
 
         exp_dict = {'Sal01': ('d__Bacteria; p__Proteobacteria; '
@@ -104,13 +104,13 @@ class TestReplaceTaxonomy(TestPluginBase):
         self.maxDiff = None
         self.assertEqual(obs_dict, exp_dict)
 
-    def test_replace_taxonomy_pass_regex(self):
+    def test_edit_taxonomy_pass_regex(self):
         replc = self.get_data_path('taxonomy-replacement-regex.txt')
         md_replc = Metadata.load(replc)
         md_replc_col = md_replc.get_column('replacements')
-        obs_series = replace_taxonomy(taxonomy=self.taxonomy,
-                                      replacement_map=md_replc_col,
-                                      use_regex=True)
+        obs_series = edit_taxonomy(taxonomy=self.taxonomy,
+                                   replacement_map=md_replc_col,
+                                   use_regex=True)
         obs_dict = obs_series.to_dict()
 
         exp_dict = {'Sal01': ('d__Bacteria; p__LAME-PYHLA; '
@@ -142,16 +142,16 @@ class TestReplaceTaxonomy(TestPluginBase):
         self.maxDiff = None
         self.assertEqual(obs_dict, exp_dict)
 
-    def test_replace_taxonomy_pass_regex_cl(self):
+    def test_edit_taxonomy_pass_regex_cl(self):
         ss = ['p__.*; c__', 's__uncultured', 'g__Escherichia.*; s__',
               'g__\\[Salmonella\\]', 'g__Shigella']
         rs = ['p__LAME-PYHLA; c__', 's__UNCIVILIZED',
               'g__Escherichia-Shigella; s__', 'g__Escherichia-Shigella',
               'g__Escherichia-Shigella']
-        obs_series = replace_taxonomy(taxonomy=self.taxonomy,
-                                      search_strings=ss,
-                                      replacement_strings=rs,
-                                      use_regex=True)
+        obs_series = edit_taxonomy(taxonomy=self.taxonomy,
+                                   search_strings=ss,
+                                   replacement_strings=rs,
+                                   use_regex=True)
         obs_dict = obs_series.to_dict()
 
         exp_dict = {'Sal01': ('d__Bacteria; p__LAME-PYHLA; '
@@ -183,15 +183,15 @@ class TestReplaceTaxonomy(TestPluginBase):
         self.maxDiff = None
         self.assertEqual(obs_dict, exp_dict)
 
-    def test_replace_taxonomy_pass_cl(self):
+    def test_edit_taxonomy_pass_cl(self):
         ss = ['g__[Salmonella]', 'g__Escherichia;', 'g__Shigella',
               'd__Bacteria;']
         rs = ['g__Escherichia-Shigella', 'g__Escherichia-Shigella;',
               'g__Escherichia-Shigella', 'd__SUPER_DUPER_BACTERIA;']
-        obs_series = replace_taxonomy(taxonomy=self.taxonomy,
-                                      search_strings=ss,
-                                      replacement_strings=rs,
-                                      use_regex=False)
+        obs_series = edit_taxonomy(taxonomy=self.taxonomy,
+                                   search_strings=ss,
+                                   replacement_strings=rs,
+                                   use_regex=False)
         obs_dict = obs_series.to_dict()
 
         exp_dict = {'Sal01': ('d__SUPER_DUPER_BACTERIA; p__Proteobacteria; '
@@ -223,11 +223,11 @@ class TestReplaceTaxonomy(TestPluginBase):
         self.maxDiff = None
         self.assertEqual(obs_dict, exp_dict)
 
-    def test_replace_taxonomy_unequal_string_lists_fail_cl(self):
+    def test_edit_taxonomy_unequal_string_lists_fail_cl(self):
         ss = ['g__[Salmonella]', 'g__Escherichia;', 'g__Shigella']
         rs = ['g__Escherichia-Shigella', 'g__Escherichia-Shigella;',
               'g__Escherichia-Shigella', 'd__SUPER_DUPER_BACTERIA;']
-        self.assertRaises(ValueError, replace_taxonomy, taxonomy=self.taxonomy,
+        self.assertRaises(ValueError, edit_taxonomy, taxonomy=self.taxonomy,
                           search_strings=ss, replacement_strings=rs)
 
     def test_cl_string_precedence_over_map_file(self):
@@ -238,11 +238,11 @@ class TestReplaceTaxonomy(TestPluginBase):
         replc = self.get_data_path('taxonomy-replacement-full-strings.txt')
         md_replc = Metadata.load(replc)
         md_replc_col = md_replc.get_column('replacements')
-        obs_series = replace_taxonomy(taxonomy=self.taxonomy,
-                                      replacement_map=md_replc_col,
-                                      search_strings=ss,
-                                      replacement_strings=rs,
-                                      use_regex=False)
+        obs_series = edit_taxonomy(taxonomy=self.taxonomy,
+                                   replacement_map=md_replc_col,
+                                   search_strings=ss,
+                                   replacement_strings=rs,
+                                   use_regex=False)
         obs_dict = obs_series.to_dict()
 
         exp_dict = {'Sal01': ('d__SUPER_DUPER_BACTERIA; p__Proteobacteria; '

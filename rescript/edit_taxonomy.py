@@ -27,12 +27,12 @@ def make_search_replace_dict(search_strings, replacement_strings):
                          % (ssl, rsl))
 
 
-def replace_taxonomy(taxonomy: pd.Series,
-                     replacement_map: MetadataColumn[Categorical] = None,
-                     search_strings: List = None,
-                     replacement_strings: List = None,
-                     use_regex: bool = False,
-                     ) -> pd.Series:
+def edit_taxonomy(taxonomy: pd.Series,
+                  replacement_map: MetadataColumn[Categorical] = None,
+                  search_strings: List = None,
+                  replacement_strings: List = None,
+                  use_regex: bool = False,
+                  ) -> pd.Series:
 
     if search_strings and replacement_strings:
         print('Processing strings from command line.')
@@ -59,9 +59,11 @@ def replace_taxonomy(taxonomy: pd.Series,
     # User sanity check. Though only appears with `--verbose`
     ranks_in = taxonomy.str.count(';')
     ranks_out = updated_tax_series.str.count(';')
-    if not ranks_in.compare(ranks_out).empty:
+    rank_diffs = ranks_in.compare(ranks_out)
+    if not rank_diffs.empty:
         warnings.warn("Warning: the number of taxonomy ranks in the output "
                       "differs from the number of taxonomy ranks of the "
-                      "input. Was this intented?")
+                      "input. Was this intented? The following lines are "
+                      "different:\n %s" % rank_diffs, UserWarning)
 
     return updated_tax_series
