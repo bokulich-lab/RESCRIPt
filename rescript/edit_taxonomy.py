@@ -41,7 +41,8 @@ def edit_taxonomy(taxonomy: pd.Series,
     elif search_strings and replacement_strings and not replacement_map:
         print('Processing strings from command line.')
         rm_dict = make_search_replace_dict(search_strings, replacement_strings)
-    elif replacement_map and not all([search_strings, replacement_strings]):
+    elif (replacement_map and not search_strings) or (
+          replacement_map and not replacement_strings):
         print('Processing strings from taxonomy map file.')
         rm_dict = replacement_map.to_series().to_dict()
     else:
