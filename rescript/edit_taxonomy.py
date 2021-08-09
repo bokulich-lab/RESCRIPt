@@ -38,6 +38,7 @@ def edit_taxonomy(taxonomy: pd.Series,
         rm_dict = replacement_map.to_series().to_dict()
         cl_dict = make_search_replace_dict(search_strings, replacement_strings)
         rm_dict.update(cl_dict)
+        print('Processing strings from mapping file and command line.')
     elif search_strings and replacement_strings and not replacement_map:
         print('Processing strings from command line.')
         rm_dict = make_search_replace_dict(search_strings, replacement_strings)
