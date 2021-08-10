@@ -507,7 +507,7 @@ plugin.methods.register_function(
         'edited_taxonomy': 'Taxonomy in which the original strings '
                            'are replaced by user-supplied strings.'
     },
-    name='Replaces existing taxonomy strings with those provided',
+    name='Edit taxonomy strings with find and replace terms.',
     description=('A method that allows the user to edit taxonomy strings. '
                  'This is often used to fix inconsistent and/or '
                  'inccorect taxonomic annotations. The user can either '
