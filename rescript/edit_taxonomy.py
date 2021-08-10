@@ -34,19 +34,15 @@ def edit_taxonomy(taxonomy: pd.Series,
                   use_regex: bool = False,
                   ) -> pd.Series:
 
-    if search_strings and replacement_strings and replacement_map:
-        rm_dict = replacement_map.to_series().to_dict()
+    rm_dict = dict()
+    if replacement_map:
+        rm_dict.update(replacement_map.to_series().to_dict())
+        print('Processng strings from replacement map file.')
+    if search_strings and replacement_strings:
         cl_dict = make_search_replace_dict(search_strings, replacement_strings)
         rm_dict.update(cl_dict)
-        print('Processing strings from mapping file and command line.')
-    elif search_strings and replacement_strings and not replacement_map:
         print('Processing strings from command line.')
-        rm_dict = make_search_replace_dict(search_strings, replacement_strings)
-    elif (replacement_map and not search_strings) or (
-          replacement_map and not replacement_strings):
-        print('Processing strings from taxonomy map file.')
-        rm_dict = replacement_map.to_series().to_dict()
-    else:
+    if len(rm_dict.keys()) == 0:
         raise ValueError('Either a replacement-map or both search-strings '
                          'and replacement-stings must be supplied.')
 
