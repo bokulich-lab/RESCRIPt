@@ -504,9 +504,8 @@ plugin.methods.register_function(
         'use_regex': 'Toggle regular expressions. By default, only litereal '
                      'substring matching is performed.'},
     output_descriptions={
-        'edited_taxonomy': 'Taxonomy in which the original rank-lineage '
-                           'strings were replaced by user-supplied '
-                           'rank-lineage strings.'
+        'edited_taxonomy': 'Taxonomy in which the original strings '
+                           'are replaced by user-supplied strings.'
     },
     name='Replaces existing taxonomy strings with those provided',
     description=('A method that allows the user to edit taxonomy strings. '
@@ -514,12 +513,14 @@ plugin.methods.register_function(
                  'inccorect taxonomic annotations. The user can either '
                  'provide two separate lists of strings, i.e. '
                  '\'search-strings\', and \'replacement-strings\', '
-                 'on the command line, or a single tab-delimited '
+                 'on the command line, and/or a single tab-delimited '
                  'replacement map file containing a list of these strings. '
                  'In both cases the number of search strings must match the '
                  'number of replacement strings. That is the first string '
                  'in \'search-strings\' is replaced with the first string '
-                 'in \'replacement-strings\', and so on.')
+                 'in \'replacement-strings\', and so on. In the case that '
+                 'both search / replacement strings, and a replacement '
+                 'map file are provided, they will be merged.')
 )
 
 
