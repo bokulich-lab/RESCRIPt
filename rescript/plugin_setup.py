@@ -10,7 +10,8 @@ import importlib
 
 from qiime2.core.type import TypeMatch
 from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int,
-                           Float, Visualization, Bool, TypeMap, Metadata)
+                           Float, Visualization, Bool, TypeMap, Metadata,
+                           MetadataColumn, Categorical)
 
 from .subsample import subsample_fasta
 from .trim_alignment import trim_alignment
@@ -21,6 +22,7 @@ from .screenseq import cull_seqs
 from .degap import degap_seqs
 from .parse_silva_taxonomy import (parse_silva_taxonomy, ALLOWED_RANKS,
                                    DEFAULT_RANKS)
+from .edit_taxonomy import edit_taxonomy
 from .get_data import get_silva_data
 from .cross_validate import (evaluate_cross_validate,
                              evaluate_classifications,
@@ -461,6 +463,64 @@ plugin.methods.register_function(
                  'sequences by removing gaps ("-") and missing data (".") '
                  'characters from the sequences. Essentially, \'unaligning\' '
                  'the sequences.')
+)
+
+
+plugin.methods.register_function(
+    function=edit_taxonomy,
+    inputs={
+        'taxonomy': FeatureData[Taxonomy]
+    },
+    parameters={
+        'replacement_map': MetadataColumn[Categorical],
+        'search_strings': List[Str],
+        'replacement_strings': List[Str],
+        'use_regex': Bool,
+    },
+    outputs=[('edited_taxonomy', FeatureData[Taxonomy])],
+    input_descriptions={
+        'taxonomy': 'Taxonomy strings data to be edited.'
+    },
+    parameter_descriptions={
+        'replacement_map': 'A tab-delimitad metadata file in which '
+                           'the strings in the \'id\' column are '
+                           'replaced by the \'replacement-strings\' in '
+                           'the second column. All strings in the '
+                           '\'id\' column must be unique!',
+        'search_strings': 'Only used in conjuntion with '
+                          '\'replacement-strings\'. Each string in this list '
+                          'is searched for and replaced with a string in the '
+                          'list of \'replace-ment-strings\'. '
+                          'That is the first string in \'search-strings\' is '
+                          ' replaced with the first string in '
+                          '\'replacement-strings\', and so on. The number of '
+                          '\'search-strings\' must be equal to the number of '
+                          'replacement strings.',
+        'replacement_strings': 'Only used in conjuntion with '
+                               '\'search-strings\'. This must contain the '
+                               'same number of replacement strings as search '
+                               'strings. See \'search-strings\' parameter '
+                               'text for more details.',
+        'use_regex': 'Toggle regular expressions. By default, only litereal '
+                     'substring matching is performed.'},
+    output_descriptions={
+        'edited_taxonomy': 'Taxonomy in which the original strings '
+                           'are replaced by user-supplied strings.'
+    },
+    name='Edit taxonomy strings with find and replace terms.',
+    description=('A method that allows the user to edit taxonomy strings. '
+                 'This is often used to fix inconsistent and/or '
+                 'inccorect taxonomic annotations. The user can either '
+                 'provide two separate lists of strings, i.e. '
+                 '\'search-strings\', and \'replacement-strings\', '
+                 'on the command line, and/or a single tab-delimited '
+                 'replacement map file containing a list of these strings. '
+                 'In both cases the number of search strings must match the '
+                 'number of replacement strings. That is the first string '
+                 'in \'search-strings\' is replaced with the first string '
+                 'in \'replacement-strings\', and so on. In the case that '
+                 'both search / replacement strings, and a replacement '
+                 'map file are provided, they will be merged.')
 )
 
 
