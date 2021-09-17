@@ -1,6 +1,5 @@
 {% set data = load_setup_py_data() %}
 {% set version = data.get('version') or 'placehold' %}
-{% set release = '.'.join(version.split('.')[:2]) %}
 
 package:
   name: rescript
@@ -24,12 +23,19 @@ requirements:
     - pandas >=0.25.3
     - scikit-learn
     - scikit-bio
-    - q2-types {{ release }}.*
-    - q2-longitudinal {{ release }}.*
-    - q2-feature-classifier {{ release }}.*
-    - qiime2 {{ release }}.*
+    - q2-types {{ qiime2_epoch }}.*
+    - q2-longitudinal {{ qiime2_epoch }}.*
+    - q2-feature-classifier {{ qiime2_epoch }}.*
+    - qiime2 {{ qiime2_epoch }}.*
 
 test:
+  requires:
+    - pytest
+    - q2-types >={{ q2_types }}
+    - q2-longitudinal >={{ q2_longitudinal }}
+    - q2-feature-classifier >={{ q2_feature_classifier }}
+    - qiime2 >={{ qiime2 }}
+
   imports:
     - rescript
     - qiime2.plugins.rescript
