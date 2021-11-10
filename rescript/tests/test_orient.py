@@ -102,7 +102,7 @@ class TestOrientSeqs(TestPluginBase):
         reoriented, unmatched = rescript.actions.orient_seqs(
             sequences=self.seqs, reference_sequences=None,
             )
-        unmatched_ids = {seq.metadata['id'] 
+        unmatched_ids = {seq.metadata['id']
                          for seq in unmatched.view(DNAIterator)}
         self.assertEqual(unmatched_ids, set([]))
         exp_seqs = [seq for seq in self.rc.view(DNAIterator)]
