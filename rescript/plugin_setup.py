@@ -59,7 +59,7 @@ plugin = Plugin(
     description=('Reference sequence annotation and curation pipeline.'),
     short_description=(
         'Pipeline for reference sequence annotation and curation.'),
-    citations=[citations['Robeson2020rescript']]
+    citations=[citations['Robeson2021rescript']]
 )
 
 
