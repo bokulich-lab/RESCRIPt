@@ -540,23 +540,26 @@ FILTER_OUTPUT_DESCRIPTIONS = {
     'filtered_seqs': 'Sequences that pass the filtering thresholds.',
     'discarded_seqs': 'Sequences that fall outside the filtering thresholds.'}
 
-
+seq_match = TypeMatch([Sequence, AlignedSequence])
 plugin.methods.register_function(
     function=orient_seqs,
-    inputs={'sequences': FeatureData[Sequence],
+    inputs={'sequences': FeatureData[seq_match],
             'reference_sequences': FeatureData[Sequence]},
     parameters=VSEARCH_PARAMS,
-    outputs=[('oriented_seqs', FeatureData[Sequence]),
-             ('unmatched_seqs', FeatureData[Sequence])],
+    outputs=[('oriented_seqs', FeatureData[seq_match]),
+             ('unmatched_seqs', FeatureData[seq_match])],
     input_descriptions={
         'sequences': 'Sequences to be oriented.',
-        'reference_sequences': 'Reference sequences to orient against.'},
+        'reference_sequences': ('Reference sequences to orient against. If no'
+                                ' reference is provided, all the sequences '
+                                'will be reverse complemented.')},
     parameter_descriptions=VSEARCH_PARAM_DESCRIPTIONS,
     output_descriptions={
         'oriented_seqs': 'Query sequences in same orientation as top matching '
                          'reference sequence.',
         'unmatched_seqs': 'Query sequences that fail to match at least one '
-                          'reference sequence in either + or - orientation.'},
+                          'reference sequence in either + or - orientation. '
+                          'This will be empty if no refrence is provided.'},
     name='Orient input sequences by comparison against reference.',
     description=(
         'Orient input sequences by comparison against a set of reference '
