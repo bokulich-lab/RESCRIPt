@@ -25,20 +25,20 @@ def orient_seqs(sequences: DNAFASTAFormat,
         # use vsearch to search query seqs against reference database
         # report orientation of query seqs relative to reference seqs.
         with tempfile.NamedTemporaryFile() as out:
-            # note: qmask is disabled as DNAFASTAFormat requires all output 
+            # note: qmask is disabled as DNAFASTAFormat requires all output
             # seqs to be uppercase. Could loop through output seqs to convert
-            # to upper but which is faster: disabling masking or looping 
+            # to upper but which is faster: disabling masking or looping
             # through with skbio?
-            cmd = ['vsearch', 
+            cmd = ['vsearch',
                    '--usearch_global', str(sequences),
-                   '--matched', str(matched_temp), 
+                   '--matched', str(matched_temp),
                    '--notmatched', str(notmatched),
-                   '--db', str(reference_sequences), 
+                   '--db', str(reference_sequences),
                    '--id', str(perc_identity),
-                   '--maxaccepts', '1', 
-                   '--strand', 'both', 
+                   '--maxaccepts', '1',
+                   '--strand', 'both',
                    '--qmask', 'none',
-                   '--query_cov', str(query_cov), 
+                   '--query_cov', str(query_cov),
                    '--threads', str(threads),
                    '--userfields', 'qstrand',
                    '--userout', out.name]
