@@ -26,7 +26,7 @@ class TestOrientSeqs(TestPluginBase):
         self.ref = import_data(
             'FeatureData[Sequence]', self.get_data_path('derep-test.fasta'))
 
-        self.rc = import_data('FeatureData[Sequence]', 
+        self.rc = import_data('FeatureData[Sequence]',
                               self.get_data_path('mixed-orientations-rc.fasta')
                               )
 
@@ -102,12 +102,11 @@ class TestOrientSeqs(TestPluginBase):
         reoriented, unmatched = rescript.actions.orient_seqs(
             sequences=self.seqs, reference_sequences=None,
             )
-        print(self.seqs)
-        unmatched_ids = {seq.metadata['id'] for id in unmatched.view(DNAIterator)}
+        unmatched_ids = {seq.metadata['id'] 
+                         for seq in unmatched.view(DNAIterator)}
         self.assertEqual(unmatched_ids, set([]))
         exp_seqs = [seq for seq in self.rc.view(DNAIterator)]
         test_seqs = [seq for seq in reoriented.view(DNAIterator)]
         for exp, test in zip(*(exp_seqs, test_seqs)):
             self.assertEqual(str(exp), str(test))
             self.assertEqual(exp.metadata['id'], test.metadata['id'])
-

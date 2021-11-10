@@ -14,7 +14,7 @@ from ._utilities import run_command
 
 
 def orient_seqs(sequences: DNAFASTAFormat,
-                reference_sequences: DNAFASTAFormat=None,
+                reference_sequences: DNAFASTAFormat = None,
                 perc_identity: float = 0.9,
                 query_cov: float = 0.9,
                 threads: int = 1,
@@ -25,15 +25,23 @@ def orient_seqs(sequences: DNAFASTAFormat,
         # use vsearch to search query seqs against reference database
         # report orientation of query seqs relative to reference seqs.
         with tempfile.NamedTemporaryFile() as out:
-            # note: qmask is disabled as DNAFASTAFormat requires all output seqs
-            # to be uppercase. Could loop through output seqs to convert to upper
-            # but which is faster: disabling masking or looping through with skbio?
-            cmd = ['vsearch', '--usearch_global', str(sequences),
-                   '--matched', str(matched_temp), '--notmatched', str(notmatched),
-                   '--db', str(reference_sequences), '--id', str(perc_identity),
-                   '--maxaccepts', '1', '--strand', 'both', '--qmask', 'none',
-                   '--query_cov', str(query_cov), '--threads', str(threads),
-                   '--userfields', 'qstrand', '--userout', out.name]
+            # note: qmask is disabled as DNAFASTAFormat requires all output 
+            # seqs to be uppercase. Could loop through output seqs to convert
+            # to upper but which is faster: disabling masking or looping 
+            # through with skbio?
+            cmd = ['vsearch', 
+                   '--usearch_global', str(sequences),
+                   '--matched', str(matched_temp), 
+                   '--notmatched', str(notmatched),
+                   '--db', str(reference_sequences), 
+                   '--id', str(perc_identity),
+                   '--maxaccepts', '1', 
+                   '--strand', 'both', 
+                   '--qmask', 'none',
+                   '--query_cov', str(query_cov), 
+                   '--threads', str(threads),
+                   '--userfields', 'qstrand',
+                   '--userout', out.name]
             if left_justify:
                 cmd.append('--leftjust')
             run_command(cmd)
