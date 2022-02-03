@@ -6,7 +6,7 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-
+import warnings
 import tempfile
 from q2_types.feature_data import DNAFASTAFormat, DNAIterator
 
@@ -21,7 +21,7 @@ def orient_seqs(sequences: DNAFASTAFormat,
                 left_justify: bool = False,
                 ) -> (DNAFASTAFormat, DNAFASTAFormat):
     matched_temp, notmatched = DNAFASTAFormat(), DNAFASTAFormat()
-    if reference_sequences is not None:
+    if (reference_sequences is not None):
         # use vsearch to search query seqs against reference database
         # report orientation of query seqs relative to reference seqs.
         with tempfile.NamedTemporaryFile() as out:

@@ -11,7 +11,7 @@ import qiime2
 from qiime2.plugin.testing import TestPluginBase
 from q2_types.feature_data import DNAIterator
 from qiime2.plugins import rescript
-
+import warnings
 
 import_data = qiime2.Artifact.import_data
 
@@ -21,14 +21,22 @@ class TestOrientSeqs(TestPluginBase):
 
     def setUp(self):
         super().setUp()
-        self.seqs = import_data('FeatureData[Sequence]',
-                                self.get_data_path('mixed-orientations.fasta'))
+        self.seqs = \
+            import_data('FeatureData[Sequence]',
+                        self.get_data_path('mixed-orientations.fasta'))
         self.ref = import_data(
             'FeatureData[Sequence]', self.get_data_path('derep-test.fasta'))
 
-        self.rc = import_data('FeatureData[Sequence]',
-                              self.get_data_path('mixed-orientations-rc.fasta')
-                              )
+        self.rc = \
+            import_data('FeatureData[Sequence]',
+                        self.get_data_path('mixed-orientations-rc.fasta')
+                        )
+        self.align = \
+            import_data('FeatureData[AlignedSequence]',
+                        self.get_data_path('aligned-seqs-orient.fasta'))
+        self.align_rc = \
+            import_data('FeatureData[AlignedSequence]',
+                        self.get_data_path('aligned-seqs-orient-rev.fasta'))
 
     def test_reorient_default(self):
         # this test checks that expected IDs AND reoriented seqs are returned
@@ -98,7 +106,6 @@ class TestOrientSeqs(TestPluginBase):
         self.assertEqual(reoriented_ids, exp_reoriented_ids)
 
     def test_reorient_no_ref(self):
-        print(self.ref)
         reoriented, unmatched = rescript.actions.orient_seqs(
             sequences=self.seqs, reference_sequences=None,
             )
@@ -110,3 +117,4 @@ class TestOrientSeqs(TestPluginBase):
         for exp, test in zip(*(exp_seqs, test_seqs)):
             self.assertEqual(str(exp), str(test))
             self.assertEqual(exp.metadata['id'], test.metadata['id'])
+

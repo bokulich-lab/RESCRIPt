@@ -366,6 +366,7 @@ palettes = ['Set1', 'Set2', 'Set3', 'Pastel1', 'Pastel2', 'Paired',
             'rainbow', 'PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGy', 'RdBu',
             'RdYlBu', 'RdYlGn', 'Spectral', 'coolwarm', 'bwr', 'seismic']
 
+
 plugin.visualizers.register_function(
     function=evaluate_seqs,
     inputs={'sequences': List[FeatureData[Sequence]]},
@@ -540,14 +541,13 @@ FILTER_OUTPUT_DESCRIPTIONS = {
     'filtered_seqs': 'Sequences that pass the filtering thresholds.',
     'discarded_seqs': 'Sequences that fall outside the filtering thresholds.'}
 
-seq_match = TypeMatch([Sequence, AlignedSequence])
 plugin.methods.register_function(
     function=orient_seqs,
-    inputs={'sequences': FeatureData[seq_match],
+    inputs={'sequences': FeatureData[Sequence],
             'reference_sequences': FeatureData[Sequence]},
     parameters=VSEARCH_PARAMS,
-    outputs=[('oriented_seqs', FeatureData[seq_match]),
-             ('unmatched_seqs', FeatureData[seq_match])],
+    outputs=[('oriented_seqs', FeatureData[Sequence]),
+             ('unmatched_seqs', FeatureData[Sequence])],
     input_descriptions={
         'sequences': 'Sequences to be oriented.',
         'reference_sequences': ('Reference sequences to orient against. If no'
