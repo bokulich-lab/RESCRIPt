@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2022, QIIME 2 development team.
+# Copyright (c) 2022-2022, QIIME 2 development team.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -13,8 +13,6 @@ from q2_types.feature_data import (
     AlignedDNAFASTAFormat, DNAFASTAFormat,
     DNAIterator, AlignedDNAIterator)
 from skbio import DNA
-
-import pandas as pd
 
 
 def _trim_sequence(sequence: DNA,

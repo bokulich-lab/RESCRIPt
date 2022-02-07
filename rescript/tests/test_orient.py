@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2022, QIIME 2 development team.
+# Copyright (c) 2022-2022, QIIME 2 development team.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -11,7 +11,6 @@ import qiime2
 from qiime2.plugin.testing import TestPluginBase
 from q2_types.feature_data import DNAIterator
 from qiime2.plugins import rescript
-import warnings
 
 import_data = qiime2.Artifact.import_data
 
@@ -117,4 +116,3 @@ class TestOrientSeqs(TestPluginBase):
         for exp, test in zip(*(exp_seqs, test_seqs)):
             self.assertEqual(str(exp), str(test))
             self.assertEqual(exp.metadata['id'], test.metadata['id'])
-
