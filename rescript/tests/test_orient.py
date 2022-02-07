@@ -30,12 +30,6 @@ class TestOrientSeqs(TestPluginBase):
             import_data('FeatureData[Sequence]',
                         self.get_data_path('mixed-orientations-rc.fasta')
                         )
-        self.align = \
-            import_data('FeatureData[AlignedSequence]',
-                        self.get_data_path('aligned-seqs-orient.fasta'))
-        self.align_rc = \
-            import_data('FeatureData[AlignedSequence]',
-                        self.get_data_path('aligned-seqs-orient-rev.fasta'))
 
     def test_reorient_default(self):
         # this test checks that expected IDs AND reoriented seqs are returned
