@@ -20,7 +20,7 @@ def orient_seqs(sequences: DNAFASTAFormat,
                 left_justify: bool = False,
                 ) -> (DNAFASTAFormat, DNAFASTAFormat):
     matched_temp, notmatched = DNAFASTAFormat(), DNAFASTAFormat()
-    if (reference_sequences is not None):
+    if reference_sequences is not None:
         # use vsearch to search query seqs against reference database
         # report orientation of query seqs relative to reference seqs.
         with tempfile.NamedTemporaryFile() as out:

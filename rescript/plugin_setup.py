@@ -550,9 +550,11 @@ plugin.methods.register_function(
              ('unmatched_seqs', FeatureData[Sequence])],
     input_descriptions={
         'sequences': 'Sequences to be oriented.',
-        'reference_sequences': ('Reference sequences to orient against. If no'
-                                ' reference is provided, all the sequences '
-                                'will be reverse complemented.')},
+        'reference_sequences': ('Reference sequences to orient against. If '
+                                'no reference is provided, all the sequences '
+                                'will be reverse complemented and all '
+                                'parameterswill be ignored.'
+                                )},
     parameter_descriptions=VSEARCH_PARAM_DESCRIPTIONS,
     output_descriptions={
         'oriented_seqs': 'Query sequences in same orientation as top matching '
