@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2021, QIIME 2 development team.
+# Copyright (c) 2022-2022, QIIME 2 development team.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -366,6 +366,7 @@ palettes = ['Set1', 'Set2', 'Set3', 'Pastel1', 'Pastel2', 'Paired',
             'rainbow', 'PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGy', 'RdBu',
             'RdYlBu', 'RdYlGn', 'Spectral', 'coolwarm', 'bwr', 'seismic']
 
+
 plugin.visualizers.register_function(
     function=evaluate_seqs,
     inputs={'sequences': List[FeatureData[Sequence]]},
@@ -540,7 +541,6 @@ FILTER_OUTPUT_DESCRIPTIONS = {
     'filtered_seqs': 'Sequences that pass the filtering thresholds.',
     'discarded_seqs': 'Sequences that fall outside the filtering thresholds.'}
 
-
 plugin.methods.register_function(
     function=orient_seqs,
     inputs={'sequences': FeatureData[Sequence],
@@ -550,19 +550,28 @@ plugin.methods.register_function(
              ('unmatched_seqs', FeatureData[Sequence])],
     input_descriptions={
         'sequences': 'Sequences to be oriented.',
-        'reference_sequences': 'Reference sequences to orient against.'},
+        'reference_sequences': ('Reference sequences to orient against. If '
+                                'no reference is provided, all the sequences '
+                                'will be reverse complemented and all '
+                                'parameters will be ignored.'
+                                )},
     parameter_descriptions=VSEARCH_PARAM_DESCRIPTIONS,
     output_descriptions={
         'oriented_seqs': 'Query sequences in same orientation as top matching '
                          'reference sequence.',
         'unmatched_seqs': 'Query sequences that fail to match at least one '
-                          'reference sequence in either + or - orientation.'},
+                          'reference sequence in either + or - orientation. '
+                          'This will be empty if no refrence is provided.'},
     name='Orient input sequences by comparison against reference.',
     description=(
         'Orient input sequences by comparison against a set of reference '
         'sequences using VSEARCH. This action can also be used to quickly '
         'filter out sequences that (do not) match a set of reference '
-        'sequences in either orientation.'
+        'sequences in either orientation. Alternatively, if no reference '
+        'sequences are provided as input, all input sequences will be '
+        'reverse-complemented. In this case, no alignment is performed, '
+        'and all alignment parameters (`perc_identity`, `query_cov`, '
+        '`threads`, and `left_justify`) are ignored.'
     ),
     citations=[citations['rognes2016vsearch']]
 )

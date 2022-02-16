@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2021, QIIME 2 development team.
+# Copyright (c) 2022-2022, QIIME 2 development team.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -12,7 +12,6 @@ from qiime2.plugin.testing import TestPluginBase
 from q2_types.feature_data import DNAIterator
 from qiime2.plugins import rescript
 
-
 import_data = qiime2.Artifact.import_data
 
 
@@ -21,10 +20,16 @@ class TestOrientSeqs(TestPluginBase):
 
     def setUp(self):
         super().setUp()
-        self.seqs = import_data('FeatureData[Sequence]',
-                                self.get_data_path('mixed-orientations.fasta'))
+        self.seqs = \
+            import_data('FeatureData[Sequence]',
+                        self.get_data_path('mixed-orientations.fasta'))
         self.ref = import_data(
             'FeatureData[Sequence]', self.get_data_path('derep-test.fasta'))
+
+        self.rc = \
+            import_data('FeatureData[Sequence]',
+                        self.get_data_path('mixed-orientations-rc.fasta')
+                        )
 
     def test_reorient_default(self):
         # this test checks that expected IDs AND reoriented seqs are returned
@@ -92,3 +97,16 @@ class TestOrientSeqs(TestPluginBase):
         exp_reoriented_ids = {seq.metadata['id'] for seq in
                               self.ref.view(DNAIterator)} - exp_unmatched_ids
         self.assertEqual(reoriented_ids, exp_reoriented_ids)
+
+    def test_reorient_no_ref(self):
+        reoriented, unmatched = rescript.actions.orient_seqs(
+            sequences=self.seqs, reference_sequences=None,
+            )
+        unmatched_ids = {seq.metadata['id']
+                         for seq in unmatched.view(DNAIterator)}
+        self.assertEqual(unmatched_ids, set([]))
+        exp_seqs = [seq for seq in self.rc.view(DNAIterator)]
+        test_seqs = [seq for seq in reoriented.view(DNAIterator)]
+        for exp, test in zip(*(exp_seqs, test_seqs)):
+            self.assertEqual(str(exp), str(test))
+            self.assertEqual(exp.metadata['id'], test.metadata['id'])
