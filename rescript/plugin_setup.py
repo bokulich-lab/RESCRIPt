@@ -553,7 +553,7 @@ plugin.methods.register_function(
         'reference_sequences': ('Reference sequences to orient against. If '
                                 'no reference is provided, all the sequences '
                                 'will be reverse complemented and all '
-                                'parameterswill be ignored.'
+                                'parameters will be ignored.'
                                 )},
     parameter_descriptions=VSEARCH_PARAM_DESCRIPTIONS,
     output_descriptions={
@@ -567,7 +567,11 @@ plugin.methods.register_function(
         'Orient input sequences by comparison against a set of reference '
         'sequences using VSEARCH. This action can also be used to quickly '
         'filter out sequences that (do not) match a set of reference '
-        'sequences in either orientation.'
+        'sequences in either orientation. Alternatively, if no reference '
+        'sequences are provided as input, all input sequences will be '
+        'reverse-complemented. In this case, no alignment is performed, '
+        'and all alignment parameters (`perc_identity`, `query_cov`, '
+        '`threads`, and `left_justify`) are ignored.'
     ),
     citations=[citations['rognes2016vsearch']]
 )
