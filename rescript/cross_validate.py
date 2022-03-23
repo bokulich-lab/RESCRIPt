@@ -11,8 +11,6 @@ import qiime2 as q2
 import timeit
 from warnings import filterwarnings
 from sklearn.model_selection import StratifiedKFold
-from q2_feature_classifier._consensus_assignment import (
-    _consensus_assignments, _get_default_unassignable_label)
 
 from q2_types.feature_data import DNAFASTAFormat, DNAIterator
 
@@ -123,71 +121,6 @@ def evaluate_cross_validate(ctx,
     _check_time(new_time, 'Evaluation')
     _check_time(start, 'Total Runtime')
     return expected_taxonomies, observed_taxonomies, evaluation
-
-
-# NOTE: This is an experimental method. Use at your own risk. It appears to be
-# much slower than the other cross-validate methods.
-def evaluate_vsearch_loo(ctx,
-                         sequences,
-                         taxonomy,
-                         maxaccepts=10,
-                         perc_identity=0.8,
-                         query_cov=0.8,
-                         min_consensus=0.51,
-                         search_exact=False,
-                         top_hits_only=False,
-                         maxrejects='all',
-                         weak_id=0.,
-                         threads=1):
-    start = timeit.default_timer()
-    _eval = ctx.get_action('rescript', 'evaluate_classifications')
-    taxa, seq_ids = _validate_cross_validate_inputs(taxonomy, sequences)
-    taxa = taxa.loc[seq_ids]
-    new_time = _check_time(start, 'Validation')
-
-    # classify seqs with vsearch + q2-feature-classifier LCA, using LOO CV
-    # Leave-one-out is applied via the `--self` parameter
-    sequences = sequences.view(DNAFASTAFormat)
-    seqs_fp = str(sequences)
-    if maxaccepts == 'all':
-        maxaccepts = 0
-    if maxrejects == 'all':
-        maxrejects = 0
-    cmd = ['vsearch', '--usearch_global', seqs_fp, '--id', str(perc_identity),
-           '--query_cov', str(query_cov), '--strand', 'plus', '--maxaccepts',
-           str(maxaccepts), '--maxrejects', str(maxrejects), '--db', seqs_fp,
-           '--threads', str(threads), '--self', '--output_no_hits']
-    if search_exact:
-        cmd[1] = '--search_exact'
-    if top_hits_only:
-        cmd.append('--top_hits_only')
-    if weak_id > 0 and weak_id < perc_identity:
-        cmd.extend(['--weak_id', str(weak_id)])
-    cmd.append('--blast6out')
-    consensus = _consensus_assignments(
-        cmd, taxa, min_consensus=min_consensus,
-        unassignable_label=_get_default_unassignable_label())
-    observed_taxonomy = q2.Artifact.import_data(
-        'FeatureData[Taxonomy]', consensus)
-    new_time = _check_time(new_time, 'Classification')
-
-    # relabel singleton taxonomies to get best possible LOO classification
-    duplicated_taxa = taxa.duplicated(keep=False)
-    singleton_taxa = taxa[-duplicated_taxa]
-    duplicated_taxa = taxa[duplicated_taxa]
-    valid_labels = _get_valid_taxonomic_labels(duplicated_taxa)
-    relabeled_singletons = singleton_taxa.apply(
-        _relabel_stratified_taxonomy, args=([valid_labels]))
-    expected_taxonomy = pd.concat([duplicated_taxa, relabeled_singletons])
-    expected_taxonomy = q2.Artifact.import_data(
-        'FeatureData[Taxonomy]', expected_taxonomy)
-    new_time = _check_time(new_time, 'Stratify Taxonomy')
-
-    # Evaluate classifications
-    evaluation, = _eval([expected_taxonomy], [observed_taxonomy])
-    _check_time(new_time, 'Evaluation')
-    _check_time(start, 'Total Runtime')
-    return expected_taxonomy, observed_taxonomy, evaluation
 
 
 def _check_time(old_time, name='Time'):
