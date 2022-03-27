@@ -7,9 +7,7 @@
 
 REference Sequence annotation and CuRatIon Pipeline
 
-**Note:** This is a beta release. Usage, and other details are forthcoming. See citation information below.
-
-RESCRIPt is a python 3 package to support a variety of operations for managing and curating reference sequence databases, DNA/RNA sequence data, and taxonomic data.
+RESCRIPt is a python 3 package to support a variety of operations for managing and curating reference sequence databases, DNA/RNA sequence data, and taxonomic data. See citation information below for a full benchmark and description.
 
 ## Install from source
 
@@ -67,7 +65,7 @@ Problem? Suggestion? Technical errors and user support requests can be filed on 
 
 ## Citation
 
-If you use RESCRIPt in your research, please cite the following pre-print:
+If you use RESCRIPt in your research, please cite the following:
 
 Michael S Robeson II, Devon R O'Rourke, Benjamin D Kaehler, Michal Ziemski, Matthew R Dillon, Jeffrey T Foster, Nicholas A Bokulich. (2021) *RESCRIPt: Reproducible sequence taxonomy reference database management*. PLoS Computational Biology 17 (11): e1009581. doi: [10.1371/journal.pcbi.1009581](http://dx.doi.org/10.1371/journal.pcbi.1009581).
 
