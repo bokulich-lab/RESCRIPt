@@ -39,7 +39,7 @@ from q2_feature_classifier.classifier import (_parameter_descriptions,
 from q2_feature_classifier._taxonomic_classifier import TaxonomicClassifier
 
 import rescript
-from rescript._utilities import _rank_handles
+from rescript._utilities import _rank_handles, _allowed_rank_handles
 from rescript.types._format import (
     SILVATaxonomyFormat, SILVATaxonomyDirectoryFormat, SILVATaxidMapFormat,
     SILVATaxidMapDirectoryFormat)
@@ -295,7 +295,8 @@ plugin.methods.register_function(
         'threads': VSEARCH_PARAMS['threads'],
         'perc_identity': VSEARCH_PARAMS['perc_identity'],
         'derep_prefix': Bool,
-        'rank_handles': Str % Choices(list(_rank_handles.keys()))},
+        'rank_handles': List[Str % Choices(_allowed_rank_handles)],
+        'backfill': Bool},
     outputs=[('dereplicated_sequences', FeatureData[Sequence]),
              ('dereplicated_taxa', FeatureData[Taxonomy])],
     input_descriptions={
@@ -316,11 +317,11 @@ plugin.methods.register_function(
                         'longer sequences, it is clustered with the shortest '
                         'of them. If they are equally long, it is clustered '
                         'with the most abundant.',
-        'rank_handles': (
-            'Specifies the set of rank handles used to backfill '
-            'missing ranks in the resulting dereplicated taxonomy. The '
-            'default setting will backfill SILVA-style 7-level rank handles. '
-            'Set to "none" to disable backfilling.')
+        'rank_handles': 'Specifies the set of rank handles used to backfill '
+                        'missing ranks in the resulting dereplicated '
+                        'taxonomy.',
+        'backfill': 'Backfill missing ranks. By default taxonomy ranks '
+                    'will be backfilled.'
     },
     name='Dereplicate features with matching sequences and taxonomies.',
     description=(

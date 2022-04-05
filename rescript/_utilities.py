@@ -21,6 +21,10 @@ _rank_handles = {
     'disable': None,
 }
 
+_allowed_rank_handles = ['d__', 'sk__', 'k__', 'ks__', 'sp__', 'p__', 'ps__',
+                         'pi__', 'sc__', 'c__', 'cs__', 'ci__', 'so__', 'o__',
+                         'os__', 'sf__', 'f__', 'fs__', 'g__', 's__']
+
 
 # modified version of _find_lca that prioritizes majority and supersets
 def _find_super_lca(taxa, collapse_substrings=True):
