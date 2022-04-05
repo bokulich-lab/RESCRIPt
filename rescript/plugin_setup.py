@@ -319,7 +319,7 @@ plugin.methods.register_function(
                         'with the most abundant.',
         'rank_handles': 'Specifies the set of rank handles used to backfill '
                         'missing ranks in the resulting dereplicated '
-                        'taxonomy.',
+                        'taxonomy. The \'backfill\' option must be enabled.',
         'backfill': 'Backfill missing ranks. By default taxonomy ranks '
                     'will be backfilled.'
     },
