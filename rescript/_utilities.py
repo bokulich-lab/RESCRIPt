@@ -14,13 +14,6 @@ from collections import Counter
 from q2_types.feature_data import DNAFASTAFormat, AlignedDNAFASTAFormat
 
 
-_rank_handles = {
-    'silva': [' d__', ' p__', ' c__', ' o__', ' f__', ' g__', ' s__'],
-    'greengenes': ['k__', 'p__', 'c__', 'o__', 'f__', 'g__', 's__'],
-    'gtdb': ['k__', 'p__', 'c__', 'o__', 'f__', 'g__', 's__'],
-    'disable': None,
-}
-
 _allowed_rank_handles = ['d__', 'sk__', 'k__', 'ks__', 'sp__', 'p__', 'ps__',
                          'pi__', 'sc__', 'c__', 'cs__', 'ci__', 'so__', 'o__',
                          'os__', 'sf__', 'f__', 'fs__', 'g__', 's__']
