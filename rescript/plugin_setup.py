@@ -39,7 +39,7 @@ from q2_feature_classifier.classifier import (_parameter_descriptions,
 from q2_feature_classifier._taxonomic_classifier import TaxonomicClassifier
 
 import rescript
-from rescript._utilities import _rank_handles, _allowed_rank_handles
+from rescript._utilities import _allowed_rank_handles
 from rescript.types._format import (
     SILVATaxonomyFormat, SILVATaxonomyDirectoryFormat, SILVATaxidMapFormat,
     SILVATaxidMapDirectoryFormat)
@@ -224,7 +224,8 @@ plugin.methods.register_function(
     parameters={
         'mode': Str % Choices(['len', 'lca', 'score', 'super', 'majority']),
         'rank_handle_regex': Str,
-        'new_rank_handle': Str % Choices(list(_rank_handles.keys())),
+        'new_rank_handles': List[Str % Choices(_allowed_rank_handles)],
+        'apply_new_rank_handles': Bool,
         'unclassified_label': Str
     },
     outputs=[('merged_data', FeatureData[Taxonomy])],
@@ -241,17 +242,18 @@ plugin.methods.register_function(
                 'taxonomy dataframe. "majority" finds the LCA consensus while '
                 'giving preference to majority labels. ' + super_lca_desc,
         'rank_handle_regex': rank_handle_description + rank_handle_extra_note,
-        'new_rank_handle': (
+        'new_rank_handles': (
             'Specifies the set of rank handles to prepend to taxonomic labels '
-            'at each rank. For example, "greengenes" will prepend 7-level '
-            'greengenes-style rank handles. Note that merged taxonomies will '
+            'at each rank. Note that merged taxonomies will '
             'only contain as many levels as there are handles if this '
-            'parameter is used. So "greengenes" will trim all taxonomies to '
-            'seven levels, even if longer annotations exist. Note that this '
+            'parameter is used. This will trim all taxonomies to the given '
+            'levels, even if longer annotations exist. Note that this '
             'parameter will prepend rank handles whether or not they already '
             'exist in the taxonomy, so should ALWAYS be used in conjunction '
             'with `rank_handle_regex` if rank handles exist in any of the '
             'inputs.'),
+        'apply_new_rank_handles': 'Apply \'new-rank-handles\' to taxonomy '
+                                  'output.',
         'unclassified_label': 'Specifies what label should be used for '
                               'taxonomies that could not be resolved (when '
                               'LCA modes are used).'

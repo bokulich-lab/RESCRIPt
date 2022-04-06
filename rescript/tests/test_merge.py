@@ -165,7 +165,9 @@ class TestMergeTaxa(TestPluginBase):
     def test_merge_taxa_lca_rank_handle_plus_new_rank_handle(self):
         result, = self.merge_taxa(
             [self.s1, self.s2, self.s3], 'lca',
-            new_rank_handle='greengenes')
+            new_rank_handles=['k__', 'p__', 'c__', 'o__', 'f__', 'g__',
+                              's__'],
+            apply_new_rank_handles=True)
         exp = pd.DataFrame({'Taxon': {
             '2562091': 'k__Bacteria;p__Actinobacteria;c__Acidimicrobiia;'
                        'o__Acidimicrobiales',
@@ -250,7 +252,9 @@ class TestMergeTaxa(TestPluginBase):
     def test_merge_taxa_len_rank_handle_plus_new_rank_handle(self):
         result, = self.merge_taxa(
             [self.m1, self.m2, self.m3], 'len',
-            new_rank_handle='greengenes')
+            new_rank_handles=['k__', 'p__', 'c__', 'o__', 'f__', 'g__',
+                              's__'],
+            apply_new_rank_handles=True)
         exp = pd.DataFrame({
             'Taxon': {
                 '2562091': 'k__Bacteria;p__Actinobacteria;c__Acidimicrobiia;'
