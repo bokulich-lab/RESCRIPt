@@ -9,9 +9,8 @@
 
 import pandas as pd
 from ._utilities import (_rank_length, _taxon_to_list, _find_top_score,
-                         _allowed_rank_handles, _find_lca, _find_super_lca,
-                         _find_lca_majority)
-
+                         _find_lca, _find_super_lca, _find_lca_majority)
+from .ncbi import _allowed_ranks
 
 MODE_ERROR_SCORE = (
     'mode "score" can only operate on dataframes with taxonomy classification '
@@ -22,8 +21,8 @@ MODE_ERROR_SCORE = (
 def merge_taxa(data: pd.DataFrame,
                mode: str = 'len',
                rank_handle_regex: str = '^[dkpcofgs]__',
-               new_rank_handles: list = ['d__', 'p__', 'c__', 'o__', 'f__',
-                                         'g__', 's__'],
+               new_rank_handles: list = ['domain', 'phylum', 'class', 'order',
+                                         'family', 'genus', 'species'],
                apply_new_rank_handles: bool = False,
                unclassified_label: str = 'Unassigned') -> pd.DataFrame:
     # Convert taxonomies to list; optionally remove rank handle
@@ -77,8 +76,8 @@ def merge_taxa(data: pd.DataFrame,
     if apply_new_rank_handles:
         # Sort user ranks relative to allowed_ranks, this ensures
         # that the taxonomic ranks supplied by the user are in order
-        sorted_rank_handles = [p for p in _allowed_rank_handles
-                               if p in new_rank_handles]
+        sorted_rank_handles = [p for r, p in _allowed_ranks.items()
+                               if r in new_rank_handles]
         result['Taxon'] = result['Taxon'].apply(
             lambda x: ';'.join([''.join(t) for t in
                                zip(sorted_rank_handles, x)]))

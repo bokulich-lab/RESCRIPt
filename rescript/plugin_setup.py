@@ -37,9 +37,7 @@ from q2_types.tree import Phylogeny, Rooted
 from q2_feature_classifier.classifier import (_parameter_descriptions,
                                               _classify_parameters)
 from q2_feature_classifier._taxonomic_classifier import TaxonomicClassifier
-
 import rescript
-from rescript._utilities import _allowed_rank_handles
 from rescript.types._format import (
     SILVATaxonomyFormat, SILVATaxonomyDirectoryFormat, SILVATaxidMapFormat,
     SILVATaxidMapDirectoryFormat)
@@ -224,7 +222,7 @@ plugin.methods.register_function(
     parameters={
         'mode': Str % Choices(['len', 'lca', 'score', 'super', 'majority']),
         'rank_handle_regex': Str,
-        'new_rank_handles': List[Str % Choices(_allowed_rank_handles)],
+        'new_rank_handles': List[Str % Choices(_allowed_ranks)],
         'apply_new_rank_handles': Bool,
         'unclassified_label': Str
     },
@@ -297,7 +295,7 @@ plugin.methods.register_function(
         'threads': VSEARCH_PARAMS['threads'],
         'perc_identity': VSEARCH_PARAMS['perc_identity'],
         'derep_prefix': Bool,
-        'rank_handles': List[Str % Choices(_allowed_rank_handles)],
+        'rank_handles': List[Str % Choices(_allowed_ranks)],
         'backfill': Bool},
     outputs=[('dereplicated_sequences', FeatureData[Sequence]),
              ('dereplicated_taxa', FeatureData[Taxonomy])],
