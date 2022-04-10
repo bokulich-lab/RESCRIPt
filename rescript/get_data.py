@@ -18,6 +18,53 @@ from urllib.request import urlretrieve
 from urllib.error import HTTPError
 from q2_types.feature_data import RNAFASTAFormat
 
+# get json for testing
+tempjson = requests.get('https://api.plutof.ut.ee/v1/public/dois/?format=vnd.api%2Bjson&identifier=10.15156/BIO/786385').json()
+tempjson['data'][0]['attributes']['media'][0]['url'] # download link
+tempjson['data'][0]['attributes']['related_identifiers'][1]['relation_type'] == "IsPreviousVersionOf" # found previous version
+tempjson['data'][0]['attributes']['related_identifiers'][1]['related_identifier'] # DOI of new version
+
+
+import requests
+
+def _assemble_unite_data_urls(DOIs, update_doi = False):
+    '''Generate UNITE urls, given their DOIs.'''
+    # Make DOIs iterable
+    DOIs = [DOIs] if isinstance(DOIs, str) else DOIs
+    # print('Get URLs for these DOIs:', DOIs)
+    base_url = 'https://api.plutof.ut.ee/v1/public/dois/'\
+               '?format=vnd.api%2Bjson&identifier='
+    # Eventual output
+    URLs = set()
+    # For each DOI, get download URL of .tar.gz file
+    for DOI in DOIs:
+        # # Optionally look for newer DOI... (not always possible)
+        # while update_doi:
+        #     print('Updating this DOI: ' + DOI)
+        #     query_data = requests.get(base_url + DOI).json()
+        #     try:
+        #         if query_data['data'][0]['attributes']['related_identifiers'][1]['relation_type'] == "IsPreviousVersionOf":
+        #             print('Found new version: ' + DOI)
+        #             DOI = query_data['data'][0]['attributes']['related_identifiers'][1]['related_identifier']
+        #             continue
+        #     except:
+        #         print('Is newest version: ' + DOI)
+        #         break
+        # # Or just use DOIs as listed
+        # else:
+        #     query_data = requests.get(base_url + DOI).json()
+        #     # look_for_new_db = False if  else True        
+        query_data = requests.get(base_url + DOI).json()
+        URL = query_data['data'][0]['attributes']['media'][0]['url']
+        URLs.add(URL)
+    return(URLs)
+
+#                          vvv Newest version       vvv older version
+_assemble_unite_data_urls(['10.15156/BIO/1264708', '10.15156/BIO/786385']) # list
+_assemble_unite_data_urls(('10.15156/BIO/1264708', '10.15156/BIO/786385')) # tuple
+_assemble_unite_data_urls({'10.15156/BIO/1264708', '10.15156/BIO/786385'}) # dictionary
+_assemble_unite_data_urls('10.15156/BIO/1264708') # newest version only
+_assemble_unite_data_urls('10.15156/BIO/786387')  # oldest version only
 
 def get_silva_data(ctx,
                    version='138.1',
