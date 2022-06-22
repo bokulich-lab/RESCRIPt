@@ -76,7 +76,6 @@ def _vsearch_derep(sequences_fp, out_fasta_fp, out_uc_fp, threads,
            '--derep_fulllength', sequences_fp,
            '--output', out_fasta_fp,
            '--uc', out_uc_fp,
-           '--qmask', 'none',
            '--xsize',
            '--threads', threads]
     if derep_prefix:
