@@ -14,7 +14,7 @@ import shutil
 from q2_types.feature_data import DNAFASTAFormat
 
 from ._utilities import (run_command, _find_lca, _majority,
-                         _find_super_lca)
+                         _find_super_lca, _sort_rank_handles)
 
 from .ncbi import _allowed_ranks
 
@@ -58,11 +58,8 @@ def dereplicate(sequences: DNAFASTAFormat,
                 taxa, sequences, clustered_seqs, uc, mode=mode)
 
             if backfill:
-                # Sort user ranks relative to allowed_ranks, this ensures
-                # that the taxonomic ranks supplied by the user are in order
-                sorted_rank_handles = [p for r, p in
-                                       _allowed_ranks.items()
-                                       if r in rank_handles]
+                sorted_rank_handles = _sort_rank_handles(rank_handles,
+                                                         _allowed_ranks)
                 derep_taxa.loc[:, 'Taxon'] = derep_taxa['Taxon'].apply(
                     _backfill_taxonomy, args=([sorted_rank_handles]))
 

@@ -9,7 +9,8 @@
 
 import pandas as pd
 from ._utilities import (_rank_length, _taxon_to_list, _find_top_score,
-                         _find_lca, _find_super_lca, _find_lca_majority)
+                         _find_lca, _find_super_lca, _find_lca_majority,
+                         _sort_rank_handles)
 from .ncbi import _allowed_ranks
 
 MODE_ERROR_SCORE = (
@@ -74,10 +75,8 @@ def merge_taxa(data: pd.DataFrame,
 
     # Insert new rank handles if selected
     if apply_new_rank_handles:
-        # Sort user ranks relative to allowed_ranks, this ensures
-        # that the taxonomic ranks supplied by the user are in order
-        sorted_rank_handles = [p for r, p in _allowed_ranks.items()
-                               if r in new_rank_handles]
+        sorted_rank_handles = _sort_rank_handles(new_rank_handles,
+                                                 _allowed_ranks)
         result['Taxon'] = result['Taxon'].apply(
             lambda x: ';'.join([''.join(t) for t in
                                zip(sorted_rank_handles, x)]))

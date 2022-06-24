@@ -14,11 +14,6 @@ from collections import Counter
 from q2_types.feature_data import DNAFASTAFormat, AlignedDNAFASTAFormat
 
 
-_allowed_rank_handles = ['d__', 'sk__', 'k__', 'ks__', 'sp__', 'p__', 'ps__',
-                         'pi__', 'sc__', 'c__', 'cs__', 'ci__', 'so__', 'o__',
-                         'os__', 'sf__', 'f__', 'fs__', 'g__', 's__']
-
-
 # modified version of _find_lca that prioritizes majority and supersets
 def _find_super_lca(taxa, collapse_substrings=True):
     # collapse and count unique labels at each rank
@@ -120,3 +115,11 @@ def _dna_iterator_to_aligned_fasta(iterator):
     ff = AlignedDNAFASTAFormat()
     skbio.io.write(iter(iterator), format='fasta', into=str(ff))
     return ff
+
+
+def _sort_rank_handles(rank_handles, allowed_ranks):
+    # Sort user ranks relative to allowed_ranks, this ensures
+    # that the taxonomic ranks supplied by the user are in order
+    sorted_rank_handles = [p for r, p in allowed_ranks.items()
+                           if r in rank_handles]
+    return sorted_rank_handles
