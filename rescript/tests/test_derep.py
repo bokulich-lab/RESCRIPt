@@ -286,16 +286,23 @@ class TestDerep(TestPluginBase):
     # Now test with backfilling. These parameters were chosen to set up a
     # variety of backfill levels.
     def test_dereplicate_lca_99_perc_backfill(self):
-        # note backfills SILVA-style rank handles by default, so we use default
+        # note backfills SILVA-style rank handles by default, so,
+        # we use default. However, this will result in inconsistant spacing
+        # for for the taxonomy string for "C1". For example,
+        # we'll end up with "Lactobacillaceae;g__;s__" instead of
+        # "Lactobacillaceae; g__; s__". This issue, was the the original
+        # _rank_handles had hard-coded spaces before each SILVA rank prefix.
+        # The updated code uses prefixes w/o leadingspaces. Should we set a
+        # user defined backfill delimiter to resolve this?
         seqs, taxa, = self.dereplicate(self.seqs, self.taxa, mode='lca',
                                        perc_identity=0.99)
         exp_taxa = pd.DataFrame({'Taxon': {
             'A1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; '
-                  'f__Paenibacillaceae; g__Paenibacillus; s__',
+                  'f__Paenibacillaceae; g__Paenibacillus;s__',
             'B1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales;'
-                  ' f__Lactobacillaceae; g__Lactobacillus; s__',
+                  ' f__Lactobacillaceae; g__Lactobacillus;s__',
             'C1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales;'
-                  ' f__Lactobacillaceae; g__; s__',
+                  ' f__Lactobacillaceae;g__;s__',
             'B1b': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
                    '; f__Lactobacillaceae; g__Lactobacillus; s__pseudocasei'}})
         pdt.assert_frame_equal(taxa.view(pd.DataFrame).sort_index(),
@@ -308,7 +315,7 @@ class TestDerep(TestPluginBase):
         default_rank_handle = "d__; p__; c__; o__; f__; g__; s__"
 
         def _backfill_series(series, rank_handles=default_rank_handle):
-            rank_handles = [r.strip() for r in rank_handles.split(';')]
+            rank_handles = rank_handles.split(';')
             return series.apply(_backfill_taxonomy, args=([rank_handles]))
 
         taxa = self.taxa.view(pd.Series).sort_index()
@@ -336,6 +343,6 @@ class TestDerep(TestPluginBase):
         pdt.assert_series_equal(backfilled_taxa, exp_taxa, check_names=False)
         # backfill custom labels
         custom_rank_handles = "p;e;a;n;u;t;s"
-        exp_taxa = trimmed_taxa.apply(lambda x: x + '; n; u; t; s')
+        exp_taxa = trimmed_taxa.apply(lambda x: x + ';n;u;t;s')
         backfilled_taxa = _backfill_series(trimmed_taxa, custom_rank_handles)
         pdt.assert_series_equal(backfilled_taxa, exp_taxa, check_names=False)

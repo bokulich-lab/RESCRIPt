@@ -67,12 +67,12 @@ def dereplicate(sequences: DNAFASTAFormat,
 
 
 def _backfill_taxonomy(taxon, rank_handles):
-    formatted_taxon = [t.strip() for t in taxon.split(';')]
+    formatted_taxon = taxon.split(';')
     tax_len = len(formatted_taxon)
     if tax_len >= len(rank_handles):
         return taxon
     else:
-        return '; '.join(formatted_taxon + rank_handles[tax_len:])
+        return ';'.join(formatted_taxon + rank_handles[tax_len:])
 
 
 def _vsearch_derep(sequences_fp, out_fasta_fp, out_uc_fp, threads,
