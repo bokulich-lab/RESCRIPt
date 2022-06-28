@@ -26,7 +26,6 @@ def dereplicate(sequences: DNAFASTAFormat,
                 threads: int = 1,
                 rank_handles: list = ['domain', 'phylum', 'class', 'order',
                                       'family', 'genus', 'species'],
-                backfill: bool = True,
                 derep_prefix: bool = False) -> (DNAFASTAFormat, pd.DataFrame):
     with tempfile.NamedTemporaryFile() as out_fasta:
         with tempfile.NamedTemporaryFile() as out_uc:
@@ -57,7 +56,7 @@ def dereplicate(sequences: DNAFASTAFormat,
             derep_taxa, seqs_out = _dereplicate_taxa(
                 taxa, sequences, clustered_seqs, uc, mode=mode)
 
-            if backfill:
+            if 'disable' not in rank_handles:
                 sorted_rank_handles = _sort_rank_handles(rank_handles,
                                                          _allowed_ranks)
                 derep_taxa.loc[:, 'Taxon'] = derep_taxa['Taxon'].apply(

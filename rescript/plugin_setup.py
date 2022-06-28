@@ -295,8 +295,8 @@ plugin.methods.register_function(
         'threads': VSEARCH_PARAMS['threads'],
         'perc_identity': VSEARCH_PARAMS['perc_identity'],
         'derep_prefix': Bool,
-        'rank_handles': List[Str % Choices(_allowed_ranks)],
-        'backfill': Bool},
+        'rank_handles': List[Str % Choices(['disable'])] | List[Str % Choices(
+                                                        _allowed_ranks)]},
     outputs=[('dereplicated_sequences', FeatureData[Sequence]),
              ('dereplicated_taxa', FeatureData[Taxonomy])],
     input_descriptions={
@@ -319,9 +319,7 @@ plugin.methods.register_function(
                         'with the most abundant.',
         'rank_handles': 'Specifies the set of rank handles used to backfill '
                         'missing ranks in the resulting dereplicated '
-                        'taxonomy. The \'backfill\' option must be enabled.',
-        'backfill': 'Backfill missing ranks. By default taxonomy ranks '
-                    'will be backfilled.'
+                        'taxonomy. The \'backfill\' option must be enabled.'
     },
     name='Dereplicate features with matching sequences and taxonomies.',
     description=(
