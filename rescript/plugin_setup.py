@@ -222,8 +222,8 @@ plugin.methods.register_function(
     parameters={
         'mode': Str % Choices(['len', 'lca', 'score', 'super', 'majority']),
         'rank_handle_regex': Str,
-        'new_rank_handles': List[Str % Choices(_allowed_ranks)],
-        'apply_new_rank_handles': Bool,
+        'new_rank_handles': List[Str % Choices(['disable'])] | List[
+                                 Str % Choices(_allowed_ranks)],
         'unclassified_label': Str
     },
     outputs=[('merged_data', FeatureData[Taxonomy])],
@@ -249,9 +249,8 @@ plugin.methods.register_function(
             'parameter will prepend rank handles whether or not they already '
             'exist in the taxonomy, so should ALWAYS be used in conjunction '
             'with `rank_handle_regex` if rank handles exist in any of the '
-            'inputs.'),
-        'apply_new_rank_handles': 'Apply \'new-rank-handles\' to taxonomy '
-                                  'output.',
+            'inputs. Use \'disable\' to prevent applying \'new_rank_handles\''
+            ),
         'unclassified_label': 'Specifies what label should be used for '
                               'taxonomies that could not be resolved (when '
                               'LCA modes are used).'
@@ -319,7 +318,8 @@ plugin.methods.register_function(
                         'with the most abundant.',
         'rank_handles': 'Specifies the set of rank handles used to backfill '
                         'missing ranks in the resulting dereplicated '
-                        'taxonomy. The \'backfill\' option must be enabled.'
+                        'taxonomy. Use \'disable\' to prevent applying '
+                        '\'rank_handles\'. '
     },
     name='Dereplicate features with matching sequences and taxonomies.',
     description=(

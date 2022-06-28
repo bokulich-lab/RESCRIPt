@@ -124,7 +124,8 @@ class TestMergeTaxa(TestPluginBase):
         self.s4 = import_data('FeatureData[Taxonomy]', m4['Taxon'])
 
     def test_merge_taxa_lca(self):
-        one_col, = self.merge_taxa([self.s1, self.s2, self.s3], 'lca', '')
+        one_col, = self.merge_taxa([self.s1, self.s2, self.s3], 'lca', '',
+                                   ['disable'])
         exp = pd.DataFrame({'Taxon': {
             '2562091': 'k__Bacteria;p__Actinobacteria;c__Acidimicrobiia;'
                        'o__Acidimicrobiales',
@@ -140,13 +141,14 @@ class TestMergeTaxa(TestPluginBase):
             'unique2': 'k__Bacteria;p__;c__;o__;f__;g__;s__blah'}})
         pdt.assert_frame_equal(
             one_col.view(pd.DataFrame), exp, check_names=False)
-        multi_col, = self.merge_taxa([self.m1, self.m2, self.m3], 'lca', '')
+        multi_col, = self.merge_taxa([self.m1, self.m2, self.m3], 'lca',
+                                     '', ['disable'])
         pdt.assert_frame_equal(
             multi_col.view(pd.DataFrame), exp, check_names=False)
 
     def test_merge_taxa_lca_rank_handle(self):
         result, = self.merge_taxa(
-            [self.s1, self.s2, self.s3], 'lca')
+            [self.s1, self.s2, self.s3], 'lca', '^[dkpcofgs]__', ['disable'])
         exp = pd.DataFrame({'Taxon': {
             '2562091': 'Bacteria;Actinobacteria;Acidimicrobiia;'
                        'Acidimicrobiales',
@@ -166,8 +168,7 @@ class TestMergeTaxa(TestPluginBase):
         result, = self.merge_taxa(
             [self.s1, self.s2, self.s3], 'lca',
             new_rank_handles=['kingdom', 'phylum', 'class', 'order', 'family',
-                              'genus', 'species'],
-            apply_new_rank_handles=True)
+                              'genus', 'species'])
         exp = pd.DataFrame({'Taxon': {
             '2562091': 'k__Bacteria;p__Actinobacteria;c__Acidimicrobiia;'
                        'o__Acidimicrobiales',
@@ -185,7 +186,8 @@ class TestMergeTaxa(TestPluginBase):
             result.view(pd.DataFrame), exp, check_names=False)
 
     def test_merge_taxa_len(self):
-        one_col, = self.merge_taxa([self.s1, self.s2, self.s3], 'len', '')
+        one_col, = self.merge_taxa([self.s1, self.s2, self.s3], 'len', '',
+                                   ['disable'])
         exp = pd.DataFrame({'Taxon': {
             '2562091': 'k__Bacteria;p__Actinobacteria;c__Acidimicrobiia;'
                        'o__Acidimicrobiales;f__Microthrixaceae;g__;s__',
@@ -213,14 +215,15 @@ class TestMergeTaxa(TestPluginBase):
                 '4361279': np.nan, '4369464': 0.99, 'unique': np.nan,
                 'unique1': 0.75, 'unique2': np.nan}
         })], axis=1)
-        multi_col, = self.merge_taxa([self.m1, self.m2, self.m3], 'len', '')
+        multi_col, = self.merge_taxa([self.m1, self.m2, self.m3], 'len', '',
+                                     ['disable'])
         multi_col = multi_col.view(pd.DataFrame).apply(
             lambda x: pd.to_numeric(x, errors='ignore'))
         pdt.assert_frame_equal(multi_col, exp, check_names=False)
 
     def test_merge_taxa_len_rank_handle(self):
         result, = self.merge_taxa(
-            [self.m1, self.m2, self.m3], 'len')
+            [self.m1, self.m2, self.m3], 'len', '^[dkpcofgs]__', ['disable'])
         exp = pd.DataFrame({
             'Taxon': {
                 '2562091': 'Bacteria;Actinobacteria;Acidimicrobiia;'
@@ -253,8 +256,7 @@ class TestMergeTaxa(TestPluginBase):
         result, = self.merge_taxa(
             [self.m1, self.m2, self.m3], 'len',
             new_rank_handles=['kingdom', 'phylum', 'class', 'order', 'family',
-                              'genus', 'species'],
-            apply_new_rank_handles=True)
+                              'genus', 'species'])
         exp = pd.DataFrame({
             'Taxon': {
                 '2562091': 'k__Bacteria;p__Actinobacteria;c__Acidimicrobiia;'
@@ -292,7 +294,8 @@ class TestMergeTaxa(TestPluginBase):
             self.merge_taxa([self.m1, self.s2], 'score', '')
 
     def test_merge_taxa_score_multi_column(self):
-        new, = self.merge_taxa([self.m1, self.m2, self.m3], 'score', '')
+        new, = self.merge_taxa([self.m1, self.m2, self.m3], 'score', '',
+                               ['disable'])
         exp = pd.DataFrame({
             'Taxon': {
                 '2562091': 'k__Bacteria;p__Actinobacteria;c__Acidimicrobiia;'
@@ -328,7 +331,8 @@ class TestMergeTaxa(TestPluginBase):
     # compare vs. LCA tests above to see super(set) mode function; the longer
     # taxonomy is selected if it is a superset of the other, otherwise LCA
     def test_merge_taxa_super_lca(self):
-        one_col, = self.merge_taxa([self.s1, self.s2, self.s3], 'super', '')
+        one_col, = self.merge_taxa([self.s1, self.s2, self.s3], 'super', '',
+                                   ['disable'])
         exp = pd.DataFrame({'Taxon': {
             '2562091': 'k__Bacteria;p__Actinobacteria;c__Acidimicrobiia;'
                        'o__Acidimicrobiales;f__Microthrixaceae;g__;s__',
@@ -348,7 +352,8 @@ class TestMergeTaxa(TestPluginBase):
             'unique2': 'k__Bacteria;p__;c__;o__;f__;g__;s__blah'}})
         pdt.assert_frame_equal(
             one_col.view(pd.DataFrame), exp, check_names=False)
-        multi_col, = self.merge_taxa([self.m1, self.m2, self.m3], 'super', '')
+        multi_col, = self.merge_taxa([self.m1, self.m2, self.m3], 'super', '',
+                                     ['disable'])
         pdt.assert_frame_equal(
             multi_col.view(pd.DataFrame), exp, check_names=False)
 
@@ -356,7 +361,7 @@ class TestMergeTaxa(TestPluginBase):
     # taxonomy is selected if it is a superset of the other, otherwise LCA
     def test_merge_taxa_super_lca_rank_handle(self):
         result, = self.merge_taxa(
-            [self.s1, self.s2, self.s3], 'super')
+            [self.s1, self.s2, self.s3], 'super', '^[dkpcofgs]__', ['disable'])
         exp = pd.DataFrame({'Taxon': {
             '2562091': 'Bacteria;Actinobacteria;Acidimicrobiia;'
                        'Acidimicrobiales;Microthrixaceae;;',
@@ -373,12 +378,14 @@ class TestMergeTaxa(TestPluginBase):
             'unique2': 'Bacteria;;;;;;blah'}})
         pdt.assert_frame_equal(
             result.view(pd.DataFrame), exp, check_names=False)
-        multi_col, = self.merge_taxa([self.m1, self.m2, self.m3], 'super')
+        multi_col, = self.merge_taxa([self.m1, self.m2, self.m3], 'super',
+                                     '^[dkpcofgs]__', ['disable'])
         pdt.assert_frame_equal(
             multi_col.view(pd.DataFrame), exp, check_names=False)
 
     def test_merge_taxa_super_lca_with_unassigned(self):
-        result, = self.merge_taxa([self.s1, self.s4], 'super')
+        result, = self.merge_taxa([self.s1, self.s4], 'super',
+                                  '^[dkpcofgs]__', ['disable'])
         exp = pd.DataFrame({
             'Taxon': {
                 '2562091': 'Bacteria;Actinobacteria;Acidimicrobiia;'
@@ -400,7 +407,8 @@ class TestMergeTaxa(TestPluginBase):
 
     # majority is super without superstring collapsing
     def test_merge_taxa_super_lca_majority(self):
-        one_col, = self.merge_taxa([self.s1, self.s2, self.s3], 'majority', '')
+        one_col, = self.merge_taxa([self.s1, self.s2, self.s3], 'majority', '',
+                                   ['disable'])
         exp = pd.DataFrame({'Taxon': {
             '2562091': 'k__Bacteria;p__Actinobacteria;c__Acidimicrobiia;'
                        'o__Acidimicrobiales',
@@ -418,7 +426,7 @@ class TestMergeTaxa(TestPluginBase):
         pdt.assert_frame_equal(
             one_col.view(pd.DataFrame), exp, check_names=False)
         multi_col, = self.merge_taxa(
-            [self.m1, self.m2, self.m3], 'majority', '')
+            [self.m1, self.m2, self.m3], 'majority', '', ['disable'])
         pdt.assert_frame_equal(
             multi_col.view(pd.DataFrame), exp, check_names=False)
 
@@ -427,7 +435,8 @@ class TestMergeTaxa(TestPluginBase):
     # consist of empty ranks vs. rank handles.
     def test_merge_taxa_majority_rank_handle(self):
         result, = self.merge_taxa(
-            [self.s1, self.s2, self.s3], 'majority')
+            [self.s1, self.s2, self.s3], 'majority', '^[dkpcofgs]__',
+            ['disable'])
         exp = pd.DataFrame({'Taxon': {
             '2562091': 'Bacteria;Actinobacteria;Acidimicrobiia;'
                        'Acidimicrobiales;Microthrixaceae;;',
@@ -444,7 +453,8 @@ class TestMergeTaxa(TestPluginBase):
             'unique2': 'Bacteria;;;;;;blah'}})
         pdt.assert_frame_equal(
             result.view(pd.DataFrame), exp, check_names=False)
-        multi_col, = self.merge_taxa([self.m1, self.m2, self.m3], 'majority')
+        multi_col, = self.merge_taxa([self.m1, self.m2, self.m3], 'majority',
+                                     '^[dkpcofgs]__', ['disable'])
         pdt.assert_frame_equal(
             multi_col.view(pd.DataFrame), exp, check_names=False)
 
@@ -468,7 +478,7 @@ class TestMergeTaxa(TestPluginBase):
         s4.index.name = 'Feature ID'
         s4 = import_data('FeatureData[Taxonomy]', pd.DataFrame(s4))
         result, = self.merge_taxa(
-            [self.s1, self.s2, self.s3, s4], 'majority', '')
+            [self.s1, self.s2, self.s3, s4], 'majority', '', ['disable'])
         exp = pd.DataFrame({'Taxon': {
             '2562091': 'k__Bacteria;p__Actinobacteria;c__Acidimicrobiia;'
                        'o__Acidimicrobiales;f__Microthrixaceae;g__;s__',

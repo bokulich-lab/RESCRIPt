@@ -24,7 +24,6 @@ def merge_taxa(data: pd.DataFrame,
                rank_handle_regex: str = '^[dkpcofgs]__',
                new_rank_handles: list = ['domain', 'phylum', 'class', 'order',
                                          'family', 'genus', 'species'],
-               apply_new_rank_handles: bool = False,
                unclassified_label: str = 'Unassigned') -> pd.DataFrame:
     # Convert taxonomies to list; optionally remove rank handle
     for d in data:
@@ -74,7 +73,7 @@ def merge_taxa(data: pd.DataFrame,
             result = result[reordered_cols]
 
     # Insert new rank handles if selected
-    if apply_new_rank_handles:
+    if 'disable' not in new_rank_handles:
         sorted_rank_handles = _sort_rank_handles(new_rank_handles,
                                                  _allowed_ranks)
         result['Taxon'] = result['Taxon'].apply(
