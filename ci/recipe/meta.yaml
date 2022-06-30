@@ -21,7 +21,7 @@ requirements:
     - requests
     - xmltodict
     - pandas {{ pandas }}
-    - vsearch 2.21.1
+    - vsearch >= 2.21.1
     - scikit-learn {{ scikit_learn }}
     - scikit-bio {{ scikit_bio }}
     - q2-types {{ qiime2_epoch }}.*
