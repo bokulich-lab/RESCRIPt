@@ -2,7 +2,7 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3891931.svg)](https://doi.org/10.5281/zenodo.3891931)
  ![lint-build-test](https://github.com/bokulich-lab/RESCRIPt/workflows/lint-build-test/badge.svg)
-
+ [![DOI](https://img.shields.io/badge/DOI-10.1371/journal.pcbi.1009581-B31B1B)](http://dx.doi.org/10.1371/journal.pcbi.1009581)
  <p align="left"><img src="logo.png" height="150" /></p>
 
 REference Sequence annotation and CuRatIon Pipeline
@@ -30,10 +30,10 @@ pip install git+https://github.com/bokulich-lab/RESCRIPt.git
 ```
 
 ### Option 2: Install within QIIME 2 environment
-First activate your QIIME 2 environment (ver 2021.4 or later) and install relevant dependencies:
+First activate your QIIME 2 environment (ver 2022.2 or later) and install relevant dependencies:
 
 ```
-conda activate qiime2-2021.4
+conda activate qiime2-2022.2
 conda install -c conda-forge -c bioconda -c qiime2 -c defaults xmltodict
 ```
 Install source:
