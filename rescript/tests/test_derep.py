@@ -284,14 +284,9 @@ class TestDerep(TestPluginBase):
     # Now test with backfilling. These parameters were chosen to set up a
     # variety of backfill levels.
     def test_dereplicate_lca_99_perc_backfill(self):
-        # note backfills SILVA-style rank handles by default, so,
-        # we use default. However, this will result in inconsistant spacing
-        # for for the taxonomy string for "C1". For example,
-        # we'll end up with "Lactobacillaceae;g__;s__" instead of
-        # "Lactobacillaceae; g__; s__". This issue, was the the original
-        # _rank_handles had hard-coded spaces before each SILVA rank prefix.
-        # The updated code uses prefixes w/o leadingspaces. Should we set a
-        # user defined backfill delimiter to resolve this?
+        # Note it is okay for inconsistent spacing around the ';' for
+        # delimiting ranks. See `C1` for example. All that matters
+        # is that `;` is delimiting the ranks.
         seqs, taxa, = self.dereplicate(self.seqs, self.taxa, mode='lca',
                                        perc_identity=0.99,
                                        rank_handles=['kingdom', 'phylum',
