@@ -30,6 +30,7 @@ from .cross_validate import (evaluate_cross_validate,
 from .filter_length import (filter_seqs_length_by_taxon, filter_seqs_length,
                             filter_taxa)
 from .orient import orient_seqs
+from .extract_seq_segments import extract_seq_segments
 from q2_types.feature_data import (FeatureData, Taxonomy, Sequence,
                                    AlignedSequence, RNASequence,
                                    AlignedRNASequence, ProteinSequence)
@@ -975,6 +976,60 @@ plugin.methods.register_function(
         "Subsample a set of sequences (either plain or aligned DNA)"
         "based on a fraction of original sequences."),
 )
+
+
+plugin.methods.register_function(
+    function=extract_seq_segments,
+    inputs={'input_sequences': FeatureData[Sequence],
+            'reference_segment_sequences': FeatureData[Sequence]},
+    parameters={'threads': VSEARCH_PARAMS['threads'],
+                'perc_identity': VSEARCH_PARAMS['perc_identity'],
+                'min_seq_len': Int % Range(1, None)
+                },
+    outputs=[('extracted_sequence_segments', FeatureData[Sequence]),
+             ('unmatched_sequences', FeatureData[Sequence])],
+    input_descriptions={
+        'input_sequences': 'Sequences from which matching shorter sequence '
+                           'segments (regions) can be extracted from. '
+                           'Sequences containing segments that match those '
+                           'from \'reference-segment-sequences\' will have '
+                           'those segments extracted and written to file.',
+        'reference_segment_sequences': 'Reference sequence segments that '
+                                       'will be used to search for and '
+                                       'extract matching segments from '
+                                       '\'sequences\'.',
+                        },
+    parameter_descriptions={
+                'threads': VSEARCH_PARAM_DESCRIPTIONS['threads'],
+                'perc_identity': VSEARCH_PARAM_DESCRIPTIONS['perc_identity'],
+                'min_seq_len': 'Minimum length of sequence allowed '
+                               'for searching. Any sequence less than '
+                               'this will be discarded. If not set, default '
+                               'program settings will be used.'},
+    output_descriptions={
+        'extracted_sequence_segments': 'Extracted sequence segments '
+                                       'from \'input-sequences\' '
+                                       'that succesfully aligned to '
+                                       '\'reference-segment-sequences\'.',
+        'unmatched_sequences': 'Sequences in \'input-sequences\' that did not '
+                               'have matching sequence segments within '
+                               '\'reference-segment-sequences\'.'
+                        },
+    name='Use reference sequences to extract shorter matching sequence '
+         'segments from longer sequences based on a user-defined '
+         '\'perc-identity\' value.',
+    description=(
+        'This action provides the ability to extract a region, or segment, '
+        'of sequence without the need to specify primer pairs. This is very '
+        'useful in cases when one or more of the primer sequences are not '
+        'present within the target sequences, which prevents extraction of '
+        'the (amplicon) region through primer-pair searching. Here, VSEARCH '
+        'is used to extract these segments based on a reference pool of '
+        'sequences that only span the region of interest.'
+        ),
+    citations=[citations['rognes2016vsearch']]
+)
+
 
 # Registrations
 plugin.register_semantic_types(SILVATaxonomy, SILVATaxidMap)
