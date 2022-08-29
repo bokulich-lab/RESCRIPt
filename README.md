@@ -58,7 +58,7 @@ These tutorials demonstrate some of the basic functionality of RESCRIPt, via the
 - [Building a COI database with NCBI sequences](https://forum.qiime2.org/t/building-a-coi-database-from-ncbi-references/16500)
 - [Using RESCRIPt's 'extract-seq-segments' to expand a reference sequence set.](https://forum.qiime2.org/t/using-rescripts-extract-seq-segments-to-expand-a-reference-sequence-set/23618)
 
-Examples of visualizations produced by RESCRIPt actions can be found in this [Visualization Gallery](https://forum.qiime2.org/t/processing-filtering-and-evaluating-the-silva-database-and-other-reference-sequence-data-with-rescript/15494#heading--seventeenth-header).
+Examples of visualizations produced by RESCRIPt actions can be found in this [Visualization Gallery](https://forum.qiime2.org/t/processing-filtering-and-evaluating-the-silva-database-and-other-reference-sequence-data-with-rescript/15494#heading--seventeenth-header). Other code examples can be found [here](https://github.com/bokulich-lab/db-benchmarks-2020).
 
 ## Getting Help
 Problem? Suggestion? Technical errors and user support requests can be filed on the [QIIME 2 Forum](https://forum.qiime2.org/).
