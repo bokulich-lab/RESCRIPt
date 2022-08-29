@@ -30,10 +30,10 @@ pip install git+https://github.com/bokulich-lab/RESCRIPt.git
 ```
 
 ### Option 2: Install within QIIME 2 environment
-First activate your QIIME 2 environment (ver 2022.2 or later) and install relevant dependencies:
+First activate your QIIME 2 environment (ver 2022.8 or later) and install relevant dependencies:
 
 ```
-conda activate qiime2-2022.2
+conda activate qiime2-2022.8
 conda install -c conda-forge -c bioconda -c qiime2 -c defaults xmltodict
 ```
 Install source:
@@ -56,6 +56,7 @@ These tutorials demonstrate some of the basic functionality of RESCRIPt, via the
 - [Getting sequences and taxonomy with get-ncbi-data](https://forum.qiime2.org/t/using-rescript-to-compile-an-sequence-databases-and-taxonomy-classifiers-from-ncbi-genbank/15947)
 - [Building a COI database with BOLD sequences](https://forum.qiime2.org/t/building-a-coi-database-from-bold-references/16129)
 - [Building a COI database with NCBI sequences](https://forum.qiime2.org/t/building-a-coi-database-from-ncbi-references/16500)
+- [Using RESCRIPt's 'extract-seq-segments' to expand a reference sequence set.](https://forum.qiime2.org/t/using-rescripts-extract-seq-segments-to-expand-a-reference-sequence-set/23618)
 
 Examples of visualizations produced by RESCRIPt actions can be found in this [Visualization Gallery](https://forum.qiime2.org/t/processing-filtering-and-evaluating-the-silva-database-and-other-reference-sequence-data-with-rescript/15494#heading--seventeenth-header).
 
