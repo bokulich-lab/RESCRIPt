@@ -18,7 +18,6 @@ requirements:
 
   run:
     - python {{ python }}
-    - joblib 1.1
     - requests
     - xmltodict
     - pandas {{ pandas }}
