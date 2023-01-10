@@ -21,8 +21,7 @@ def orient_seqs(sequences: DNAFASTAFormat,
                 ) -> (DNAFASTAFormat, DNAFASTAFormat):
     matched, notmatched = DNAFASTAFormat(), DNAFASTAFormat()
     if reference_sequences is not None:
-        # use vsearch to search query seqs against reference database
-        # report orientation of query seqs relative to reference seqs.
+        # use vsearch to orient seqs against reference database
         with tempfile.NamedTemporaryFile() as out:
             # note: qmask is disabled as DNAFASTAFormat requires all output
             # seqs to be uppercase. Could loop through output seqs to convert
