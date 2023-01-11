@@ -313,8 +313,6 @@ class TestDerep(TestPluginBase):
         default_rank_handle = "d__; p__; c__; o__; f__; g__; s__"
 
         def _backfill_series(series, rank_handles=default_rank_handle):
-            # rank_handles = [t.strip() for t in rank_handles.split(';')]
-            # rank_handles = rank_handles.split(';')
             rank_handles = _return_stripped_taxon_rank_list(rank_handles)
             return series.apply(_backfill_taxonomy,
                                 args=([rank_handles, '; ']))
@@ -326,7 +324,6 @@ class TestDerep(TestPluginBase):
         pdt.assert_series_equal(backfilled_taxa, exp_taxa, check_names=False)
         # manually backfill to match expected
         exp_taxa.loc['C1b'] += '; g__; s__'
-        # exp_taxa.loc['C1b'] += ';g__;s__'
         # backfill with defaults
         backfilled_taxa = _backfill_series(taxa)
         pdt.assert_series_equal(backfilled_taxa, exp_taxa, check_names=False)

@@ -79,7 +79,6 @@ def dereplicate(sequences: DNAFASTAFormat,
 
 
 def _backfill_taxonomy(taxon, rank_handles, coerce_sc_delim):
-    # formatted_taxon = taxon.split(';')
     formatted_taxon = _return_stripped_taxon_rank_list(taxon)
     tax_len = len(formatted_taxon)
     if tax_len >= len(rank_handles):
