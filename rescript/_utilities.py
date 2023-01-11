@@ -123,3 +123,8 @@ def _sort_rank_handles(rank_handles, allowed_ranks):
     sorted_rank_handles = [p for r, p in allowed_ranks.items()
                            if r in rank_handles]
     return sorted_rank_handles
+
+
+def _return_stripped_taxon_rank_list(taxonomy_str):
+    # strips whitespace for each taxon rank returns as list
+    return [t.strip() for t in taxonomy_str.split(';')]

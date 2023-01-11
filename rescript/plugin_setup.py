@@ -250,7 +250,8 @@ plugin.methods.register_function(
             'parameter will prepend rank handles whether or not they already '
             'exist in the taxonomy, so should ALWAYS be used in conjunction '
             'with `rank_handle_regex` if rank handles exist in any of the '
-            'inputs. Use \'disable\' to prevent applying \'new_rank_handles\''
+            'inputs. Use \'disable\' to prevent prepending '
+            '\'new_rank_handles\''
             ),
         'unclassified_label': 'Specifies what label should be used for '
                               'taxonomies that could not be resolved (when '
@@ -296,7 +297,8 @@ plugin.methods.register_function(
         'perc_identity': VSEARCH_PARAMS['perc_identity'],
         'derep_prefix': Bool,
         'rank_handles': List[Str % Choices(['disable'])] | List[Str % Choices(
-                                                        _allowed_ranks)]},
+                                                        _allowed_ranks)],
+        'coerce_sc_delim': Str % Choices([';', '; ', ' ; '])},
     outputs=[('dereplicated_sequences', FeatureData[Sequence]),
              ('dereplicated_taxa', FeatureData[Taxonomy])],
     input_descriptions={
@@ -320,7 +322,10 @@ plugin.methods.register_function(
         'rank_handles': 'Specifies the set of rank handles used to backfill '
                         'missing ranks in the resulting dereplicated '
                         'taxonomy. Use \'disable\' to prevent applying '
-                        '\'rank_handles\'. '
+                        '\'rank_handles\'. ',
+        'coerce_sc_delim': 'Coerces all semicolon delimiters to have '
+                           'identical spacing before and after the '
+                           'semicolon.'
     },
     name='Dereplicate features with matching sequences and taxonomies.',
     description=(
