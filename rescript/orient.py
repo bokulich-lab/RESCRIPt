@@ -33,13 +33,9 @@ def orient_seqs(sequences: DNAFASTAFormat,
                    '--notmatched', str(notmatched),
                    '--db', str(reference_sequences),
                    # '--id', str(perc_identity),
-                   # '--maxaccepts', '1',
-                   # '--strand', 'both',
                    '--qmask', 'none',
                    # '--query_cov', str(query_cov),
-                   '--threads', str(threads),
-                   # '--userfields', 'qstrand',
-                   '--fastaout', out.name]
+                   '--threads', str(threads)]
             # if left_justify:
             #     cmd.append('--leftjust')
             run_command(cmd)
