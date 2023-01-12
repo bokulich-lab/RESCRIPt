@@ -55,7 +55,6 @@ def dereplicate(sequences: DNAFASTAFormat,
                 shutil.copyfile(out_fasta.name, str(clustered_seqs))
 
             # Remove any potential spacing around semicolon delimiters
-            # eventually join on user defind semicolon delimiter, i.e.
             # This will help maintain consitency as we won't know
             # what a user might have done previous to using this code.
             # Best to "normalize" to a consitent semicolon delimiter.
