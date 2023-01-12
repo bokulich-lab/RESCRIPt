@@ -25,6 +25,8 @@ def orient_seqs(sequences: DNAFASTAFormat,
         # seqs to be uppercase. Could loop through output seqs to convert
         # to upper but which is faster: disabling masking or looping
         # through with skbio?
+        # NOTE: --id, --query_cov and --leftjust are disabled since
+        # they are not available with orient
         cmd = [
             'vsearch',
             '--orient', str(sequences),
