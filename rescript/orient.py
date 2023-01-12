@@ -7,8 +7,17 @@
 # ----------------------------------------------------------------------------
 
 from q2_types.feature_data import DNAFASTAFormat, DNAIterator
+from warnings import warn
 
 from ._utilities import run_command
+
+
+def _warn_deprecated(value, default, name):
+    if value != default:
+        warn(
+            f"{name} is not available in this current version.",
+            DeprecationWarning,
+        )
 
 
 def orient_seqs(sequences: DNAFASTAFormat,
@@ -41,6 +50,11 @@ def orient_seqs(sequences: DNAFASTAFormat,
         # if left_justify:
         #     cmd.append('--leftjust')
         run_command(cmd)
+
+        # Warn about parameters were deprecated
+        _warn_deprecated(perc_identity, 0.9, 'perc_identity')
+        _warn_deprecated(query_cov, 0.9, 'query_cov')
+        _warn_deprecated(left_justify, False, 'left_justify')
 
     else:
         oriented = DNAFASTAFormat()
