@@ -270,8 +270,6 @@ VSEARCH_PARAMS = {
     'threads': Int % Range(1, 256),
     'perc_identity': Float % Range(0, 1, inclusive_start=False,
                                    inclusive_end=True),
-    'left_justify': Bool,
-    'query_cov': Float % Range(0.0, 1.0, inclusive_end=True),
 }
 
 VSEARCH_PARAM_DESCRIPTIONS = {
@@ -281,9 +279,6 @@ VSEARCH_PARAM_DESCRIPTIONS = {
     'perc_identity': 'The percent identity at which clustering should be '
                      'performed. This parameter maps to vsearch\'s --id '
                      'parameter.',
-    'left_justify': 'Reject match if the pairwise alignment begins with gaps',
-    'query_cov': 'Reject match if query alignment coverage per high-scoring '
-                 'pair is lower.',
 }
 
 
@@ -546,7 +541,9 @@ plugin.methods.register_function(
     function=orient_seqs,
     inputs={'sequences': FeatureData[Sequence],
             'reference_sequences': FeatureData[Sequence]},
-    parameters=VSEARCH_PARAMS,
+    parameters={
+        'threads': VSEARCH_PARAMS['threads'],
+    },
     outputs=[('oriented_seqs', FeatureData[Sequence]),
              ('unmatched_seqs', FeatureData[Sequence])],
     input_descriptions={
@@ -556,7 +553,9 @@ plugin.methods.register_function(
                                 'will be reverse complemented and all '
                                 'parameters will be ignored.'
                                 )},
-    parameter_descriptions=VSEARCH_PARAM_DESCRIPTIONS,
+    parameter_descriptions={
+        'threads': VSEARCH_PARAM_DESCRIPTIONS['threads'],
+    },
     output_descriptions={
         'oriented_seqs': 'Query sequences in same orientation as top matching '
                          'reference sequence.',
