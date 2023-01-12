@@ -8,6 +8,7 @@
 
 
 import qiime2
+import unittest
 from qiime2.plugin.testing import TestPluginBase
 from q2_types.feature_data import DNAIterator
 from qiime2.plugins import rescript
@@ -66,21 +67,7 @@ class TestOrientSeqs(TestPluginBase):
         exp_unmatched_ids = {'JUNK', 'MOREJUNK'}
         self.assertEqual(unmatched_ids, exp_unmatched_ids)
 
-    def test_reorient_no_ref(self):
-        reoriented, unmatched = rescript.actions.orient_seqs(
-            sequences=self.seqs, reference_sequences=None,
-            )
-        unmatched_ids = {seq.metadata['id']
-                         for seq in unmatched.view(DNAIterator)}
-        self.assertEqual(unmatched_ids, set([]))
-        exp_seqs = [seq for seq in self.rc.view(DNAIterator)]
-        test_seqs = [seq for seq in reoriented.view(DNAIterator)]
-        for exp, test in zip(*(exp_seqs, test_seqs)):
-            self.assertEqual(str(exp), str(test))
-            self.assertEqual(exp.metadata['id'], test.metadata['id'])
-
-
-"""
+    @unittest.skip(reason="Identity is not available with orient")
     def test_reorient_exact(self):
         # just check correct IDs are returned; default test checks orientations
         reoriented, unmatched, = rescript.actions.orient_seqs(
@@ -97,6 +84,7 @@ class TestOrientSeqs(TestPluginBase):
                               self.ref.view(DNAIterator)} - exp_unmatched_ids
         self.assertEqual(reoriented_ids, exp_reoriented_ids)
 
+    @unittest.skip(reason="Left justify is not available with orient")
     def test_reorient_left_justify(self):
         # just check correct IDs are returned; default test checks orientations
         reoriented, unmatched, = rescript.actions.orient_seqs(
@@ -112,4 +100,16 @@ class TestOrientSeqs(TestPluginBase):
         exp_reoriented_ids = {seq.metadata['id'] for seq in
                               self.ref.view(DNAIterator)} - exp_unmatched_ids
         self.assertEqual(reoriented_ids, exp_reoriented_ids)
-"""
+
+    def test_reorient_no_ref(self):
+        reoriented, unmatched = rescript.actions.orient_seqs(
+            sequences=self.seqs, reference_sequences=None,
+            )
+        unmatched_ids = {seq.metadata['id']
+                         for seq in unmatched.view(DNAIterator)}
+        self.assertEqual(unmatched_ids, set([]))
+        exp_seqs = [seq for seq in self.rc.view(DNAIterator)]
+        test_seqs = [seq for seq in reoriented.view(DNAIterator)]
+        for exp, test in zip(*(exp_seqs, test_seqs)):
+            self.assertEqual(str(exp), str(test))
+            self.assertEqual(exp.metadata['id'], test.metadata['id'])
