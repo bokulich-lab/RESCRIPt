@@ -297,8 +297,7 @@ plugin.methods.register_function(
         'perc_identity': VSEARCH_PARAMS['perc_identity'],
         'derep_prefix': Bool,
         'rank_handles': List[Str % Choices(['disable'])] | List[Str % Choices(
-                                                        _allowed_ranks)],
-        'coerce_sc_delim': Str % Choices([';', '; ', ' ; '])},
+                                                        _allowed_ranks)]},
     outputs=[('dereplicated_sequences', FeatureData[Sequence]),
              ('dereplicated_taxa', FeatureData[Taxonomy])],
     input_descriptions={
@@ -322,10 +321,7 @@ plugin.methods.register_function(
         'rank_handles': 'Specifies the set of rank handles used to backfill '
                         'missing ranks in the resulting dereplicated '
                         'taxonomy. Use \'disable\' to prevent applying '
-                        '\'rank_handles\'. ',
-        'coerce_sc_delim': 'Coerces all semicolon delimiters to have '
-                           'identical spacing before and after the '
-                           'semicolon.'
+                        '\'rank_handles\'. '
     },
     name='Dereplicate features with matching sequences and taxonomies.',
     description=(
@@ -336,7 +332,10 @@ plugin.methods.register_function(
         'sequences are duplicates (uniq); or return only dereplicated '
         'sequences labeled by either the least common ancestor (lca) or the '
         'most common taxonomic label associated with sequences in that '
-        'cluster (majority).'),
+        'cluster (majority). Note: all taxonomy strings will be coerced '
+        'to semicolon delimiters without any leading or trailing spaces. '
+        'If this is not desired, please use \'rescript edit-taxonomy\' '
+        'to make any changes.'),
     citations=[citations['rognes2016vsearch']]
 )
 

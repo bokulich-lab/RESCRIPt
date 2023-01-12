@@ -27,7 +27,6 @@ def dereplicate(sequences: DNAFASTAFormat,
                 threads: int = 1,
                 rank_handles: list = ['domain', 'phylum', 'class', 'order',
                                       'family', 'genus', 'species'],
-                coerce_sc_delim: str = '; ',
                 derep_prefix: bool = False) -> (DNAFASTAFormat, pd.DataFrame):
     with tempfile.NamedTemporaryFile() as out_fasta:
         with tempfile.NamedTemporaryFile() as out_uc:
@@ -60,12 +59,13 @@ def dereplicate(sequences: DNAFASTAFormat,
             # This will help maintain consitency as we won't know
             # what a user might have done previous to using this code.
             # Best to "normalize" to a consitent semicolon delimiter.
+            sc_delim = ';'
             taxa.loc[:, 'Taxon'] = taxa.loc[:, 'Taxon'].apply(
-                lambda x: coerce_sc_delim.join(
+                lambda x: sc_delim.join(
                     _return_stripped_taxon_rank_list(x)))
 
             derep_taxa, seqs_out = _dereplicate_taxa(
-                taxa, sequences, clustered_seqs, uc, coerce_sc_delim,
+                taxa, sequences, clustered_seqs, uc, sc_delim,
                 mode=mode)
 
             if 'disable' not in rank_handles:
@@ -73,18 +73,18 @@ def dereplicate(sequences: DNAFASTAFormat,
                                                          _allowed_ranks)
                 derep_taxa.loc[:, 'Taxon'] = derep_taxa['Taxon'].apply(
                     _backfill_taxonomy, args=([sorted_rank_handles,
-                                              coerce_sc_delim]))
+                                              sc_delim]))
 
     return seqs_out, derep_taxa
 
 
-def _backfill_taxonomy(taxon, rank_handles, coerce_sc_delim):
+def _backfill_taxonomy(taxon, rank_handles, sc_delim):
     formatted_taxon = _return_stripped_taxon_rank_list(taxon)
     tax_len = len(formatted_taxon)
     if tax_len >= len(rank_handles):
         return taxon
     else:
-        return coerce_sc_delim.join(formatted_taxon + rank_handles[tax_len:])
+        return sc_delim.join(formatted_taxon + rank_handles[tax_len:])
 
 
 def _vsearch_derep(sequences_fp, out_fasta_fp, out_uc_fp, threads,
@@ -123,7 +123,7 @@ def _parse_uc(uc_fp):
     return uc
 
 
-def _dereplicate_taxa(taxa, raw_seqs, derep_seqs, uc, coerce_sc_delim, mode):
+def _dereplicate_taxa(taxa, raw_seqs, derep_seqs, uc, sc_delim, mode):
     # we only want to grab hits for uniq mode
     if mode == 'uniq':
         centroid_ids = set(uc['centroidID'].unique())
@@ -155,12 +155,12 @@ def _dereplicate_taxa(taxa, raw_seqs, derep_seqs, uc, coerce_sc_delim, mode):
 
         # find LCA within each cluster
         if mode == 'lca':
-            derep_taxa = derep_taxa.apply(lambda x: coerce_sc_delim.join(
+            derep_taxa = derep_taxa.apply(lambda x: sc_delim.join(
                 _find_lca([_return_stripped_taxon_rank_list(y)
                           for y in x]))).to_frame()
         # find majority superset LCA within each cluster
         elif mode == 'super':
-            derep_taxa = derep_taxa.apply(lambda x: coerce_sc_delim.join(
+            derep_taxa = derep_taxa.apply(lambda x: sc_delim.join(
                 _find_super_lca([_return_stripped_taxon_rank_list(y)
                                 for y in x]))).to_frame()
         # find majority taxon within each cluster

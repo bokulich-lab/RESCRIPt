@@ -42,29 +42,29 @@ class TestDerep(TestPluginBase):
         seqs, taxa, = self.dereplicate(
             self.seqs, self.taxa, mode='uniq', rank_handles=['disable'])
         exp_taxa = pd.DataFrame({'Taxon': {
-            'A1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; '
-                  'f__Paenibacillaceae; g__Paenibacillus; s__chondroitinus',
-            'B1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales;'
-                  ' f__Lactobacillaceae; g__Lactobacillus; s__brevis',
-            'C1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales;'
-                  ' f__Lactobacillaceae; g__Pediococcus; s__damnosus',
-            'B1a': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
-                   '; f__Lactobacillaceae; g__Lactobacillus; s__vaginalis',
-            'B1b': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
-                   '; f__Lactobacillaceae; g__Lactobacillus; s__pseudocasei',
-            'C1a': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
-                   '; f__Lactobacillaceae; g__Pediococcus; s__acidilacti',
-            'A3': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; '
-                  'f__Paenibacillaceae; g__Paenibacillus; s__alvei',
-            'B2': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales;'
-                  ' f__Lactobacillaceae; g__Lactobacillus; s__casei',
-            'C1b': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
-                   '; f__Lactobacillaceae'}})
+            'A1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Bacillales;'
+                  'f__Paenibacillaceae;g__Paenibacillus;s__chondroitinus',
+            'B1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales;'
+                  'f__Lactobacillaceae;g__Lactobacillus;s__brevis',
+            'C1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales;'
+                  'f__Lactobacillaceae;g__Pediococcus;s__damnosus',
+            'B1a': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales'
+                   ';f__Lactobacillaceae;g__Lactobacillus;s__vaginalis',
+            'B1b': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales'
+                   ';f__Lactobacillaceae;g__Lactobacillus;s__pseudocasei',
+            'C1a': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales'
+                   ';f__Lactobacillaceae;g__Pediococcus;s__acidilacti',
+            'A3': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Bacillales;'
+                  'f__Paenibacillaceae;g__Paenibacillus;s__alvei',
+            'B2': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales;'
+                  'f__Lactobacillaceae;g__Lactobacillus;s__casei',
+            'C1b': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales'
+                   ';f__Lactobacillaceae'}})
         pdt.assert_frame_equal(taxa.view(pd.DataFrame).sort_index(),
                                exp_taxa.sort_index(), check_names=False)
         pdt.assert_index_equal(seqs.view(pd.Series).sort_index().index,
                                exp_taxa.sort_index().index, check_names=False)
-        # use derep_prefix=True; should still obtain same result if the prefix
+        # use derep_prefix=True;should still obtain same result if the prefix
         # seqs bear unique taxonomic labels, as seen in this test case
         seqs, taxa, = self.dereplicate(self.seqs, self.taxa, mode='uniq',
                                        derep_prefix=True,
@@ -79,29 +79,29 @@ class TestDerep(TestPluginBase):
                                        perc_identity=0.99,
                                        rank_handles=['disable'])
         exp_taxa = pd.DataFrame({'Taxon': {
-            'A1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; '
-                  'f__Paenibacillaceae; g__Paenibacillus; s__chondroitinus',
-            'B1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales;'
-                  ' f__Lactobacillaceae; g__Lactobacillus; s__brevis',
-            'C1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales;'
-                  ' f__Lactobacillaceae; g__Pediococcus; s__damnosus',
-            'B1a': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
-                   '; f__Lactobacillaceae; g__Lactobacillus; s__vaginalis',
-            'B1b': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
-                   '; f__Lactobacillaceae; g__Lactobacillus; s__pseudocasei',
-            'C1a': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
-                   '; f__Lactobacillaceae; g__Pediococcus; s__acidilacti',
-            'A3': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; '
-                  'f__Paenibacillaceae; g__Paenibacillus; s__alvei',
-            'B2': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales;'
-                  ' f__Lactobacillaceae; g__Lactobacillus; s__casei',
-            'C1b': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
-                   '; f__Lactobacillaceae'}})
+            'A1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Bacillales;'
+                  'f__Paenibacillaceae;g__Paenibacillus;s__chondroitinus',
+            'B1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales;'
+                  'f__Lactobacillaceae;g__Lactobacillus;s__brevis',
+            'C1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales;'
+                  'f__Lactobacillaceae;g__Pediococcus;s__damnosus',
+            'B1a': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales'
+                   ';f__Lactobacillaceae;g__Lactobacillus;s__vaginalis',
+            'B1b': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales'
+                   ';f__Lactobacillaceae;g__Lactobacillus;s__pseudocasei',
+            'C1a': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales'
+                   ';f__Lactobacillaceae;g__Pediococcus;s__acidilacti',
+            'A3': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Bacillales;'
+                  'f__Paenibacillaceae;g__Paenibacillus;s__alvei',
+            'B2': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales;'
+                  'f__Lactobacillaceae;g__Lactobacillus;s__casei',
+            'C1b': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales'
+                   ';f__Lactobacillaceae'}})
         pdt.assert_frame_equal(taxa.view(pd.DataFrame).sort_index(),
                                exp_taxa.sort_index(), check_names=False)
         pdt.assert_index_equal(seqs.view(pd.Series).sort_index().index,
                                exp_taxa.sort_index().index, check_names=False)
-        # use derep_prefix=True; should still obtain same result if the prefix
+        # use derep_prefix=True;should still obtain same result if the prefix
         # seqs bear unique taxonomic labels, as seen in this test case
         seqs, taxa, = self.dereplicate(self.seqs, self.taxa, mode='uniq',
                                        perc_identity=0.99, derep_prefix=True,
@@ -115,18 +115,18 @@ class TestDerep(TestPluginBase):
         seqs, taxa, = self.dereplicate(
             self.seqs, self.taxa, mode='lca', rank_handles=['disable'])
         exp_taxa = pd.DataFrame({'Taxon': {
-            'A1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; '
-                  'f__Paenibacillaceae; g__Paenibacillus',
-            'B1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales;'
-                  ' f__Lactobacillaceae; g__Lactobacillus',
-            'C1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales;'
-                  ' f__Lactobacillaceae; g__Pediococcus; s__damnosus',
-            'B1a': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
-                   '; f__Lactobacillaceae; g__Lactobacillus; s__vaginalis',
-            'B1b': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
-                   '; f__Lactobacillaceae; g__Lactobacillus; s__pseudocasei',
-            'C1a': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
-                   '; f__Lactobacillaceae'}})
+            'A1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Bacillales;'
+                  'f__Paenibacillaceae;g__Paenibacillus',
+            'B1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales;'
+                  'f__Lactobacillaceae;g__Lactobacillus',
+            'C1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales;'
+                  'f__Lactobacillaceae;g__Pediococcus;s__damnosus',
+            'B1a': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales'
+                   ';f__Lactobacillaceae;g__Lactobacillus;s__vaginalis',
+            'B1b': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales'
+                   ';f__Lactobacillaceae;g__Lactobacillus;s__pseudocasei',
+            'C1a': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales'
+                   ';f__Lactobacillaceae'}})
         pdt.assert_frame_equal(taxa.view(pd.DataFrame).sort_index(),
                                exp_taxa.sort_index(), check_names=False)
         pdt.assert_index_equal(seqs.view(pd.Series).sort_index().index,
@@ -136,18 +136,18 @@ class TestDerep(TestPluginBase):
         seqs, taxa, = self.dereplicate(
             self.seqs, self.taxa, mode='super')
         exp_taxa = pd.DataFrame({'Taxon': {
-            'A1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; '
-                  'f__Paenibacillaceae; g__Paenibacillus; s__alvei',
-            'B1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales;'
-                  ' f__Lactobacillaceae; g__Lactobacillus; s__casei',
-            'C1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales;'
-                  ' f__Lactobacillaceae; g__Pediococcus; s__damnosus',
-            'B1a': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
-                   '; f__Lactobacillaceae; g__Lactobacillus; s__vaginalis',
-            'B1b': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
-                   '; f__Lactobacillaceae; g__Lactobacillus; s__pseudocasei',
-            'C1a': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
-                   '; f__Lactobacillaceae; g__Pediococcus; s__acidilacti'}})
+            'A1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Bacillales;'
+                  'f__Paenibacillaceae;g__Paenibacillus;s__alvei',
+            'B1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales;'
+                  'f__Lactobacillaceae;g__Lactobacillus;s__casei',
+            'C1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales;'
+                  'f__Lactobacillaceae;g__Pediococcus;s__damnosus',
+            'B1a': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales'
+                   ';f__Lactobacillaceae;g__Lactobacillus;s__vaginalis',
+            'B1b': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales'
+                   ';f__Lactobacillaceae;g__Lactobacillus;s__pseudocasei',
+            'C1a': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales'
+                   ';f__Lactobacillaceae;g__Pediococcus;s__acidilacti'}})
         pdt.assert_frame_equal(taxa.view(pd.DataFrame).sort_index(),
                                exp_taxa.sort_index(), check_names=False)
         pdt.assert_index_equal(seqs.view(pd.Series).sort_index().index,
@@ -157,14 +157,14 @@ class TestDerep(TestPluginBase):
         seqs, taxa, = self.dereplicate(self.seqs, self.taxa, mode='super',
                                        perc_identity=0.99)
         exp_taxa = pd.DataFrame({'Taxon': {
-            'A1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; '
-                  'f__Paenibacillaceae; g__Paenibacillus; s__alvei',
-            'B1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales;'
-                  ' f__Lactobacillaceae; g__Lactobacillus; s__casei',
-            'C1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales;'
-                  ' f__Lactobacillaceae; g__Pediococcus; s__acidilacti',
-            'B1b': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
-                   '; f__Lactobacillaceae; g__Lactobacillus; s__pseudocasei'}})
+            'A1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Bacillales;'
+                  'f__Paenibacillaceae;g__Paenibacillus;s__alvei',
+            'B1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales;'
+                  'f__Lactobacillaceae;g__Lactobacillus;s__casei',
+            'C1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales;'
+                  'f__Lactobacillaceae;g__Pediococcus;s__acidilacti',
+            'B1b': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales'
+                   ';f__Lactobacillaceae;g__Lactobacillus;s__pseudocasei'}})
         pdt.assert_frame_equal(taxa.view(pd.DataFrame).sort_index(),
                                exp_taxa.sort_index(), check_names=False)
         pdt.assert_index_equal(seqs.view(pd.Series).sort_index().index,
@@ -177,16 +177,16 @@ class TestDerep(TestPluginBase):
                                        derep_prefix=True,
                                        rank_handles=['disable'])
         exp_taxa = pd.DataFrame({'Taxon': {
-            'A1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; '
-                  'f__Paenibacillaceae; g__Paenibacillus',
-            'B1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales;'
-                  ' f__Lactobacillaceae; g__Lactobacillus',
-            'C1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales;'
-                  ' f__Lactobacillaceae',
-            'B1a': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
-                   '; f__Lactobacillaceae; g__Lactobacillus; s__vaginalis',
-            'B1b': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
-                   '; f__Lactobacillaceae; g__Lactobacillus; s__pseudocasei'}})
+            'A1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Bacillales;'
+                  'f__Paenibacillaceae;g__Paenibacillus',
+            'B1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales;'
+                  'f__Lactobacillaceae;g__Lactobacillus',
+            'C1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales;'
+                  'f__Lactobacillaceae',
+            'B1a': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales'
+                   ';f__Lactobacillaceae;g__Lactobacillus;s__vaginalis',
+            'B1b': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales'
+                   ';f__Lactobacillaceae;g__Lactobacillus;s__pseudocasei'}})
         pdt.assert_frame_equal(taxa.view(pd.DataFrame).sort_index(),
                                exp_taxa.sort_index(), check_names=False)
         pdt.assert_index_equal(seqs.view(pd.Series).sort_index().index,
@@ -197,14 +197,14 @@ class TestDerep(TestPluginBase):
                                        perc_identity=0.99,
                                        rank_handles=['disable'])
         exp_taxa = pd.DataFrame({'Taxon': {
-            'A1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; '
-                  'f__Paenibacillaceae; g__Paenibacillus',
-            'B1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales;'
-                  ' f__Lactobacillaceae; g__Lactobacillus',
-            'C1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales;'
-                  ' f__Lactobacillaceae',
-            'B1b': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
-                   '; f__Lactobacillaceae; g__Lactobacillus; s__pseudocasei'}})
+            'A1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Bacillales;'
+                  'f__Paenibacillaceae;g__Paenibacillus',
+            'B1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales;'
+                  'f__Lactobacillaceae;g__Lactobacillus',
+            'C1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales;'
+                  'f__Lactobacillaceae',
+            'B1b': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales'
+                   ';f__Lactobacillaceae;g__Lactobacillus;s__pseudocasei'}})
         pdt.assert_frame_equal(taxa.view(pd.DataFrame).sort_index(),
                                exp_taxa.sort_index(), check_names=False)
         pdt.assert_index_equal(seqs.view(pd.Series).sort_index().index,
@@ -214,18 +214,18 @@ class TestDerep(TestPluginBase):
         seqs, taxa, = self.dereplicate(
             self.seqs, self.taxa, mode='majority')
         exp_taxa = pd.DataFrame({'Taxon': {
-            'A1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; '
-                  'f__Paenibacillaceae; g__Paenibacillus; s__alvei',
-            'B1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales;'
-                  ' f__Lactobacillaceae; g__Lactobacillus; s__casei',
-            'C1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales;'
-                  ' f__Lactobacillaceae; g__Pediococcus; s__damnosus',
-            'B1a': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
-                   '; f__Lactobacillaceae; g__Lactobacillus; s__vaginalis',
-            'B1b': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
-                   '; f__Lactobacillaceae; g__Lactobacillus; s__pseudocasei',
-            'C1a': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
-                   '; f__Lactobacillaceae; g__Pediococcus; s__acidilacti'}})
+            'A1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Bacillales;'
+                  'f__Paenibacillaceae;g__Paenibacillus;s__alvei',
+            'B1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales;'
+                  'f__Lactobacillaceae;g__Lactobacillus;s__casei',
+            'C1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales;'
+                  'f__Lactobacillaceae;g__Pediococcus;s__damnosus',
+            'B1a': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales'
+                   ';f__Lactobacillaceae;g__Lactobacillus;s__vaginalis',
+            'B1b': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales'
+                   ';f__Lactobacillaceae;g__Lactobacillus;s__pseudocasei',
+            'C1a': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales'
+                   ';f__Lactobacillaceae;g__Pediococcus;s__acidilacti'}})
         pdt.assert_frame_equal(taxa.view(pd.DataFrame).sort_index(),
                                exp_taxa.sort_index(), check_names=False)
         pdt.assert_index_equal(seqs.view(pd.Series).sort_index().index,
@@ -237,16 +237,16 @@ class TestDerep(TestPluginBase):
         seqs, taxa, = self.dereplicate(self.seqs, self.taxa, mode='majority',
                                        derep_prefix=True)
         exp_taxa = pd.DataFrame({'Taxon': {
-            'A1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; '
-                  'f__Paenibacillaceae; g__Paenibacillus; s__alvei',
-            'B1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales;'
-                  ' f__Lactobacillaceae; g__Lactobacillus; s__casei',
-            'C1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales;'
-                  ' f__Lactobacillaceae; g__Pediococcus; s__acidilacti',
-            'B1a': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
-                   '; f__Lactobacillaceae; g__Lactobacillus; s__vaginalis',
-            'B1b': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
-                   '; f__Lactobacillaceae; g__Lactobacillus; s__pseudocasei'}})
+            'A1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Bacillales;'
+                  'f__Paenibacillaceae;g__Paenibacillus;s__alvei',
+            'B1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales;'
+                  'f__Lactobacillaceae;g__Lactobacillus;s__casei',
+            'C1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales;'
+                  'f__Lactobacillaceae;g__Pediococcus;s__acidilacti',
+            'B1a': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales'
+                   ';f__Lactobacillaceae;g__Lactobacillus;s__vaginalis',
+            'B1b': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales'
+                   ';f__Lactobacillaceae;g__Lactobacillus;s__pseudocasei'}})
         pdt.assert_frame_equal(taxa.view(pd.DataFrame).sort_index(),
                                exp_taxa.sort_index(), check_names=False)
         pdt.assert_index_equal(seqs.view(pd.Series).sort_index().index,
@@ -256,20 +256,20 @@ class TestDerep(TestPluginBase):
         seqs, taxa, = self.dereplicate(self.seqs, self.taxa, mode='majority',
                                        perc_identity=0.99)
         exp_taxa = pd.DataFrame({'Taxon': {
-            'A1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; '
-                  'f__Paenibacillaceae; g__Paenibacillus; s__alvei',
-            'B1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales;'
-                  ' f__Lactobacillaceae; g__Lactobacillus; s__casei',
-            'C1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales;'
-                  ' f__Lactobacillaceae; g__Pediococcus; s__acidilacti',
-            'B1b': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
-                   '; f__Lactobacillaceae; g__Lactobacillus; s__pseudocasei'}})
+            'A1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Bacillales;'
+                  'f__Paenibacillaceae;g__Paenibacillus;s__alvei',
+            'B1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales;'
+                  'f__Lactobacillaceae;g__Lactobacillus;s__casei',
+            'C1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales;'
+                  'f__Lactobacillaceae;g__Pediococcus;s__acidilacti',
+            'B1b': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales'
+                   ';f__Lactobacillaceae;g__Lactobacillus;s__pseudocasei'}})
         pdt.assert_frame_equal(taxa.view(pd.DataFrame).sort_index(),
                                exp_taxa.sort_index(), check_names=False)
         pdt.assert_index_equal(seqs.view(pd.Series).sort_index().index,
                                exp_taxa.sort_index().index, check_names=False)
 
-    # the above tests check actual derep functionality; this test just makes
+    # the above tests check actual derep functionality;this test just makes
     # sure that the same tests/modes above operate on numeric seq IDs, using
     # the same test data above (with numeric IDs).
     # See https://github.com/bokulich-lab/RESCRIPt/issues/49
@@ -295,14 +295,14 @@ class TestDerep(TestPluginBase):
                                                      'family', 'genus',
                                                      'species'])
         exp_taxa = pd.DataFrame({'Taxon': {
-            'A1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; '
-                  'f__Paenibacillaceae; g__Paenibacillus; s__',
-            'B1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales;'
-                  ' f__Lactobacillaceae; g__Lactobacillus; s__',
-            'C1': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales;'
-                  ' f__Lactobacillaceae; g__; s__',
-            'B1b': 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales'
-                   '; f__Lactobacillaceae; g__Lactobacillus; s__pseudocasei'}})
+            'A1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Bacillales;'
+                  'f__Paenibacillaceae;g__Paenibacillus;s__',
+            'B1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales;'
+                  'f__Lactobacillaceae;g__Lactobacillus;s__',
+            'C1': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales;'
+                  'f__Lactobacillaceae;g__;s__',
+            'B1b': 'k__Bacteria;p__Firmicutes;c__Bacilli;o__Lactobacillales'
+                   ';f__Lactobacillaceae;g__Lactobacillus;s__pseudocasei'}})
         pdt.assert_frame_equal(taxa.view(pd.DataFrame).sort_index(),
                                exp_taxa.sort_index(), check_names=False)
         pdt.assert_index_equal(seqs.view(pd.Series).sort_index().index,
@@ -315,15 +315,17 @@ class TestDerep(TestPluginBase):
         def _backfill_series(series, rank_handles=default_rank_handle):
             rank_handles = _return_stripped_taxon_rank_list(rank_handles)
             return series.apply(_backfill_taxonomy,
-                                args=([rank_handles, '; ']))
+                                args=([rank_handles, ';']))
 
         taxa = self.taxa.view(pd.Series).sort_index()
+        taxa = taxa.apply(lambda x: ';'.join(
+                          _return_stripped_taxon_rank_list(x)))
         exp_taxa = taxa.copy()
         # note: taxonomy is unchanged if rank handles are shorter than taxon
         backfilled_taxa = _backfill_series(taxa, "my;taxonomy;is;too;short")
         pdt.assert_series_equal(backfilled_taxa, exp_taxa, check_names=False)
         # manually backfill to match expected
-        exp_taxa.loc['C1b'] += '; g__; s__'
+        exp_taxa.loc['C1b'] += ';g__;s__'
         # backfill with defaults
         backfilled_taxa = _backfill_series(taxa)
         pdt.assert_series_equal(backfilled_taxa, exp_taxa, check_names=False)
@@ -331,17 +333,19 @@ class TestDerep(TestPluginBase):
         trimmed_taxa = backfilled_taxa.apply(
             lambda x: ';'.join(x.split(';')[:3]))
         # manually backfill
-        exp_taxa = trimmed_taxa.apply(lambda x: x + '; o__; f__; g__; s__')
+        exp_taxa = trimmed_taxa.apply(lambda x: x + ';o__;f__;g__;s__')
         backfilled_taxa = _backfill_series(trimmed_taxa)
         pdt.assert_series_equal(backfilled_taxa, exp_taxa, check_names=False)
         # backfill to root
         # note: taxon labels can never be empty, so this test covers cases
         # where there is no classification beyond root/domain/kingdom
         backfilled_taxa = _backfill_series(trimmed_taxa.apply(lambda x: 'd__'))
-        exp_taxa = trimmed_taxa.apply(lambda x: default_rank_handle)
+        exp_taxa = trimmed_taxa.apply(lambda x: ';'.join(
+                                      _return_stripped_taxon_rank_list(
+                                          default_rank_handle)))
         pdt.assert_series_equal(backfilled_taxa, exp_taxa, check_names=False)
         # backfill custom labels
         custom_rank_handles = "p;e;a;n;u;t;s"
-        exp_taxa = trimmed_taxa.apply(lambda x: x + '; n; u; t; s')
+        exp_taxa = trimmed_taxa.apply(lambda x: x + ';n;u;t;s')
         backfilled_taxa = _backfill_series(trimmed_taxa, custom_rank_handles)
         pdt.assert_series_equal(backfilled_taxa, exp_taxa, check_names=False)
