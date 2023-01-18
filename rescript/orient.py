@@ -15,6 +15,14 @@ def orient_seqs(
     sequences: DNAFASTAFormat,
     reference_sequences: DNAFASTAFormat = None,
     threads: int = 1,
+    dbmask: str = 'dust',
+    relabel: str = None,
+    relabel_keep: bool = None,
+    relabel_md5: bool = None,
+    relabel_self: bool = None,
+    relabel_sha1: bool = None,
+    sizein: bool = None,
+    sizeout: bool = None,
 ) -> (DNAFASTAFormat, DNAFASTAFormat):
     oriented, notmatched = DNAFASTAFormat(), DNAFASTAFormat()
     if reference_sequences is not None:
@@ -32,7 +40,22 @@ def orient_seqs(
             '--db', str(reference_sequences),
             '--qmask', 'none',
             '--threads', str(threads),
+            '--dbmask', dbmask,
         ]
+        if relabel:
+            cmd.append(f"--relabel {relabel}")
+        if relabel_keep:
+            cmd.append("--relabel_keep")
+        if relabel_md5:
+            cmd.append("--relabel_md5")
+        if relabel_self:
+            cmd.append("--relabel_self")
+        if relabel_sha1:
+            cmd.append("--relabel_sha1")
+        if sizein:
+            cmd.append("--sizein")
+        if sizeout:
+            cmd.append("--sizeout")
         run_command(cmd)
 
     else:
