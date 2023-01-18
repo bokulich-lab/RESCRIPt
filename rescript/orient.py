@@ -16,7 +16,8 @@ from ._utilities import run_command
 def _warn_deprecated(value, default, name):
     if value != default:
         warn(
-            f"{name} will be deprecated in a future release.",
+            f"{name} is deprecated and will be removed from RESCRIPt 2023.5 "
+            "(RESCRIPt 2023.2 will be the last release with this parameter).",
             FutureWarning
         )
 
