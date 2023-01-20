@@ -7,15 +7,35 @@
 # ----------------------------------------------------------------------------
 
 from q2_types.feature_data import DNAFASTAFormat, DNAIterator
+from typing import List, Dict, Any
 
 from ._utilities import run_command
+
+
+def _add_optional_parameters(cmd: List[str], **kwargs: Dict[str, Any]) -> None:
+    """
+    Add optional parameters to a command.
+
+    Parameters
+    ----------
+    cmd : List[str]
+        The command to add optional parameters to.
+    kwargs : Dict[str, Any]
+        The optional parameters to add to the command.
+    """
+    for parameter, value in kwargs.items():
+        if isinstance(value, bool) and value is True:
+            cmd.append(f"--{parameter}")
+        elif isinstance(value, str) and value != "":
+            cmd.append(f"--{parameter}")
+            cmd.append(f"{value}")
 
 
 def orient_seqs(
     sequences: DNAFASTAFormat,
     reference_sequences: DNAFASTAFormat = None,
     threads: int = 1,
-    dbmask: str = 'dust',
+    dbmask: str = None,
     relabel: str = None,
     relabel_keep: bool = None,
     relabel_md5: bool = None,
@@ -31,7 +51,6 @@ def orient_seqs(
         # seqs to be uppercase. Could loop through output seqs to convert
         # to upper but which is faster: disabling masking or looping
         # through with skbio?
-        # TODO: add new parameters for orient
         cmd = [
             'vsearch',
             '--orient', str(sequences),
@@ -40,22 +59,20 @@ def orient_seqs(
             '--db', str(reference_sequences),
             '--qmask', 'none',
             '--threads', str(threads),
-            '--dbmask', dbmask,
         ]
-        if relabel:
-            cmd.append(f"--relabel {relabel}")
-        if relabel_keep:
-            cmd.append("--relabel_keep")
-        if relabel_md5:
-            cmd.append("--relabel_md5")
-        if relabel_self:
-            cmd.append("--relabel_self")
-        if relabel_sha1:
-            cmd.append("--relabel_sha1")
-        if sizein:
-            cmd.append("--sizein")
-        if sizeout:
-            cmd.append("--sizeout")
+
+        _add_optional_parameters(
+            cmd,
+            dbmask=dbmask,
+            relabel=relabel,
+            relabel_keep=relabel_keep,
+            relabel_md5=relabel_md5,
+            relabel_self=relabel_self,
+            relabel_sha1=relabel_sha1,
+            sizein=sizein,
+            sizeout=sizeout,
+        )
+
         run_command(cmd)
 
     else:

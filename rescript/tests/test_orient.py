@@ -11,6 +11,7 @@ import qiime2
 from qiime2.plugin.testing import TestPluginBase
 from q2_types.feature_data import DNAIterator
 from qiime2.plugins import rescript
+from rescript.orient import _add_optional_parameters
 
 import_data = qiime2.Artifact.import_data
 
@@ -78,3 +79,28 @@ class TestOrientSeqs(TestPluginBase):
         for exp, test in zip(*(exp_seqs, test_seqs)):
             self.assertEqual(str(exp), str(test))
             self.assertEqual(exp.metadata['id'], test.metadata['id'])
+
+    def test_add_optional_parameters(self):
+        expected = [
+            "--dbmask", "dust",
+            "--relabel", "new_id",
+            "--relabel_keep",
+            "--relabel_md5",
+            "--relabel_self",
+            "--relabel_sha1",
+            "--sizein",
+            "--sizeout",
+        ]
+        result = []
+        _add_optional_parameters(
+            result,
+            dbmask="dust",
+            relabel="new_id",
+            relabel_keep=True,
+            relabel_md5=True,
+            relabel_self=True,
+            relabel_sha1=True,
+            sizein=True,
+            sizeout=True,
+        )
+        self.assertEqual(result, expected)
