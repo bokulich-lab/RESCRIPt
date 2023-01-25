@@ -14,9 +14,10 @@ import zipfile
 from typing import List
 
 import ncbi.datasets as nd
+from ncbi.datasets.openapi import ApiClient as DatasetsApiClient
 import pandas as pd
 import skbio
-from joblib.externals.loky.backend.managers import LokyManager
+from multiprocessing import Manager
 from ncbi.datasets import ApiException
 from q2_types.feature_data import DNAFASTAFormat
 from q2_types_genomics.genome_data import (LociDirectoryFormat,
@@ -27,10 +28,11 @@ from rescript.ncbi import get_taxonomies, _default_ranks
 
 def _get_assembly_descriptors(
         api_instance, assembly_levels, assembly_source, only_reference,
-        page_size, taxon, tax_exact_match):
+        page_size, taxon, tax_exact_match
+):
     all_acc_ids = []
     all_tax_ids = []
-    next_page_token = None
+    next_page_token = ''
     while True:
         try:
             genome_summary = api_instance.assembly_descriptors_by_taxon(
@@ -107,8 +109,7 @@ def _fetch_and_extract_dataset(api_response):
 
 
 def _fetch_taxonomy(all_acc_ids, all_tax_ids):
-    manager = LokyManager()
-    manager.start()
+    manager = Manager()
     taxa, bad_accs = get_taxonomies(
         taxids={k: v for k, v in zip(all_acc_ids, all_tax_ids)},
         ranks=_default_ranks, rank_propagation=True,
@@ -134,22 +135,23 @@ def get_ncbi_genomes(
         page_size: int = 20,
 ) -> (DNAFASTAFormat, LociDirectoryFormat,
       ProteinsDirectoryFormat, pd.DataFrame):
-    api_instance = nd.GenomeApi(nd.ApiClient())
+    with DatasetsApiClient() as api_client:
+        api_instance = nd.GenomeApi(api_client)
 
-    all_acc_ids, all_tax_ids = _get_assembly_descriptors(
-        api_instance=api_instance, assembly_levels=assembly_levels,
-        assembly_source=assembly_source, only_reference=only_reference,
-        page_size=page_size, taxon=taxon, tax_exact_match=tax_exact_match)
+        all_acc_ids, all_tax_ids = _get_assembly_descriptors(
+            api_instance=api_instance, assembly_levels=assembly_levels,
+            assembly_source=assembly_source, only_reference=only_reference,
+            page_size=page_size, taxon=taxon, tax_exact_match=tax_exact_match)
 
-    api_response = api_instance.download_assembly_package(
-        all_acc_ids,
-        # chromosomes=['MT'],
-        exclude_sequence=False,
-        include_annotation_type=['PROT_FASTA', 'GENOME_GFF'],
-        _preload_content=False
-    )
+        api_response = api_instance.download_assembly_package(
+            all_acc_ids,
+            # chromosomes=['MT'],
+            exclude_sequence=False,
+            include_annotation_type=['PROT_FASTA', 'GENOME_GFF'],
+            _preload_content=False
+        )
 
-    genomes, loci, proteins = _fetch_and_extract_dataset(api_response)
-    taxa = _fetch_taxonomy(all_acc_ids, all_tax_ids)
+        genomes, loci, proteins = _fetch_and_extract_dataset(api_response)
+        taxa = _fetch_taxonomy(all_acc_ids, all_tax_ids)
 
     return genomes, loci, proteins, taxa
