@@ -29,8 +29,14 @@ class TestDerep(TestPluginBase):
 
         self.seqs = import_data(
             'FeatureData[Sequence]', self.get_data_path('derep-test.fasta'))
+        self.fungi_seqs = import_data(
+            'FeatureData[Sequence]',
+            self.get_data_path('derep-test-fungi.fasta'))
         self.taxa = import_data(
             'FeatureData[Taxonomy]', self.get_data_path('derep-taxa.tsv'))
+        self.fungi_taxa = import_data(
+            'FeatureData[Taxonomy]',
+            self.get_data_path('derep-test-fungi.tsv'))
         self.seqsnumericids = import_data(
             'FeatureData[Sequence]', self.get_data_path(
                 'derep-test-numericIDs.fasta'))
@@ -192,6 +198,45 @@ class TestDerep(TestPluginBase):
         pdt.assert_index_equal(seqs.view(pd.Series).sort_index().index,
                                exp_taxa.sort_index().index, check_names=False)
 
+    # test that LCA taxonomy assignment works when derep_prefix=True
+    # seqs F05, F06, F07 are identical. Thus having the longest shared prefix.
+    # The representative taxonomy should appear in the output as F05, as that
+    # has the shorter taxonomy. Thus the LCA is set to that.
+    # Here derep_prefix + LCA taxonomy
+    def test_dereplicate_prefix_lca_fungi(self):
+        seqs, taxa, = self.dereplicate(self.fungi_seqs, self.fungi_taxa,
+                                       mode='lca',
+                                       derep_prefix=True,
+                                       rank_handles=['disable'])
+        exp_taxa = pd.DataFrame({'Taxon': {
+            'F01': 'd__Eukaryota;sk__Nucletmycea;k__Fungi;ks__Dikarya;'
+                   'p__Ascomycota',
+            'F02': 'd__Eukaryota;sk__Nucletmycea;k__Fungi;ks__Dikarya;'
+                   'p__Ascomycota;ps__Saccharomycotina;c__Saccharomycetes;'
+                   'o__Saccharomycetales;sf__Debaryomycetaceae;'
+                   'g__Candida-Lodderomyces_clade;s__Candida_parapsilosis',
+            'F03': 'd__Eukaryota;sk__Nucletmycea;k__Fungi;ks__Dikarya;'
+                   'p__Ascomycota;ps__Saccharomycotina;c__Saccharomycetes;'
+                   'o__Saccharomycetales;sf__Debaryomycetaceae;'
+                   'g__Candida-Lodderomyces_clade;s__Candida_parapsilosis',
+            'F04': 'd__Eukaryota;sk__Nucletmycea;k__Fungi;ks__Dikarya;'
+                   'p__Ascomycota;ps__Saccharomycotina;c__Saccharomycetes;'
+                   'o__Saccharomycetales;sf__Debaryomycetaceae;'
+                   'g__Candida-Lodderomyces_clade;s__Candida_parapsilosis',
+            'F05': 'd__Eukaryota;sk__Nucletmycea;k__Fungi;ks__Dikarya;'
+                   'p__Ascomycota;ps__Saccharomycotina;c__Saccharomycetes;'
+                   'o__Saccharomycetales;sf__Saccharomycetaceae;g__Lachancea',
+            'F08': 'd__Eukaryota',
+            'F09': 'd__Eukaryota;sk__Nucletmycea;k__Fungi;ks__Dikarya;'
+                   'p__Ascomycota;ps__Saccharomycotina;c__Saccharomycetes;'
+                   'o__Saccharomycetales;sf__Saccharomycetaceae;'
+                   'g__Saccharomyces;s__Saccharomyces_cerevisiae'
+             }})
+        pdt.assert_frame_equal(taxa.view(pd.DataFrame).sort_index(),
+                               exp_taxa.sort_index(), check_names=False)
+        pdt.assert_index_equal(seqs.view(pd.Series).sort_index().index,
+                               exp_taxa.sort_index().index, check_names=False)
+
     def test_dereplicate_lca_99_perc(self):
         seqs, taxa, = self.dereplicate(self.seqs, self.taxa, mode='lca',
                                        perc_identity=0.99,
@@ -269,6 +314,30 @@ class TestDerep(TestPluginBase):
         pdt.assert_index_equal(seqs.view(pd.Series).sort_index().index,
                                exp_taxa.sort_index().index, check_names=False)
 
+    def test_dereplicate_majority_perc98_fungi(self):
+        seqs, taxa, = self.dereplicate(self.fungi_seqs, self.fungi_taxa,
+                                       mode='majority',
+                                       perc_identity=0.98,
+                                       rank_handles=['disable'])
+        exp_taxa = pd.DataFrame({'Taxon': {
+            'F01': 'd__Eukaryota;sk__Nucletmycea;k__Fungi;ks__Dikarya;'
+                   'p__Ascomycota;ps__Saccharomycotina;c__Saccharomycetes;'
+                   'o__Saccharomycetales;sf__Debaryomycetaceae;'
+                   'g__Candida-Lodderomyces_clade;s__Candida_parapsilosis',
+            'F05': 'd__Eukaryota;sk__Nucletmycea;k__Fungi;ks__Dikarya;'
+                   'p__Ascomycota;ps__Saccharomycotina;c__Saccharomycetes;'
+                   'o__Saccharomycetales;sf__Saccharomycetaceae;g__Lachancea;'
+                   's__Lachancea_thermotolerans',
+            'F09': 'd__Eukaryota;sk__Nucletmycea;k__Fungi;ks__Dikarya;'
+                   'p__Ascomycota;ps__Saccharomycotina;c__Saccharomycetes;'
+                   'o__Saccharomycetales;sf__Saccharomycetaceae;'
+                   'g__Saccharomyces;s__Saccharomyces_cerevisiae'
+                   }})
+        pdt.assert_frame_equal(taxa.view(pd.DataFrame).sort_index(),
+                               exp_taxa.sort_index(), check_names=False)
+        pdt.assert_index_equal(seqs.view(pd.Series).sort_index().index,
+                               exp_taxa.sort_index().index, check_names=False)
+
     # the above tests check actual derep functionality;this test just makes
     # sure that the same tests/modes above operate on numeric seq IDs, using
     # the same test data above (with numeric IDs).
@@ -308,6 +377,23 @@ class TestDerep(TestPluginBase):
         pdt.assert_index_equal(seqs.view(pd.Series).sort_index().index,
                                exp_taxa.sort_index().index, check_names=False)
 
+    def test_derep_lca_90_perc_backfill_fungi(self):
+        seqs, taxa, = self.dereplicate(self.fungi_seqs, self.fungi_taxa,
+                                       mode='lca',
+                                       perc_identity=0.90,
+                                       rank_handles=[
+                                           'domain', 'superkingdom',
+                                           'kingdom', 'subkingdom', 'phylum',
+                                           'subphylum', 'class', 'order',
+                                           'superfamily', 'genus', 'species'])
+        exp_taxa = pd.DataFrame({'Taxon': {
+            'F01': 'd__Eukaryota;sk__;k__;ks__;p__;ps__;c__;o__;sf__;g__;s__'}
+            })
+        pdt.assert_frame_equal(taxa.view(pd.DataFrame).sort_index(),
+                               exp_taxa.sort_index(), check_names=False)
+        pdt.assert_index_equal(seqs.view(pd.Series).sort_index().index,
+                               exp_taxa.sort_index().index, check_names=False)
+
     def test_backfill_taxonomy(self):
 
         default_rank_handle = "d__; p__; c__; o__; f__; g__; s__"
@@ -321,6 +407,7 @@ class TestDerep(TestPluginBase):
         taxa = taxa.apply(lambda x: ';'.join(
                           _return_stripped_taxon_rank_list(x)))
         exp_taxa = taxa.copy()
+
         # note: taxonomy is unchanged if rank handles are shorter than taxon
         backfilled_taxa = _backfill_series(taxa, "my;taxonomy;is;too;short")
         pdt.assert_series_equal(backfilled_taxa, exp_taxa, check_names=False)
@@ -349,3 +436,20 @@ class TestDerep(TestPluginBase):
         exp_taxa = trimmed_taxa.apply(lambda x: x + ';n;u;t;s')
         backfilled_taxa = _backfill_series(trimmed_taxa, custom_rank_handles)
         pdt.assert_series_equal(backfilled_taxa, exp_taxa, check_names=False)
+
+        # alt  / longer ranks
+        # same as fungal data but then adding subspecies prefixes
+        alt_rank_handles = ('d__; sk__; k__; ks__; p__; ps__; c__; o__; sf__;'
+                            ' g__; s__; ssb__; for__')
+        f_taxa = self.fungi_taxa.view(pd.Series).sort_index()
+        f_taxa = f_taxa.apply(lambda x: ';'.join(
+                          _return_stripped_taxon_rank_list(x)))
+        backfilled_f_taxa = _backfill_series(f_taxa, alt_rank_handles)
+        trimmed_f_taxa = backfilled_f_taxa.apply(
+            lambda x: ';'.join(x.split(';')[:9]))
+        # manually backfill
+        exp_f_taxa = trimmed_f_taxa.apply(lambda x: x + ';g__;s__;ssb__;for__')
+        updated_backfilled_f_taxa = _backfill_series(trimmed_f_taxa,
+                                                     alt_rank_handles)
+        pdt.assert_series_equal(updated_backfilled_f_taxa, exp_f_taxa,
+                                check_names=False)
