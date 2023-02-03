@@ -38,9 +38,7 @@ from q2_types.tree import Phylogeny, Rooted
 from q2_feature_classifier.classifier import (_parameter_descriptions,
                                               _classify_parameters)
 from q2_feature_classifier._taxonomic_classifier import TaxonomicClassifier
-
 import rescript
-from rescript._utilities import _rank_handles
 from rescript.types._format import (
     SILVATaxonomyFormat, SILVATaxonomyDirectoryFormat, SILVATaxidMapFormat,
     SILVATaxidMapDirectoryFormat)
@@ -225,7 +223,8 @@ plugin.methods.register_function(
     parameters={
         'mode': Str % Choices(['len', 'lca', 'score', 'super', 'majority']),
         'rank_handle_regex': Str,
-        'new_rank_handle': Str % Choices(list(_rank_handles.keys())),
+        'new_rank_handles': List[Str % Choices(['disable'])] | List[
+                                 Str % Choices(_allowed_ranks)],
         'unclassified_label': Str
     },
     outputs=[('merged_data', FeatureData[Taxonomy])],
@@ -242,17 +241,18 @@ plugin.methods.register_function(
                 'taxonomy dataframe. "majority" finds the LCA consensus while '
                 'giving preference to majority labels. ' + super_lca_desc,
         'rank_handle_regex': rank_handle_description + rank_handle_extra_note,
-        'new_rank_handle': (
+        'new_rank_handles': (
             'Specifies the set of rank handles to prepend to taxonomic labels '
-            'at each rank. For example, "greengenes" will prepend 7-level '
-            'greengenes-style rank handles. Note that merged taxonomies will '
+            'at each rank. Note that merged taxonomies will '
             'only contain as many levels as there are handles if this '
-            'parameter is used. So "greengenes" will trim all taxonomies to '
-            'seven levels, even if longer annotations exist. Note that this '
+            'parameter is used. This will trim all taxonomies to the given '
+            'levels, even if longer annotations exist. Note that this '
             'parameter will prepend rank handles whether or not they already '
             'exist in the taxonomy, so should ALWAYS be used in conjunction '
             'with `rank_handle_regex` if rank handles exist in any of the '
-            'inputs.'),
+            'inputs. Use \'disable\' to prevent prepending '
+            '\'new_rank_handles\''
+            ),
         'unclassified_label': 'Specifies what label should be used for '
                               'taxonomies that could not be resolved (when '
                               'LCA modes are used).'
@@ -296,7 +296,8 @@ plugin.methods.register_function(
         'threads': VSEARCH_PARAMS['threads'],
         'perc_identity': VSEARCH_PARAMS['perc_identity'],
         'derep_prefix': Bool,
-        'rank_handles': Str % Choices(list(_rank_handles.keys()))},
+        'rank_handles': List[Str % Choices(['disable'])] | List[Str % Choices(
+                                                        _allowed_ranks)]},
     outputs=[('dereplicated_sequences', FeatureData[Sequence]),
              ('dereplicated_taxa', FeatureData[Taxonomy])],
     input_descriptions={
@@ -317,11 +318,10 @@ plugin.methods.register_function(
                         'longer sequences, it is clustered with the shortest '
                         'of them. If they are equally long, it is clustered '
                         'with the most abundant.',
-        'rank_handles': (
-            'Specifies the set of rank handles used to backfill '
-            'missing ranks in the resulting dereplicated taxonomy. The '
-            'default setting will backfill SILVA-style 7-level rank handles. '
-            'Set to "none" to disable backfilling.')
+        'rank_handles': 'Specifies the set of rank handles used to backfill '
+                        'missing ranks in the resulting dereplicated '
+                        'taxonomy. Use \'disable\' to prevent applying '
+                        '\'rank_handles\'. '
     },
     name='Dereplicate features with matching sequences and taxonomies.',
     description=(
@@ -332,7 +332,10 @@ plugin.methods.register_function(
         'sequences are duplicates (uniq); or return only dereplicated '
         'sequences labeled by either the least common ancestor (lca) or the '
         'most common taxonomic label associated with sequences in that '
-        'cluster (majority).'),
+        'cluster (majority). Note: all taxonomy strings will be coerced '
+        'to semicolon delimiters without any leading or trailing spaces. '
+        'If this is not desired, please use \'rescript edit-taxonomy\' '
+        'to make any changes.'),
     citations=[citations['rognes2016vsearch']]
 )
 

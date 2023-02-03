@@ -66,7 +66,7 @@ _allowed_ranks = OrderedDict([
     ('species subgroup', 'sgs__'),
     ('species', 's__'),
     ('subspecies', 'ssb__'),
-    ('forma', 'f__')
+    ('forma', 'for__')
 ])
 
 
