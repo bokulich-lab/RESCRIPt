@@ -437,19 +437,26 @@ class TestDerep(TestPluginBase):
         backfilled_taxa = _backfill_series(trimmed_taxa, custom_rank_handles)
         pdt.assert_series_equal(backfilled_taxa, exp_taxa, check_names=False)
 
-        # alt  / longer ranks
-        # same as fungal data but then adding subspecies prefixes
-        alt_rank_handles = ('d__; sk__; k__; ks__; p__; ps__; c__; o__; sf__;'
-                            ' g__; s__; ssb__; for__')
-        f_taxa = self.fungi_taxa.view(pd.Series).sort_index()
-        f_taxa = f_taxa.apply(lambda x: ';'.join(
-                          _return_stripped_taxon_rank_list(x)))
-        backfilled_f_taxa = _backfill_series(f_taxa, alt_rank_handles)
-        trimmed_f_taxa = backfilled_f_taxa.apply(
-            lambda x: ';'.join(x.split(';')[:9]))
-        # manually backfill
-        exp_f_taxa = trimmed_f_taxa.apply(lambda x: x + ';g__;s__;ssb__;for__')
-        updated_backfilled_f_taxa = _backfill_series(trimmed_f_taxa,
-                                                     alt_rank_handles)
-        pdt.assert_series_equal(updated_backfilled_f_taxa, exp_f_taxa,
-                                check_names=False)
+    def test_backfill_long_taxonomy(self):
+        default_rank_handle = ('d__; sk__; k__; ks__; p__; ps__; c__; o__; '
+                               'sf__; g__; s__; ssb__; for__')
+        rank_handles = _return_stripped_taxon_rank_list(default_rank_handle)
+        taxa = ['d__Eukaryota; sk__Nucletmycea; k__Fungi; ks__Dikarya; '
+                'p__Ascomycota',
+                'd__Eukaryota',
+                'd__Eukaryota; sk__Nucletmycea; k__Fungi; ks__Dikarya; '
+                'p__Ascomycota; ps__Saccharomycotina; c__Saccharomycetes; '
+                'o__Saccharomycetales; sf__Debaryomycetaceae; '
+                'g__Candida-Lodderomyces_clade; s__Candida_parapsilosis']
+        backfilled_taxa = [_backfill_taxonomy(t, rank_handles, ';')
+                           for t in taxa]
+        exp_taxa = ['d__Eukaryota;sk__Nucletmycea;k__Fungi;ks__Dikarya;'
+                    'p__Ascomycota;ps__;c__;o__;sf__;g__;s__;ssb__;for__',
+                    'd__Eukaryota;sk__;k__;ks__;p__;ps__;c__;o__;sf__;g__;s__;'
+                    'ssb__;for__',
+                    'd__Eukaryota;sk__Nucletmycea;k__Fungi;ks__Dikarya;'
+                    'p__Ascomycota;ps__Saccharomycotina;c__Saccharomycetes;'
+                    'o__Saccharomycetales;sf__Debaryomycetaceae;'
+                    'g__Candida-Lodderomyces_clade;s__Candida_parapsilosis;'
+                    'ssb__;for__']
+        self.assertEqual(backfilled_taxa, exp_taxa)
