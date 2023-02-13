@@ -86,7 +86,9 @@ def _fetch_and_extract_dataset(api_response):
             os.path.join(tmp, 'ncbi_dataset', 'data', '*', '*_genomic.fna'))
         with open(str(genomes), 'a') as fin:
             for f in genome_seq_fps:
-                seq = skbio.read(f, format='fasta', constructor=skbio.DNA)
+                seq = skbio.read(
+                    f, format='fasta', constructor=skbio.DNA, lowercase=True
+                )
                 skbio.io.write(seq, format='fasta', into=fin)
 
         # find and move all the gff files
