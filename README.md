@@ -22,6 +22,7 @@ conda activate rescript
 conda install \
   -c conda-forge -c bioconda -c qiime2 -c defaults \
   qiime2 q2cli q2templates q2-types q2-longitudinal q2-feature-classifier "pandas>=0.25.3" xmltodict
+pip install "ncbi-datasets-pylib==12.6.0"
 ```
 Install source:
 
@@ -35,6 +36,7 @@ First activate your QIIME 2 environment (ver 2022.8 or later) and install releva
 ```
 conda activate qiime2-2022.8
 conda install -c conda-forge -c bioconda -c qiime2 -c defaults xmltodict
+pip install "ncbi-datasets-pylib==12.6.0"
 ```
 Install source:
 
