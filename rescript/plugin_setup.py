@@ -46,7 +46,7 @@ from rescript.types._type import SILVATaxonomy, SILVATaxidMap
 from rescript.types.methods import reverse_transcribe
 from rescript.ncbi import (
     get_ncbi_data, _default_ranks, _allowed_ranks, get_ncbi_data_protein)
-
+from .get_gtdb import get_gtdb_data
 
 citations = Citations.load('citations.bib', package='rescript')
 
@@ -65,6 +65,11 @@ plugin = Plugin(
 SILVA_LICENSE_NOTE = (
     'NOTE: THIS ACTION ACQUIRES DATA FROM THE SILVA DATABASE. SEE '
     'https://www.arb-silva.de/silva-license-information/ FOR MORE INFORMATION '
+    'and be aware that earlier versions may be released under a different '
+    'license.')
+
+GTDB_LICENSE_NOTE = ('NOTE: THIS ACTION ACQUIRES DATA FROM GTDB. SEE '
+    'https://gtdb.ecogenomic.org/about FOR MORE INFORMATION '
     'and be aware that earlier versions may be released under a different '
     'license.')
 
@@ -889,6 +894,32 @@ plugin.methods.register_function(
         'from the NCBI Taxonomy database.' + GET_NCBI_DATA_DISCLAIMER
     ),
     citations=[citations['ncbi2018database'], citations['benson2012genbank']]
+)
+
+
+#plugin.pipelines.register_function(
+plugin.pipelines.register_function(
+    function=get_gtdb_data,
+    inputs={},
+    parameters={
+        'version': Str % Choices(['202', '207']),
+        },
+    outputs=[('gtdb_taxonomy', FeatureData[Taxonomy]),
+             ('gtdb_sequences', FeatureData[Sequence])],
+    input_descriptions={},
+    parameter_descriptions={
+        'version': 'GTDB database version to download.'},
+    output_descriptions={
+        'gtdb_taxonomy': 'GTDB reference taxonomy.',
+        'gtdb_sequences': 'GTDB reference sequences.'},
+    name='Download, parse, and import GTDB reference data.',
+    description=(
+        'Download, parse, and import GTDB files, given a version '
+        'number. Downloads data directly from GTDB, '
+        'parses the taxonomy files, and outputs ready-to-use sequence and '
+        'taxonomy artifacts. REQUIRES STABLE INTERNET CONNECTION. ' +
+        GTDB_LICENSE_NOTE),
+    citations=[citations['Parks2020gtdb'], citations['Parks2021gtdb']]
 )
 
 
