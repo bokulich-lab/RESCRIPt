@@ -118,9 +118,6 @@ def _retrieve_data_from_gtdb(queries, version_dict=VERSION_DICT):
                     except OSError:
                         pass
 
-                    # import gtdb seqs
-                    # if type == 'FeatureData[Sequence]':
-                    #     print('  Importing gtdb sequence data...')
                     seq_results.append(qiime2.Artifact.import_data(
                                                                type,
                                                                untarred_destination,
@@ -136,10 +133,6 @@ def _retrieve_data_from_gtdb(queries, version_dict=VERSION_DICT):
                     except OSError:
                         pass
 
-                    # import gtdb tax
-                    # if type == 'FeatureData[Taxonomy]':
-                    #     print('Importing INFO:', type, destination,format)
-                    #     print('Importing gtdb taxonomy data...')
                     tax_results.append(qiime2.Artifact.import_data(
                                                                    type,
                                                                    destination,
