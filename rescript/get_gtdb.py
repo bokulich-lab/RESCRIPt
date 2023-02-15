@@ -37,7 +37,7 @@ from q2_feature_table import merge_seqs, merge_taxa
 # is based on 53 and 120 concatenated proteins (cp), respectively.
 # If this changes we can set up a conditional statemnt below.   
 VERSION_DICT = {'207': {'archaea': 'ar53', 'bacteria': 'bac120'}, 
-                '202':{'archaea': 'ar53', 'bacteria': 'bac120'}}
+                '202':{'archaea': 'ar122', 'bacteria': 'bac120'}}
 
 
 def get_gtdb_data(ctx, version='207'):
