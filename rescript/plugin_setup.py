@@ -68,7 +68,8 @@ SILVA_LICENSE_NOTE = (
     'and be aware that earlier versions may be released under a different '
     'license.')
 
-GTDB_LICENSE_NOTE = ('NOTE: THIS ACTION ACQUIRES DATA FROM GTDB. SEE '
+GTDB_LICENSE_NOTE = (
+    'NOTE: THIS ACTION ACQUIRES DATA FROM GTDB. SEE '
     'https://gtdb.ecogenomic.org/about FOR MORE INFORMATION '
     'and be aware that earlier versions may be released under a different '
     'license.')
@@ -897,7 +898,6 @@ plugin.methods.register_function(
 )
 
 
-#plugin.pipelines.register_function(
 plugin.pipelines.register_function(
     function=get_gtdb_data,
     inputs={},
