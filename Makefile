@@ -16,7 +16,7 @@ test-cov: all
 
 install: all
 	$(PYTHON) setup.py install
-	pip install "ncbi-datasets-pylib==12.6.0"
+	pip install ncbi-datasets-pylib
 
 dev: all
 	pip install -e .
