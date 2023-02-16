@@ -11,6 +11,7 @@ import os
 import shutil
 import tempfile
 import zipfile
+from copy import deepcopy
 from typing import List
 
 import ncbi.datasets as nd
@@ -137,13 +138,21 @@ def get_ncbi_genomes(
         page_size: int = 20,
 ) -> (DNAFASTAFormat, LociDirectoryFormat,
       ProteinsDirectoryFormat, pd.DataFrame):
+    # we use a deepcopy of assembly_levels because the new versions of the NCBI
+    # datasets toolkit somehow, magically, update it what causes a conflict in
+    # the q2cli resulting in a failure to dump the action's params to provenance
+    assembly_descriptors_params = {
+        'assembly_levels': deepcopy(assembly_levels),
+        'assembly_source': assembly_source,
+        'only_reference': only_reference, 'page_size': page_size,
+        'taxon': taxon, 'tax_exact_match': tax_exact_match
+    }
     with DatasetsApiClient() as api_client:
         api_instance = nd.GenomeApi(api_client)
 
         all_acc_ids, all_tax_ids = _get_assembly_descriptors(
-            api_instance=api_instance, assembly_levels=assembly_levels,
-            assembly_source=assembly_source, only_reference=only_reference,
-            page_size=page_size, taxon=taxon, tax_exact_match=tax_exact_match)
+            api_instance=api_instance, **assembly_descriptors_params
+        )
 
         api_response = api_instance.download_assembly_package(
             all_acc_ids,
