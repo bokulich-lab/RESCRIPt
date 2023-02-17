@@ -85,8 +85,7 @@ def _retrieve_data_from_gtdb(queries):
     '''
     Download data from gtdb, given a list of queries.
 
-    queries: list of tuples of (str, str)
-        (name, urlpath)
+    queries: list of tuples: (domain + tax/seq, url, type, format)
     '''
     tax_results = []
     seq_results = []
