@@ -14,37 +14,35 @@ import tarfile
 
 import qiime2
 from urllib.request import urlretrieve
+from collections import defaultdict
 # from urllib.error import HTTPError
 # from q2_types.feature_data import DNAFASTAFormat, DNAIterator
 # from q2_feature_table import merge_seqs, merge_taxa
-
-
-# ALLOWED_GTDB_RANKS = OrderedDict({'domain': 'd__', 'phylum': 'p__',
-#                                   'class': 'c__', 'order': 'o__',
-#                                   'family': 'f__', 'genus': 'g__',
-#                                   'species': 's__'})
-
-# DEFAULT_GTDB_RANKS = ['domain', 'phylum', 'class', 'order',
-#                       'family', 'genus', 'species']
 
 
 # different versions may have different file names for archaea and
 # bacteria. for example 'ar53' and 'bac120' mean that the GTDB phylogeny
 # is based on 53 and 120 concatenated proteins (cp), respectively.
 # If this changes we can set up a conditional statemnt below.
-VERSION_DICT = {'207': {'archaea': 'ar53', 'bacteria': 'bac120'},
-                '202': {'archaea': 'ar122', 'bacteria': 'bac120'}}
+VERSION_DICT = {'207': {'Archaea': 'ar53', 'Bacteria': 'bac120'},
+                '202': {'Archaea': 'ar122', 'Bacteria': 'bac120'}}
 
 
-def get_gtdb_data(ctx, version='207'):
+def get_gtdb_data(ctx, version='207', domain='Both'):
 
     merge_gtdb_seqs = ctx.get_action('feature_table', 'merge_seqs')
     merge_gtdb_taxonomy = ctx.get_action('feature_table', 'merge_taxa')
 
+    d = defaultdict(lambda: defaultdict(dict))
+
+    if domain == 'Both':
+        d[version] = VERSION_DICT[version]
+    else:
+        d[version][domain] = VERSION_DICT[version][domain]
+
     # download data from gtdb
-    print('\nDownloading and processing raw files may take some time... '
-          'get some coffee.\n')
-    queries = _assemble_gtdb_data_urls(version, VERSION_DICT)
+    print('\nDownloading and processing raw files ... \n')
+    queries = _assemble_gtdb_data_urls(d)
     gtdb_data = _retrieve_data_from_gtdb(queries)
     tax_q, seqs_q = gtdb_data
 
@@ -58,7 +56,7 @@ def get_gtdb_data(ctx, version='207'):
     return merged_gtdb_tax, merged_gtdb_seqs
 
 
-def _assemble_gtdb_data_urls(version, version_dict=VERSION_DICT):
+def _assemble_gtdb_data_urls(d):
     '''Generate gtdb urls, given database version and reference target.'''
 
     # Compile URLs
@@ -66,21 +64,24 @@ def _assemble_gtdb_data_urls(version, version_dict=VERSION_DICT):
                     '%s.0/genomic_files_reps/%s_ssu_reps_r%s.tar.gz')
     base_tax_url = ('https://data.gtdb.ecogenomic.org/releases/release%s/'
                     '%s.0/%s_taxonomy_r%s.tsv.gz')
+
     # taxonomy
     tax_queries = [(domain + '_taxonomy',
                    base_tax_url % (version, version, cp, version),
                    'FeatureData[Taxonomy]', 'HeaderlessTSVTaxonomyFormat')
-                   for domain, cp in version_dict[version].items()]
+                   for version, dcp in d.items() for domain, cp in
+                   dcp.items()]
     # sequences
     seq_queries = [(domain + '_sequences',
                    base_seq_url % (version, version, cp, version),
                    'FeatureData[Sequence]', 'DNAFASTAFormat')
-                   for domain, cp in version_dict[version].items()]
+                   for version, dcp in d.items() for domain, cp in
+                   dcp.items()]
 
     return tax_queries, seq_queries
 
 
-def _retrieve_data_from_gtdb(queries, version_dict=VERSION_DICT):
+def _retrieve_data_from_gtdb(queries):
     '''
     Download data from gtdb, given a list of queries.
 
@@ -116,6 +117,7 @@ def _retrieve_data_from_gtdb(queries, version_dict=VERSION_DICT):
                                                         type,
                                                         untarred_destination,
                                                         format))
+
                 # taxonomy files are contained within ``.gz`
                 else:
                     try:
@@ -123,7 +125,6 @@ def _retrieve_data_from_gtdb(queries, version_dict=VERSION_DICT):
                         print('  Unzipping {0}...'.format(name))
                         _gzip_decompress(destination, unzipped_destination)
                         destination = unzipped_destination
-                        print('DESTINATION: ', destination)
                     except OSError:
                         pass
 

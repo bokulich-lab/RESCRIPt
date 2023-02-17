@@ -903,12 +903,18 @@ plugin.pipelines.register_function(
     inputs={},
     parameters={
         'version': Str % Choices(['202', '207']),
+        'domain': Str % Choices(['Both', 'Bacteria', 'Archaea']),
         },
     outputs=[('gtdb_taxonomy', FeatureData[Taxonomy]),
              ('gtdb_sequences', FeatureData[Sequence])],
     input_descriptions={},
     parameter_descriptions={
-        'version': 'GTDB database version to download.'},
+        'version': 'GTDB database version to download.',
+        'domain': 'Sequence and taxonomy data to download from a given '
+                  'microbial domain from GTDB. \'Both\' will fetch both '
+                  'bacterial and archaeal data. \'Bacteria\' will only '
+                  'fetch bacterial data. \'Archaea\' will only fetch '
+                  'archaeal data.'},
     output_descriptions={
         'gtdb_taxonomy': 'GTDB reference taxonomy.',
         'gtdb_sequences': 'GTDB reference sequences.'},
