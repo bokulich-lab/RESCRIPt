@@ -8,8 +8,6 @@
 
 import os
 import tempfile
-import shutil
-import gzip
 import tarfile
 import warnings
 
@@ -17,11 +15,9 @@ import qiime2
 from urllib.request import urlretrieve
 from collections import defaultdict
 from urllib.error import HTTPError
-# from q2_types.feature_data import DNAFASTAFormat, DNAIterator
-# from q2_feature_table import merge_seqs, merge_taxa
+from rescript.get_data import _gzip_decompress
 
-
-# different versions may have different file names for archaea and
+# Different versions may have different file names for archaea and
 # bacteria. for example 'ar53' and 'bac120' mean that the GTDB phylogeny
 # is based on 53 and 120 concatenated proteins (cp), respectively.
 # If this changes we can set up a conditional statemnt below.
@@ -33,74 +29,77 @@ def get_gtdb_data(ctx, version='207', domain='Both'):
 
     d = defaultdict(lambda: defaultdict(dict))
 
-    if domain == 'Both':
-        d[version] = VERSION_DICT[version]
-    else:
-        d[version][domain] = VERSION_DICT[version][domain]
-
-    # download data from gtdb
-    print('\nDownloading and processing raw files ... \n')
-    queries = _assemble_gtdb_data_urls(d)
-    tax_q, seqs_q = _retrieve_data_from_gtdb(queries)
-
+    # Subset dict if needed, but keep same structure
     # Although we can run the following merge actions on a list of one
     # i.e. 'Archaea', we do not want to confuse anyone when looking
     # at provenance, by running a merge command for no reason.
     if domain == 'Both':
+        d[version] = VERSION_DICT[version]
+
+        queries = _assemble_queries(d)
+        tax_q, seqs_q = _retrieve_data_from_gtdb(queries)
+
         merge_gtdb_seqs = ctx.get_action('feature_table', 'merge_seqs')
         merge_gtdb_taxonomy = ctx.get_action('feature_table', 'merge_taxa')
         print('\n  Merging taxonomy data...')
         merged_gtdb_tax, = merge_gtdb_taxonomy(data=tax_q)
         print('\n  Merging sequence data...')
         merged_gtdb_seqs, = merge_gtdb_seqs(data=seqs_q)
+
     else:
+        d[version][domain] = VERSION_DICT[version][domain]
+        queries = _assemble_queries(d)
+        tax_q, seqs_q = _retrieve_data_from_gtdb(queries)
         merged_gtdb_tax = tax_q[0]
         merged_gtdb_seqs = seqs_q[0]
 
     print('\n Saving files...\n')
-
     return merged_gtdb_tax, merged_gtdb_seqs
 
 
-def _assemble_gtdb_data_urls(d):
-    '''Generate gtdb urls, given database version and reference target.'''
+def _assemble_queries(d):
+    ql = defaultdict(lambda: list())
 
-    # Base URLs
     base_seq_url = ('https://data.gtdb.ecogenomic.org/releases/release%s/'
                     '%s.0/genomic_files_reps/%s_ssu_reps_r%s.tar.gz')
     base_tax_url = ('https://data.gtdb.ecogenomic.org/releases/release%s/'
                     '%s.0/%s_taxonomy_r%s.tsv.gz')
 
-    def build_query(data, url, type, format):
-        query = [(data + ' (' + domain + ')',
-                 url % (version, version, cp, version), type, format)
-                 for version, dcp in d.items() for domain, cp in
-                 dcp.items()]
-        return query
+    for version, dcp in d.items():
+        for dom, cp in dcp.items():
 
-    # taxonomy
-    tax_queries = build_query('Taxonomy', base_tax_url,
-                              'FeatureData[Taxonomy]',
-                              'HeaderlessTSVTaxonomyFormat')
-    # sequences
-    seq_queries = build_query('Sequence', base_seq_url,
-                              'FeatureData[Sequence]',
-                              'DNAFASTAFormat')
-    return tax_queries, seq_queries
+            ql['Taxonomy'].append(
+                (dom,
+                 base_tax_url % (version, version, cp, version),
+                 'FeatureData[Taxonomy]',
+                 'HeaderlessTSVTaxonomyFormat'))
+
+            ql['Sequence'].append(
+               (dom,
+                base_seq_url % (version, version, cp, version),
+                'FeatureData[Sequence]',
+                'DNAFASTAFormat'))
+    return ql
 
 
 def _retrieve_data_from_gtdb(queries):
     '''
     Download data from gtdb, given a list of queries.
 
-    queries: list of tuples: (domain tax/seq, url, type, format)
+    queries: {'Taxonomy':(domain, url, type, format), (...),
+              'Sequence':(domain, url, type, format), (...)}
     '''
+
     tax_results = []
     seq_results = []
+
+    print('\nDownloading and processing raw files ... \n')
+
     with tempfile.TemporaryDirectory() as tmpdirname:
-        for q in queries:
-            for name, url, type, format in q:
-                print('Retrieving {0} from {1}'.format(name, url))
+        for sttype, q_info in queries.items():
+            for domain, url, dtype, fmt in q_info:
+                print('Retrieving {0} for {1} from {2}'.format(
+                      sttype, domain, url))
                 # grab url
                 bn = os.path.basename(url)
                 destination = os.path.join(tmpdirname, bn)
@@ -121,26 +120,20 @@ def _retrieve_data_from_gtdb(queries):
                     except OSError:
                         pass
                     seq_results.append(qiime2.Artifact.import_data(
-                                        type,
+                                        dtype,
                                         os.path.join(tmpdirname, untarred_fn),
-                                        format))
+                                        fmt))
                 # taxonomy files are contained within ``.gz`
                 else:
                     try:
                         unzipped_destination = os.path.splitext(destination)[0]
-                        print('  Unzipping {0}...\n'.format(name))
+                        print('  Unzipping {0}...\n'.format(bn))
                         _gzip_decompress(destination, unzipped_destination)
                         destination = unzipped_destination
                     except OSError:
                         pass
                     tax_results.append(qiime2.Artifact.import_data(
-                                                                type,
+                                                                dtype,
                                                                 destination,
-                                                                format))
+                                                                fmt))
         return tax_results, seq_results
-
-
-def _gzip_decompress(input_fp, output_fp):
-    with gzip.open(input_fp, 'rt') as temp_in:
-        with open(output_fp, 'w') as temp_out:
-            shutil.copyfileobj(temp_in, temp_out)

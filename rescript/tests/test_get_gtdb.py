@@ -10,7 +10,8 @@
 # import pkg_resources
 from qiime2.plugin.testing import TestPluginBase
 # from qiime2.plugins import rescript
-from rescript.get_gtdb import (VERSION_DICT, _assemble_gtdb_data_urls)
+from rescript.get_gtdb import (VERSION_DICT, _assemble_queries,
+                               _retrieve_data_from_gtdb)
 
 # from urllib.request import urlopen
 # from urllib.error import HTTPError
@@ -21,11 +22,11 @@ class TestGetGTDB(TestPluginBase):
     package = 'rescript.tests'
 
     # test that appropriate URLs are assembled, and those URLs work
-    def test_assemble_gtdb_data_urls(self):
-        obs_tax_queries, obs_seq_queries = _assemble_gtdb_data_urls(
-                                                       VERSION_DICT)
-        obs_tax_urls = [tax_q[1] for tax_q in obs_tax_queries]
-        obs_seq_urls = [seq_q[1] for seq_q in obs_seq_queries]
+    def test_assemble_queries(self):
+        queries = _assemble_queries(VERSION_DICT)
+
+        obs_tax_urls = [q_info[1] for q_info in queries['Taxonomy']]
+        obs_seq_urls = [q_info[1] for q_info in queries['Sequence']]
 
         exp_tax_urls = [('https://data.gtdb.ecogenomic.org/releases/'
                          'release207/207.0/ar53_taxonomy_r207.tsv.gz'),
@@ -49,3 +50,17 @@ class TestGetGTDB(TestPluginBase):
                          'bac120_ssu_reps_r202.tar.gz')]
         self.assertEqual(obs_tax_urls, exp_tax_urls)
         self.assertEqual(obs_seq_urls, exp_seq_urls)
+
+    def test_retrieve_data_from_gtdb(self):
+        queries = {'Taxonomy': [('Archaea', (
+                        'https://data.gtdb.ecogenomic.org/releases/'
+                        'release207/207.0/ar53_taxonomy_r207.tsv.gz'),
+                        'FeatureData[Taxonomy]',
+                        'HeaderlessTSVTaxonomyFormat')],
+                   'Sequence': [('Archaea', (
+                        'https://data.gtdb.ecogenomic.org/releases'
+                        '/release207/207.0/genomic_files_reps/'
+                        'ar53_ssu_reps_r207.tar.gz'),
+                        'FeatureData[Sequence]', 'DNAFASTAFormat')]}
+        _retrieve_data_from_gtdb(queries)
+        self.assertTrue(True)  # if we make it here, it worked.
