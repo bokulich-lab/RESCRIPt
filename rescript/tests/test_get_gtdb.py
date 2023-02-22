@@ -13,15 +13,15 @@ from qiime2.plugin.testing import TestPluginBase
 from rescript.get_gtdb import (VERSION_DICT, _assemble_queries,
                                _retrieve_data_from_gtdb)
 
-# from urllib.request import urlopen
-# from urllib.error import HTTPError
+from urllib.request import urlopen
+from urllib.error import HTTPError
 # from unittest.mock import patch
 
 
 class TestGetGTDB(TestPluginBase):
     package = 'rescript.tests'
 
-    # test that appropriate URLs are assembled, and those URLs work
+    # test that appropriate URLs are assembled
     def test_assemble_queries(self):
         queries = _assemble_queries(VERSION_DICT)
 
@@ -50,6 +50,13 @@ class TestGetGTDB(TestPluginBase):
                          'bac120_ssu_reps_r202.tar.gz')]
         self.assertEqual(obs_tax_urls, exp_tax_urls)
         self.assertEqual(obs_seq_urls, exp_seq_urls)
+
+        # test that these URLs work
+        for u in obs_tax_urls + obs_seq_urls:
+            try:
+                urlopen(u)
+            except HTTPError:
+                raise ValueError('Failed to open URL: ' + u)
 
     def test_retrieve_data_from_gtdb(self):
         queries = {'Taxonomy': [('Archaea', (
