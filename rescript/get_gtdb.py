@@ -21,35 +21,34 @@ from rescript.get_data import _gzip_decompress
 # bacteria. for example 'ar53' and 'bac120' mean that the GTDB phylogeny
 # is based on 53 and 120 concatenated proteins (cp), respectively.
 # If this changes we can set up a conditional statemnt below.
-VERSION_DICT = {'207': {'Archaea': 'ar53', 'Bacteria': 'bac120'},
-                '202': {'Archaea': 'ar122', 'Bacteria': 'bac120'}}
+VERSION_MAP_DICT = {'207': {'Archaea': 'ar53', 'Bacteria': 'bac120'},
+                    '202': {'Archaea': 'ar122', 'Bacteria': 'bac120'}}
 
 
 def get_gtdb_data(ctx, version='207', domain='Both'):
 
-    d = defaultdict(lambda: defaultdict(dict))
+    ver_dom_dict = defaultdict(lambda: defaultdict(dict))
 
     # Subset dict if needed, but keep same structure
     # Although we can run the following merge actions on a list of one
     # i.e. 'Archaea', we do not want to confuse anyone when looking
     # at provenance, by running a merge command for no reason.
     if domain == 'Both':
-        d[version] = VERSION_DICT[version]
+        ver_dom_dict[version] = VERSION_MAP_DICT[version]
+    else:
+        ver_dom_dict[version][domain] = VERSION_MAP_DICT[version][domain]
 
-        queries = _assemble_queries(d)
-        tax_q, seqs_q = _retrieve_data_from_gtdb(queries)
+    queries = _assemble_queries(ver_dom_dict)
+    tax_q, seqs_q = _retrieve_data_from_gtdb(queries)
 
+    if domain == 'Both':
         merge_gtdb_seqs = ctx.get_action('feature_table', 'merge_seqs')
         merge_gtdb_taxonomy = ctx.get_action('feature_table', 'merge_taxa')
         print('\n  Merging taxonomy data...')
         merged_gtdb_tax, = merge_gtdb_taxonomy(data=tax_q)
         print('\n  Merging sequence data...')
         merged_gtdb_seqs, = merge_gtdb_seqs(data=seqs_q)
-
     else:
-        d[version][domain] = VERSION_DICT[version][domain]
-        queries = _assemble_queries(d)
-        tax_q, seqs_q = _retrieve_data_from_gtdb(queries)
         merged_gtdb_tax = tax_q[0]
         merged_gtdb_seqs = seqs_q[0]
 
@@ -57,29 +56,29 @@ def get_gtdb_data(ctx, version='207', domain='Both'):
     return merged_gtdb_tax, merged_gtdb_seqs
 
 
-def _assemble_queries(d):
-    ql = defaultdict(lambda: list())
+def _assemble_queries(ver_dom_dict):
+    queries = defaultdict(lambda: list())
 
     base_seq_url = ('https://data.gtdb.ecogenomic.org/releases/release%s/'
                     '%s.0/genomic_files_reps/%s_ssu_reps_r%s.tar.gz')
     base_tax_url = ('https://data.gtdb.ecogenomic.org/releases/release%s/'
                     '%s.0/%s_taxonomy_r%s.tsv.gz')
 
-    for version, dcp in d.items():
+    for version, dcp in ver_dom_dict.items():
         for dom, cp in dcp.items():
 
-            ql['Taxonomy'].append(
+            queries['Taxonomy'].append(
                 (dom,
                  base_tax_url % (version, version, cp, version),
                  'FeatureData[Taxonomy]',
                  'HeaderlessTSVTaxonomyFormat'))
 
-            ql['Sequence'].append(
+            queries['Sequence'].append(
                (dom,
                 base_seq_url % (version, version, cp, version),
                 'FeatureData[Sequence]',
                 'DNAFASTAFormat'))
-    return ql
+    return queries
 
 
 def _retrieve_data_from_gtdb(queries):

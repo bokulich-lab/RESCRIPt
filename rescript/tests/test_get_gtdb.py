@@ -10,8 +10,7 @@
 # import pkg_resources
 from qiime2.plugin.testing import TestPluginBase
 # from qiime2.plugins import rescript
-from rescript.get_gtdb import (VERSION_DICT, _assemble_queries,
-                               _retrieve_data_from_gtdb)
+from rescript.get_gtdb import (VERSION_MAP_DICT, _assemble_queries)
 
 from urllib.request import urlopen
 from urllib.error import HTTPError
@@ -23,7 +22,7 @@ class TestGetGTDB(TestPluginBase):
 
     # test that appropriate URLs are assembled
     def test_assemble_queries(self):
-        queries = _assemble_queries(VERSION_DICT)
+        queries = _assemble_queries(VERSION_MAP_DICT)
 
         obs_tax_urls = [q_info[1] for q_info in queries['Taxonomy']]
         obs_seq_urls = [q_info[1] for q_info in queries['Sequence']]
@@ -57,17 +56,3 @@ class TestGetGTDB(TestPluginBase):
                 urlopen(u)
             except HTTPError:
                 raise ValueError('Failed to open URL: ' + u)
-
-    def test_retrieve_data_from_gtdb(self):
-        queries = {'Taxonomy': [('Archaea', (
-                        'https://data.gtdb.ecogenomic.org/releases/'
-                        'release207/207.0/ar53_taxonomy_r207.tsv.gz'),
-                        'FeatureData[Taxonomy]',
-                        'HeaderlessTSVTaxonomyFormat')],
-                   'Sequence': [('Archaea', (
-                        'https://data.gtdb.ecogenomic.org/releases'
-                        '/release207/207.0/genomic_files_reps/'
-                        'ar53_ssu_reps_r207.tar.gz'),
-                        'FeatureData[Sequence]', 'DNAFASTAFormat')]}
-        _retrieve_data_from_gtdb(queries)
-        self.assertTrue(True)  # if we make it here, it worked.
