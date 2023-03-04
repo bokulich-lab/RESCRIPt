@@ -59,23 +59,23 @@ def get_gtdb_data(ctx, version='207', domain='Both'):
 def _assemble_queries(ver_dom_dict):
     queries = defaultdict(lambda: list())
 
-    base_seq_url = ('https://data.gtdb.ecogenomic.org/releases/release%s/'
-                    '%s.0/genomic_files_reps/%s_ssu_reps_r%s.tar.gz')
-    base_tax_url = ('https://data.gtdb.ecogenomic.org/releases/release%s/'
-                    '%s.0/%s_taxonomy_r%s.tsv.gz')
+    base_seq_url = ('https://data.gtdb.ecogenomic.org/releases/release{ver}/'
+                    '{ver}.0/genomic_files_reps/{cp}_ssu_reps_r{ver}.tar.gz')
+    base_tax_url = ('https://data.gtdb.ecogenomic.org/releases/release{ver}/'
+                    '{ver}.0/{cp}_taxonomy_r{ver}.tsv.gz')
 
     for version, dcp in ver_dom_dict.items():
         for dom, cp in dcp.items():
 
             queries['Taxonomy'].append(
                 (dom,
-                 base_tax_url % (version, version, cp, version),
+                 base_tax_url.format(**{'ver': version, 'cp': cp}),
                  'FeatureData[Taxonomy]',
                  'HeaderlessTSVTaxonomyFormat'))
 
             queries['Sequence'].append(
                (dom,
-                base_seq_url % (version, version, cp, version),
+                base_seq_url.format(**{'ver': version, 'cp': cp}),
                 'FeatureData[Sequence]',
                 'DNAFASTAFormat'))
     return queries
@@ -108,31 +108,34 @@ def _retrieve_data_from_gtdb(queries):
                     msg = ("Unable to retrieve the followng file from GTDB:\n "
                            + url)
                     warnings.warn(msg, UserWarning)
-                # seq files are contained within `tar.gz``
+                # seq files are contained within `tar.gz`
                 if tarfile.is_tarfile(destination):
-                    try:
-                        untarred_fn = bn.split('.')[0]+'.fna'
-                        print('  Untarring {0}...\n'.format(bn))
-                        with tarfile.open(destination, 'r') as tar:
-                            tar.extract(member=untarred_fn,
-                                        path=tmpdirname)
-                    except OSError:
-                        pass
-                    seq_results.append(qiime2.Artifact.import_data(
-                                        dtype,
-                                        os.path.join(tmpdirname, untarred_fn),
-                                        fmt))
-                # taxonomy files are contained within ``.gz`
+                    seq_results.append(get_tar_data(destination, bn,
+                                                    tmpdirname, dtype, fmt))
                 else:
-                    try:
-                        unzipped_destination = os.path.splitext(destination)[0]
-                        print('  Unzipping {0}...\n'.format(bn))
-                        _gzip_decompress(destination, unzipped_destination)
-                        destination = unzipped_destination
-                    except OSError:
-                        pass
-                    tax_results.append(qiime2.Artifact.import_data(
-                                                                dtype,
-                                                                destination,
-                                                                fmt))
+                    tax_results.append(get_gzipped_data(destination, bn,
+                                                        dtype, fmt))
         return tax_results, seq_results
+
+
+def get_tar_data(tar_loc, base_fn, tmpdirname, dtype, fmt):
+    try:
+        untarred_fn = base_fn.split('.')[0]+'.fna'
+        print('  Untarring {0}...\n'.format(base_fn))
+        with tarfile.open(tar_loc, 'r') as tar:
+            tar.extract(member=untarred_fn,
+                        path=tmpdirname)
+        return qiime2.Artifact.import_data(dtype, os.path.join(
+                                       tmpdirname, untarred_fn), fmt)
+    except OSError:
+        pass
+
+
+def get_gzipped_data(zipped_loc, base_fn, dtype, fmt):
+    try:
+        unzipped_destination = os.path.splitext(zipped_loc)[0]
+        print('  Unzipping {0}...\n'.format(base_fn))
+        _gzip_decompress(zipped_loc, unzipped_destination)
+        return qiime2.Artifact.import_data(dtype, unzipped_destination, fmt)
+    except OSError:
+        pass
