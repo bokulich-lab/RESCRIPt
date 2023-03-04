@@ -128,7 +128,8 @@ def get_tar_data(tar_loc, base_fn, tmpdirname, dtype, fmt):
         return qiime2.Artifact.import_data(dtype, os.path.join(
                                        tmpdirname, untarred_fn), fmt)
     except OSError:
-        pass
+        raise OSError(('{0}: either does not exist or can not '
+                       'be untarred!'.format(tar_loc)))
 
 
 def get_gzipped_data(zipped_loc, base_fn, dtype, fmt):
@@ -138,4 +139,5 @@ def get_gzipped_data(zipped_loc, base_fn, dtype, fmt):
         _gzip_decompress(zipped_loc, unzipped_destination)
         return qiime2.Artifact.import_data(dtype, unzipped_destination, fmt)
     except OSError:
-        pass
+        raise OSError(('{0}: either does not exist or can not '
+                       'be unzipped!'.format(unzipped_destination)))
