@@ -20,6 +20,29 @@ from unittest.mock import patch
 class TestGetGTDB(TestPluginBase):
     package = 'rescript.tests'
 
+    def setUp(self):
+        super().setUp()
+        self.arch_tax = qiime2.Artifact.import_data(
+                            'FeatureData[Taxonomy]',
+                            pkg_resources.resource_filename(
+                                'rescript.tests',
+                                'data/gtdb-taxa-archaea.tsv'))
+        self.bact_tax = qiime2.Artifact.import_data(
+                            'FeatureData[Taxonomy]',
+                            pkg_resources.resource_filename(
+                                'rescript.tests',
+                                'data/gtdb-taxa-bacteria.tsv'))
+        self.arch_seqs = qiime2.Artifact.import_data(
+                            'FeatureData[Sequence]',
+                            pkg_resources.resource_filename(
+                                'rescript.tests',
+                                'data/gtdb-seqs-archaea.fasta'))
+        self.bact_seqs = qiime2.Artifact.import_data(
+                            'FeatureData[Sequence]',
+                            pkg_resources.resource_filename(
+                                'rescript.tests',
+                                'data/gtdb-seqs-bacteria.fasta'))
+
     # test that appropriate URLs are assembled
     def test_assemble_queries(self):
         queries = _assemble_queries(VERSION_MAP_DICT)
@@ -59,34 +82,11 @@ class TestGetGTDB(TestPluginBase):
 
     def test_get_gtdb(self):
         def _makey_fakey_both(faking_ignore_this):
-            arch_tax = qiime2.Artifact.import_data(
-                'FeatureData[Taxonomy]',
-                pkg_resources.resource_filename(
-                    'rescript.tests', 'data/gtdb-taxa-archaea.tsv'))
-            bact_tax = qiime2.Artifact.import_data(
-                'FeatureData[Taxonomy]',
-                pkg_resources.resource_filename(
-                    'rescript.tests', 'data/gtdb-taxa-bacteria.tsv'))
-            arch_seqs = qiime2.Artifact.import_data(
-                'FeatureData[Sequence]',
-                pkg_resources.resource_filename(
-                    'rescript.tests', 'data/gtdb-seqs-archaea.fasta'))
-            bact_seqs = qiime2.Artifact.import_data(
-                'FeatureData[Sequence]',
-                pkg_resources.resource_filename(
-                    'rescript.tests', 'data/gtdb-seqs-bacteria.fasta'))
-            return [arch_tax, bact_tax], [arch_seqs, bact_seqs]
+            return [self.arch_tax, self.bact_tax], [self.arch_seqs,
+                                                    self.bact_seqs]
 
         def _makey_fakey_arch(faking_ignore_this):
-            arch_tax = qiime2.Artifact.import_data(
-                'FeatureData[Taxonomy]',
-                pkg_resources.resource_filename(
-                    'rescript.tests', 'data/gtdb-taxa-archaea.tsv'))
-            arch_seqs = qiime2.Artifact.import_data(
-                'FeatureData[Sequence]',
-                pkg_resources.resource_filename(
-                    'rescript.tests', 'data/gtdb-seqs-archaea.fasta'))
-            return [arch_tax], [arch_seqs]
+            return [self.arch_tax], [self.arch_seqs]
 
         # default (both domains)
         with patch('rescript.get_gtdb._retrieve_data_from_gtdb',
