@@ -88,7 +88,10 @@ class TestGetGTDB(TestPluginBase):
         def _makey_fakey_arch(faking_ignore_this):
             return [self.arch_tax], [self.arch_seqs]
 
-        # default (both domains)
+        def _makey_fakey_bact(faking_ignore_this):
+            return [self.bact_tax], [self.bact_seqs]
+
+        # default (both domains, version 207)
         with patch('rescript.get_gtdb._retrieve_data_from_gtdb',
                    new=_makey_fakey_both):
             rescript.actions.get_gtdb_data(
@@ -99,4 +102,10 @@ class TestGetGTDB(TestPluginBase):
                    new=_makey_fakey_arch):
             rescript.actions.get_gtdb_data(
                 version='202', domain='Archaea')
+            self.assertTrue(True)
+        # just grab bacteria domain, and version 207
+        with patch('rescript.get_gtdb._retrieve_data_from_gtdb',
+                   new=_makey_fakey_bact):
+            rescript.actions.get_gtdb_data(
+                version='207', domain='Bacteria')
             self.assertTrue(True)
