@@ -6,15 +6,15 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-# import qiime2
-# import pkg_resources
+import qiime2
+import pkg_resources
 from qiime2.plugin.testing import TestPluginBase
-# from qiime2.plugins import rescript
+from qiime2.plugins import rescript
 from rescript.get_gtdb import (VERSION_MAP_DICT, _assemble_queries)
 
 from urllib.request import urlopen
 from urllib.error import HTTPError
-# from unittest.mock import patch
+from unittest.mock import patch
 
 
 class TestGetGTDB(TestPluginBase):
@@ -56,3 +56,47 @@ class TestGetGTDB(TestPluginBase):
                 urlopen(u)
             except HTTPError:
                 raise ValueError('Failed to open URL: ' + u)
+
+    def test_get_gtdb(self):
+        def _makey_fakey_both(faking_ignore_this):
+            arch_tax = qiime2.Artifact.import_data(
+                'FeatureData[Taxonomy]',
+                pkg_resources.resource_filename(
+                    'rescript.tests', 'data/gtdb-taxa-archaea.tsv'))
+            bact_tax = qiime2.Artifact.import_data(
+                'FeatureData[Taxonomy]',
+                pkg_resources.resource_filename(
+                    'rescript.tests', 'data/gtdb-taxa-bacteria.tsv'))
+            arch_seqs = qiime2.Artifact.import_data(
+                'FeatureData[Sequence]',
+                pkg_resources.resource_filename(
+                    'rescript.tests', 'data/gtdb-seqs-archaea.fasta'))
+            bact_seqs = qiime2.Artifact.import_data(
+                'FeatureData[Sequence]',
+                pkg_resources.resource_filename(
+                    'rescript.tests', 'data/gtdb-seqs-bacteria.fasta'))
+            return [arch_tax, bact_tax], [arch_seqs, bact_seqs]
+
+        def _makey_fakey_arch(faking_ignore_this):
+            arch_tax = qiime2.Artifact.import_data(
+                'FeatureData[Taxonomy]',
+                pkg_resources.resource_filename(
+                    'rescript.tests', 'data/gtdb-taxa-archaea.tsv'))
+            arch_seqs = qiime2.Artifact.import_data(
+                'FeatureData[Sequence]',
+                pkg_resources.resource_filename(
+                    'rescript.tests', 'data/gtdb-seqs-archaea.fasta'))
+            return [arch_tax], [arch_seqs]
+
+        # default (both domains)
+        with patch('rescript.get_gtdb._retrieve_data_from_gtdb',
+                   new=_makey_fakey_both):
+            rescript.actions.get_gtdb_data(
+                version='207', domain='Both')
+            self.assertTrue(True)
+        # just grab archaea domain, and version 202
+        with patch('rescript.get_gtdb._retrieve_data_from_gtdb',
+                   new=_makey_fakey_arch):
+            rescript.actions.get_gtdb_data(
+                version='202', domain='Archaea')
+            self.assertTrue(True)
