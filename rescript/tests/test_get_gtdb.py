@@ -94,18 +94,24 @@ class TestGetGTDB(TestPluginBase):
         # default (both domains, version 207)
         with patch('rescript.get_gtdb._retrieve_data_from_gtdb',
                    new=_makey_fakey_both):
-            rescript.actions.get_gtdb_data(
+            res = rescript.actions.get_gtdb_data(
                 version='207', domain='Both')
-            self.assertTrue(True)
+            self.assertEqual(len(res), 2)
+            self.assertEqual(str(res[0].type), 'FeatureData[Taxonomy]')
+            self.assertEqual(str(res[1].type), 'FeatureData[Sequence]')
         # just grab archaea domain, and version 202
         with patch('rescript.get_gtdb._retrieve_data_from_gtdb',
                    new=_makey_fakey_arch):
-            rescript.actions.get_gtdb_data(
+            resa = rescript.actions.get_gtdb_data(
                 version='202', domain='Archaea')
-            self.assertTrue(True)
+            self.assertEqual(len(resa), 2)
+            self.assertEqual(str(resa[0].type), 'FeatureData[Taxonomy]')
+            self.assertEqual(str(resa[1].type), 'FeatureData[Sequence]')
         # just grab bacteria domain, and version 207
         with patch('rescript.get_gtdb._retrieve_data_from_gtdb',
                    new=_makey_fakey_bact):
-            rescript.actions.get_gtdb_data(
+            resb = rescript.actions.get_gtdb_data(
                 version='207', domain='Bacteria')
-            self.assertTrue(True)
+            self.assertEqual(len(resb), 2)
+            self.assertEqual(str(resb[0].type), 'FeatureData[Taxonomy]')
+            self.assertEqual(str(resb[1].type), 'FeatureData[Sequence]')
