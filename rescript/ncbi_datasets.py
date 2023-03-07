@@ -20,7 +20,7 @@ import pandas as pd
 import skbio
 from multiprocessing import Manager
 from ncbi.datasets import ApiException
-from q2_types.feature_data import DNAFASTAFormat, MixedCaseDNAFASTAFormat
+from q2_types.feature_data import DNAFASTAFormat
 from q2_types_genomics.genome_data import (LociDirectoryFormat,
                                            ProteinsDirectoryFormat)
 
@@ -139,9 +139,10 @@ def get_ncbi_genomes(
         page_size: int = 20,
 ) -> (DNAFASTAFormat, LociDirectoryFormat,
       ProteinsDirectoryFormat, pd.DataFrame):
-    # we use a deepcopy of assembly_levels because the new versions of the NCBI
-    # datasets toolkit somehow, magically, update it what causes a conflict in
-    # the q2cli resulting in a failure to dump the action's params to provenance
+    # we use a deepcopy of assembly_levels because the new versions of
+    # the NCBI datasets toolkit somehow, magically, update it what
+    # causes a conflict in the q2cli resulting in a failure to dump
+    # the action's params to provenance
     assembly_descriptors_params = {
         'assembly_levels': deepcopy(assembly_levels),
         'assembly_source': assembly_source,
