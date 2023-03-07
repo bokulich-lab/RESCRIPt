@@ -20,7 +20,7 @@ import pandas as pd
 import skbio
 from multiprocessing import Manager
 from ncbi.datasets import ApiException
-from q2_types.feature_data import DNAFASTAFormat
+from q2_types.feature_data import DNAFASTAFormat, MixedCaseDNAFASTAFormat
 from q2_types_genomics.genome_data import (LociDirectoryFormat,
                                            ProteinsDirectoryFormat)
 
@@ -84,7 +84,8 @@ def _fetch_and_extract_dataset(api_response):
         # find and move all the genome sequences
         genomes = DNAFASTAFormat()
         genome_seq_fps = glob.glob(
-            os.path.join(tmp, 'ncbi_dataset', 'data', '*', '*_genomic.fna'))
+            os.path.join(tmp, 'ncbi_dataset', 'data', '*', '*_genomic.fna')
+        )
         with open(str(genomes), 'a') as fin:
             for f in genome_seq_fps:
                 seq = skbio.read(

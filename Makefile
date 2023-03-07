@@ -16,7 +16,6 @@ test-cov: all
 
 install: all
 	$(PYTHON) setup.py install
-	$(PYTHON) -m pip install ncbi-datasets-pylib
 
 dev: all
 	pip install -e .
