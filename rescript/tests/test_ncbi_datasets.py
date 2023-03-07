@@ -69,7 +69,7 @@ class TestNCBIDatasets(TestPluginBase):
                 filters_assembly_level=['complete_chromosome'],
                 filters_reference_only=True,
                 filters_has_annotation=True,
-                tax_exact_match=True, page_token=None
+                tax_exact_match=True, page_token=''
             )
 
     def test_get_assembly_descriptors_many_pages(self):
@@ -97,7 +97,7 @@ class TestNCBIDatasets(TestPluginBase):
                       filters_reference_only=True,
                       filters_has_annotation=True,
                       tax_exact_match=True, page_token=i)
-                 for i in (None, 'token1', 'token2')]
+                 for i in ('', 'token1', 'token2')]
             )
 
     def test_get_assembly_descriptors_with_api_error(self):
@@ -196,7 +196,7 @@ class TestNCBIDatasets(TestPluginBase):
                 filters_assembly_level=['scaffold', 'contig'],
                 filters_reference_only=True,
                 filters_has_annotation=True,
-                tax_exact_match=True, page_token=None
+                tax_exact_match=True, page_token=''
             )
             p2.assert_called_once_with(
                 self.fake_acc_ids, exclude_sequence=False,
