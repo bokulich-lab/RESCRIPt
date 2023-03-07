@@ -52,14 +52,6 @@ def get_gtdb_data(ctx, version='207', domain='Both'):
         gtdb_tax = tax_q[0]
         gtdb_seqs = seqs_q[0]
 
-    # The GTDB taxonomy file contains information for all genomes.
-    # Which the SSU data are a subset. So, we'll remove these excess
-    # taxonomy entries.
-    print('\nRemoving excess taxonomy labels...')
-    filt_tax = ctx.get_action('rescript', 'filter_taxa')
-    gtdb_ids_to_keep = gtdb_seqs.view(qiime2.Metadata)
-    gtdb_tax, = filt_tax(taxonomy=gtdb_tax,
-                         ids_to_keep=gtdb_ids_to_keep)
     print('\n Saving files...\n')
     return gtdb_tax, gtdb_seqs
 
