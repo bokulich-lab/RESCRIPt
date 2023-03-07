@@ -15,6 +15,7 @@ from rescript.get_gtdb import (VERSION_MAP_DICT, _assemble_queries)
 from urllib.request import urlopen
 from urllib.error import HTTPError
 from unittest.mock import patch
+import pandas as pd
 
 
 class TestGetGTDB(TestPluginBase):
@@ -115,3 +116,17 @@ class TestGetGTDB(TestPluginBase):
             self.assertEqual(len(resb), 2)
             self.assertEqual(str(resb[0].type), 'FeatureData[Taxonomy]')
             self.assertEqual(str(resb[1].type), 'FeatureData[Sequence]')
+
+    def test_get_gtdb_filter_excess_taxa(self):
+        def _makey_fakey_more_taxa(faking_ignore_this):
+            return [self.arch_tax, self.bact_tax], [self.arch_seqs]
+
+        # default (grab more taxa than seqs, remove excess taxa)
+        with patch('rescript.get_gtdb._retrieve_data_from_gtdb',
+                   new=_makey_fakey_more_taxa):
+            res = rescript.actions.get_gtdb_data(
+                version='207', domain='Both')
+            self.assertEqual(len(res), 2)
+            self.assertEqual(str(res[0].type), 'FeatureData[Taxonomy]')
+            self.assertEqual(str(res[1].type), 'FeatureData[Sequence]')
+            self.assertEqual(len(res[0].view(pd.Series)), 2)
