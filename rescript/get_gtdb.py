@@ -45,15 +45,28 @@ def get_gtdb_data(ctx, version='207', domain='Both'):
         merge_gtdb_seqs = ctx.get_action('feature_table', 'merge_seqs')
         merge_gtdb_taxonomy = ctx.get_action('feature_table', 'merge_taxa')
         print('\n  Merging taxonomy data...')
-        merged_gtdb_tax, = merge_gtdb_taxonomy(data=tax_q)
+        gtdb_tax, = merge_gtdb_taxonomy(data=tax_q)
         print('\n  Merging sequence data...')
-        merged_gtdb_seqs, = merge_gtdb_seqs(data=seqs_q)
+        gtdb_seqs, = merge_gtdb_seqs(data=seqs_q)
     else:
-        merged_gtdb_tax = tax_q[0]
-        merged_gtdb_seqs = seqs_q[0]
+        gtdb_tax = tax_q[0]
+        gtdb_seqs = seqs_q[0]
 
+    # The GTDB taxonomy file contains information for all genomes.
+    # Which the SSU data are a subset. So, we'll remove these excess
+    # taxonomy entries.
+    print('\nRemoving excess taxonomy labels...')
+    gtdb_tax = _filter_excess_taxa(ctx, gtdb_tax, gtdb_seqs)
     print('\n Saving files...\n')
-    return merged_gtdb_tax, merged_gtdb_seqs
+    return gtdb_tax, gtdb_seqs
+
+
+def _filter_excess_taxa(ctx, gtdb_tax, gtdb_seqs):
+    filt_tax = ctx.get_action('rescript', 'filter_taxa')
+    gtdb_ids_to_keep = gtdb_seqs.view(qiime2.Metadata)
+    gtdb_tax, = filt_tax(taxonomy=gtdb_tax,
+                         ids_to_keep=gtdb_ids_to_keep)
+    return gtdb_tax
 
 
 def _assemble_queries(ver_dom_dict):
