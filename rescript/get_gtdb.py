@@ -56,17 +56,12 @@ def get_gtdb_data(ctx, version='207', domain='Both'):
     # Which the SSU data are a subset. So, we'll remove these excess
     # taxonomy entries.
     print('\nRemoving excess taxonomy labels...')
-    gtdb_tax = _filter_excess_taxa(ctx, gtdb_tax, gtdb_seqs)
-    print('\n Saving files...\n')
-    return gtdb_tax, gtdb_seqs
-
-
-def _filter_excess_taxa(ctx, gtdb_tax, gtdb_seqs):
     filt_tax = ctx.get_action('rescript', 'filter_taxa')
     gtdb_ids_to_keep = gtdb_seqs.view(qiime2.Metadata)
     gtdb_tax, = filt_tax(taxonomy=gtdb_tax,
                          ids_to_keep=gtdb_ids_to_keep)
-    return gtdb_tax
+    print('\n Saving files...\n')
+    return gtdb_tax, gtdb_seqs
 
 
 def _assemble_queries(ver_dom_dict):
