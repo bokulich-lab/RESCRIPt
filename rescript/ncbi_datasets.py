@@ -55,7 +55,7 @@ def _get_assembly_descriptors(
 
         if not genome_summary.assemblies:
             msg = 'The query to the NCBI Dataset API did not return ' \
-                  'any result.'
+                  'any genomes.'
             if not genome_summary.messages:
                 msg += ' It is possible that your query was to restrictive. ' \
                        'Try to adjust one of the following parameters: ' \
