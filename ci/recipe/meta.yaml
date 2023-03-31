@@ -18,7 +18,7 @@ requirements:
 
   run:
     - python {{ python }}
-    - ncbi-datasets-pylib ==14.13.0
+    - ncbi-datasets-pylib >=14.13.0
     - requests
     - xmltodict
     - pandas {{ pandas }}

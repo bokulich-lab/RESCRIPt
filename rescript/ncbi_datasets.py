@@ -54,11 +54,21 @@ def _get_assembly_descriptors(
                             f'API: {e}.')
 
         if not genome_summary.assemblies:
-            raise Exception('The query to the NCBI Dataset API did not return '
-                            'any result but contained an error message (see '
-                            'below). Please check the message, update your '
-                            'query and try again.\n\nThe error message was:\n'
-                            f'"{genome_summary.messages[0].error.message}"')
+            msg = 'The query to the NCBI Dataset API did not return ' \
+                  'any result.'
+            if not genome_summary.messages:
+                msg += ' It is possible that your query was to restrictive. ' \
+                       'Try to adjust one of the following parameters: ' \
+                       '"assembly_source", "assembly_levels", ' \
+                       '"only_reference", "taxon" or "tax_exact_match" ' \
+                       'and try again.'
+                raise Exception(msg)
+
+            msg += ' However, it contained an error message (see below). ' \
+                   'Please check the message, update your query and try ' \
+                   'again.\n\nThe error message was:\n' \
+                   f'"{genome_summary.messages[0].error.message}"'
+            raise Exception(msg)
 
         next_page_token = genome_summary.next_page_token
 
