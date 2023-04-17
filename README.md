@@ -34,7 +34,7 @@ pip install git+https://github.com/bokulich-lab/RESCRIPt.git
 First activate your QIIME 2 environment (ver 2022.8 or later) and install relevant dependencies:
 
 ```
-conda activate qiime2-2022.8
+conda activate qiime2-2023.2
 conda install -c conda-forge -c bioconda -c qiime2 -c https://packages.qiime2.org/qiime2/2023.5/tested/ -c defaults \
   xmltodict q2-types-genomics ncbi-datasets-pylib
 ```
