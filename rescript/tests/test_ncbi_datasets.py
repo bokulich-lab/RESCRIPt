@@ -118,7 +118,9 @@ class TestNCBIDatasets(TestPluginBase):
             p.return_value = self.generate_fake_response(None, is_error=True)
             api_instance = GenomeApi(ApiClient())
 
-            with self.assertRaisesRegex(Exception, ".*Please update your query.*"):
+            with self.assertRaisesRegex(
+                    Exception, ".*Please update your query.*"
+            ):
                 _get_assembly_descriptors(
                     api_instance, ['complete_chromosome'], 'refseq',
                     True, 10, 'invalid taxon', True
