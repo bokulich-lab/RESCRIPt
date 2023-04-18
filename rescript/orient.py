@@ -8,8 +8,18 @@
 
 import tempfile
 from q2_types.feature_data import DNAFASTAFormat, DNAIterator
+from warnings import warn
 
 from ._utilities import run_command
+
+
+def _warn_deprecated(value, default, name):
+    if value != default:
+        warn(
+            f"{name} is deprecated and will be removed from RESCRIPt 2023.5 "
+            "(RESCRIPt 2023.2 will be the last release with this parameter).",
+            FutureWarning
+        )
 
 
 def orient_seqs(sequences: DNAFASTAFormat,
@@ -46,6 +56,11 @@ def orient_seqs(sequences: DNAFASTAFormat,
             run_command(cmd)
             with open(out.name, 'r') as orient:
                 orientations = [line.strip() for line in orient]
+
+            # Warn about parameters that will be deprecated
+            _warn_deprecated(perc_identity, 0.9, 'perc_identity')
+            _warn_deprecated(query_cov, 0.9, 'query_cov')
+            _warn_deprecated(left_justify, False, 'left_justify')
 
         # if any query seqs are in reverse orientation, reverse complement
         if '-' in orientations:
