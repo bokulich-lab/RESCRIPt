@@ -167,7 +167,6 @@ def get_ncbi_genomes(
 
         api_response = api_instance.download_assembly_package(
             all_acc_ids,
-            # chromosomes=['MT'],
             exclude_sequence=False,
             include_annotation_type=['PROT_FASTA', 'GENOME_GFF'],
             _preload_content=False

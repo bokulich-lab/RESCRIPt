@@ -1079,6 +1079,11 @@ plugin.methods.register_function(
         'sequences and protein/gene annotations will be fetched and '
         'supplemented with full taxonomy of every sequence.'
     ),
+    citations=[
+        citations['clark2016'],
+        citations['oleary2016'],
+        citations['schoch2020']
+    ]
 )
 
 # Registrations
