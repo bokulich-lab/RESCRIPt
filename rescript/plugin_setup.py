@@ -8,6 +8,7 @@
 
 import importlib
 
+from q2_types_genomics.genome_data import GenomeData, Loci, Proteins
 from qiime2.core.type import TypeMatch
 from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int,
                            Float, Visualization, Bool, TypeMap, Metadata,
@@ -31,6 +32,7 @@ from .filter_length import (filter_seqs_length_by_taxon, filter_seqs_length,
                             filter_taxa)
 from .orient import orient_seqs
 from .extract_seq_segments import extract_seq_segments
+from .ncbi_datasets import get_ncbi_genomes
 from q2_types.feature_data import (FeatureData, Taxonomy, Sequence,
                                    AlignedSequence, RNASequence,
                                    AlignedRNASequence, ProteinSequence)
@@ -1017,7 +1019,6 @@ plugin.methods.register_function(
         "based on a fraction of original sequences."),
 )
 
-
 plugin.methods.register_function(
     function=extract_seq_segments,
     inputs={'input_sequences': FeatureData[Sequence],
@@ -1070,6 +1071,60 @@ plugin.methods.register_function(
     citations=[citations['rognes2016vsearch']]
 )
 
+plugin.methods.register_function(
+    function=get_ncbi_genomes,
+    inputs={},
+    parameters={
+        'taxon': Str,
+        'assembly_source': Str % Choices(['refseq', 'genbank']),
+        'only_reference': Bool,
+        'assembly_levels': List[Str % Choices(
+            ['complete_genome', 'chromosome', 'scaffold', 'contig'])],
+        'tax_exact_match': Bool,
+        'page_size': Int % Range(20, 1000, inclusive_end=True)
+    },
+    outputs=[
+        ('genome_assemblies', FeatureData[Sequence]),
+        ('loci', GenomeData[Loci]),
+        ('proteins', GenomeData[Proteins]),
+        ('taxonomies', FeatureData[Taxonomy]),
+    ],
+    input_descriptions={},
+    parameter_descriptions={
+        'taxon': 'NCBI Taxonomy ID or name (common or scientific) '
+                 'at any taxonomic rank.',
+        'assembly_source': 'Fetch only RefSeq or GenBank genome assemblies.',
+        'only_reference': 'Fetch only reference and representative '
+                          'genome assemblies.',
+        'assembly_levels': 'Fetch only genome assemblies that are one of the '
+                           'specified assembly levels.',
+        'tax_exact_match': 'If true, only return assemblies with the given '
+                           'NCBI Taxonomy ID, or name. Otherwise, assemblies '
+                           'from taxonomy subtree are included, too.',
+        'page_size': 'The maximum number of genome assemblies to return per '
+                     'request. If number of genomes to fetch is higher than '
+                     'this number, requests will be repeated until all '
+                     'assemblies are fetched.',
+    },
+    output_descriptions={
+        'genome_assemblies': 'Nucleotide sequences of requested genomes.',
+        'loci': 'Loci features of requested genomes.',
+        'proteins': 'Protein sequences originating from requested genomes.',
+        'taxonomies': 'Taxonomies of requested genomes.',
+    },
+    name='Fetch entire genomes and associated taxonomies and metadata '
+         'using NCBI Datasets.',
+    description=(
+        'Uses NCBI Datasets to fetch genomes for indicated taxa. Nucleotide '
+        'sequences and protein/gene annotations will be fetched and '
+        'supplemented with full taxonomy of every sequence.'
+    ),
+    citations=[
+        citations['clark2016'],
+        citations['oleary2016'],
+        citations['schoch2020']
+    ]
+)
 
 # Registrations
 plugin.register_semantic_types(SILVATaxonomy, SILVATaxidMap)

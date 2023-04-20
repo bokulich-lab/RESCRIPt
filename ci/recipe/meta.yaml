@@ -18,6 +18,7 @@ requirements:
 
   run:
     - python {{ python }}
+    - ncbi-datasets-pylib >=14.13.0
     - requests
     - xmltodict
     - pandas {{ pandas }}
@@ -25,6 +26,7 @@ requirements:
     - scikit-learn {{ scikit_learn }}
     - scikit-bio {{ scikit_bio }}
     - q2-types {{ qiime2_epoch }}.*
+    - q2-types-genomics >2023.2
     - q2-longitudinal {{ qiime2_epoch }}.*
     - q2-feature-classifier {{ qiime2_epoch }}.*
     - qiime2 {{ qiime2_epoch }}.*
