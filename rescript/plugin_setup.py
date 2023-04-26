@@ -23,6 +23,9 @@ from .screenseq import cull_seqs
 from .degap import degap_seqs
 from .parse_silva_taxonomy import (parse_silva_taxonomy, ALLOWED_RANKS,
                                    DEFAULT_RANKS)
+from .parse_rdp import (parse_rdp_taxonomy, ALLOWED_RDP_RANKS,
+                        DEFAULT_RDP_RANKS)
+from .get_rdp_data import get_rdp_data
 from .edit_taxonomy import edit_taxonomy
 from .get_data import get_silva_data
 from .cross_validate import (evaluate_cross_validate,
@@ -791,6 +794,87 @@ plugin.methods.register_function(
     ),
     citations=[citations['Pruesse2007'],
                citations['Quast2013']]
+)
+
+
+RDP_RANK_DESCRIPTION = ('List of taxonomic ranks for building a taxonomy from '
+                        'the RDP Taxonomy database. Use '
+                        '\'include_species_labels\' to append the organism '
+                        'name as the species label. '
+                        "[default: '" +
+                        "', '".join(DEFAULT_RDP_RANKS) + "']")
+
+RDP_LICENSE_NOTE = (
+    'NOTE: THIS ACTION ACQUIRES DATA FROM THE RDP DATABASE. SEE '
+    'http://rdp.cme.msu.edu/misc/citation.jsp#license FOR MORE INFORMATION '
+    'and be aware that some versions may be released under a different '
+    'license.')
+
+plugin.methods.register_function(
+    function=parse_rdp_taxonomy,
+    inputs={'rdp_reference_sequences': FeatureData[Sequence]},
+    parameters={
+        'rank_propagation': Bool,
+        'ranks': List[Str % Choices(ALLOWED_RDP_RANKS)],
+        'include_species_labels': Bool
+    },
+    outputs=[('rdp_taxonomy', FeatureData[Taxonomy])],
+    input_descriptions={
+        'rdp_reference_sequences': '',
+    },
+    parameter_descriptions={
+        'rank_propagation': RANK_PROPAGATE_DESCRIPTION,
+        'ranks': RDP_RANK_DESCRIPTION,
+        'include_species_labels': INCLUDE_SPECIES_LABELS_DESCRIPTION
+    },
+    output_descriptions={
+        'rdp_taxonomy': 'The resulting fixed-rank Ribosomal Database Project '
+        '(RDP) formatted taxonomy.'
+    },
+    name='Generates an RDP fixed-rank taxonomy.',
+    description=(
+        'Parses FASTA files from the Ribosomal Database Project '
+        '(RDP) reference database to produce a GreenGenes-like fixed rank '
+        'taxonomy. The default generated ranks (and the rank handles used to '
+        'label these ranks in the resulting taxonomy) are: domain (d__), '
+        'phylum (p__), class (c__), subclass (cs_), order (o__), suborder '
+        '(os_), family (f__), and genus (g__). ' + RDP_LICENSE_NOTE
+    ),
+    citations=[citations['Cole2009']]
+)
+
+
+plugin.pipelines.register_function(
+    function=get_rdp_data,
+    inputs={},
+    parameters={
+        'ref_db': Str % Choices(['Archaea+Bacteria', 'Fungi']),
+        'include_species_labels': Bool,
+        'rank_propagation': Bool,
+        'ranks': List[Str % Choices(ALLOWED_RDP_RANKS)]
+        },
+    outputs=[('rdp_sequences', FeatureData[Sequence]),
+             ('rdp_taxonomy', FeatureData[Taxonomy])],
+    input_descriptions={},
+    parameter_descriptions={
+        'ref_db': 'Reference sequence target to download. \'Archaea+Bacteria\''
+                  ' = combined unaligned Archaeal and Bacterial 16S small '
+                  'subunit rRNA gene sequences. \'Fungi\' == unaligned Fungal '
+                  '28S large subunit rRNA gene sequences. ',
+        'include_species_labels': INCLUDE_SPECIES_LABELS_DESCRIPTION,
+        'rank_propagation': RANK_PROPAGATE_DESCRIPTION,
+        'ranks': RDP_RANK_DESCRIPTION},
+    output_descriptions={
+        'rdp_sequences': 'RDP reference sequences.',
+        'rdp_taxonomy': 'RDP reference taxonomy.'},
+    name='Download, parse, and import RDP database.',
+    description=(
+        'Download, parse, and import RDP database files, given a version '
+        'number and reference target. Downloads data directly from RDP, '
+        'parses the taxonomy files, and outputs ready-to-use sequence and '
+        'taxonomy artifacts. REQUIRES STABLE INTERNET CONNECTION. ' +
+        RDP_LICENSE_NOTE),
+    citations=[citations['Cole2009']]
 )
 
 
