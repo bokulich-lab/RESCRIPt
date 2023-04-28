@@ -51,6 +51,10 @@ class TestGetGTDB(TestPluginBase):
         obs_seq_urls = [q_info[1] for q_info in queries['Sequence']]
 
         exp_tax_urls = [('https://data.gtdb.ecogenomic.org/releases/'
+                         'release214/214.0/ar53_taxonomy_r214.tsv.gz'),
+                        ('https://data.gtdb.ecogenomic.org/releases/'
+                         'release214/214.0/bac120_taxonomy_r214.tsv.gz'),
+                        ('https://data.gtdb.ecogenomic.org/releases/'
                          'release207/207.0/ar53_taxonomy_r207.tsv.gz'),
                         ('https://data.gtdb.ecogenomic.org/releases/'
                          'release207/207.0/bac120_taxonomy_r207.tsv.gz'),
@@ -59,6 +63,12 @@ class TestGetGTDB(TestPluginBase):
                         ('https://data.gtdb.ecogenomic.org/releases'
                          '/release202/202.0/bac120_taxonomy_r202.tsv.gz')]
         exp_seq_urls = [('https://data.gtdb.ecogenomic.org/releases'
+                         '/release214/214.0/genomic_files_reps/'
+                         'ar53_ssu_reps_r214.tar.gz'),
+                        ('https://data.gtdb.ecogenomic.org/releases/'
+                         'release214/214.0/genomic_files_reps/'
+                         'bac120_ssu_reps_r214.tar.gz'),
+                        ('https://data.gtdb.ecogenomic.org/releases'
                          '/release207/207.0/genomic_files_reps/'
                          'ar53_ssu_reps_r207.tar.gz'),
                         ('https://data.gtdb.ecogenomic.org/releases/'
@@ -91,11 +101,11 @@ class TestGetGTDB(TestPluginBase):
         def _makey_fakey_bact(faking_ignore_this):
             return [self.bact_tax], [self.bact_seqs]
 
-        # default (both domains, version 207)
+        # default (both domains, version 214)
         with patch('rescript.get_gtdb._retrieve_data_from_gtdb',
                    new=_makey_fakey_both):
             res = rescript.actions.get_gtdb_data(
-                version='207', domain='Both')
+                version='214', domain='Both')
             self.assertEqual(len(res), 2)
             self.assertEqual(str(res[0].type), 'FeatureData[Taxonomy]')
             self.assertEqual(str(res[1].type), 'FeatureData[Sequence]')

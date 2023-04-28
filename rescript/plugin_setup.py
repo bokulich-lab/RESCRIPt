@@ -904,7 +904,7 @@ plugin.pipelines.register_function(
     function=get_gtdb_data,
     inputs={},
     parameters={
-        'version': Str % Choices(['202', '207']),
+        'version': Str % Choices(['202', '207', '214']),
         'domain': Str % Choices(['Both', 'Bacteria', 'Archaea']),
         },
     outputs=[('gtdb_taxonomy', FeatureData[Taxonomy]),

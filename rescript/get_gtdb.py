@@ -21,11 +21,12 @@ from rescript.get_data import _gzip_decompress
 # bacteria. for example 'ar53' and 'bac120' mean that the GTDB phylogeny
 # is based on 53 and 120 concatenated proteins (cp), respectively.
 # If this changes we can set up a conditional statemnt below.
-VERSION_MAP_DICT = {'207': {'Archaea': 'ar53', 'Bacteria': 'bac120'},
+VERSION_MAP_DICT = {'214': {'Archaea': 'ar53', 'Bacteria': 'bac120'},
+                    '207': {'Archaea': 'ar53', 'Bacteria': 'bac120'},
                     '202': {'Archaea': 'ar122', 'Bacteria': 'bac120'}}
 
 
-def get_gtdb_data(ctx, version='207', domain='Both'):
+def get_gtdb_data(ctx, version='214', domain='Both'):
 
     ver_dom_dict = defaultdict(lambda: defaultdict(dict))
 
