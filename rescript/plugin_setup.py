@@ -278,8 +278,14 @@ VSEARCH_PARAMS = {
     'threads': Int % Range(1, 256),
     'perc_identity': Float % Range(0, 1, inclusive_start=False,
                                    inclusive_end=True),
-    'left_justify': Bool,
-    'query_cov': Float % Range(0.0, 1.0, inclusive_end=True),
+    'dbmask': Str % Choices(['none', 'dust', 'soft']),
+    'relabel': Str,
+    'relabel_keep': Bool,
+    'relabel_md5': Bool,
+    'relabel_self': Bool,
+    'relabel_sha1': Bool,
+    'sizein': Bool,
+    'sizeout': Bool,
 }
 
 VSEARCH_PARAM_DESCRIPTIONS = {
@@ -289,9 +295,25 @@ VSEARCH_PARAM_DESCRIPTIONS = {
     'perc_identity': 'The percent identity at which clustering should be '
                      'performed. This parameter maps to vsearch\'s --id '
                      'parameter.',
-    'left_justify': 'Reject match if the pairwise alignment begins with gaps',
-    'query_cov': 'Reject match if query alignment coverage per high-scoring '
-                 'pair is lower.',
+    'dbmask': 'Mask regions in the target database sequences using the '
+              'dust method, or do not mask (none). When using soft '
+              'masking, search commands become case sensitive.',
+    'relabel': 'Relabel sequences using the prefix string and a ticker '
+               '(1, 2, 3, etc.) to construct the new headers. Use --sizeout'
+               ' to conserve the abundance annotations.',
+    'relabel_keep': 'When relabeling, keep the original identifier in the '
+                    'header after a space.',
+    'relabel_md5': 'When relabeling, use the MD5 digest of the sequence as '
+                   'the new identifier. Use --sizeout to conserve the '
+                   'abundance annotations.',
+    'relabel_self': 'Relabel sequences using the sequence itself as a label.',
+    'relabel_sha1': 'When relabeling, use the SHA1 digest of the sequence as '
+                    'the new identifier. The probability of a collision is '
+                    'smaller than the MD5 algorithm.',
+    'sizein': 'In de novo mode, abundance annotations (pattern '
+              '`[>;]size=integer[;]`) present in sequence headers '
+              'are taken into account.',
+    'sizeout': 'Add abundance annotations to the output FASTA files.',
 }
 
 
@@ -557,7 +579,17 @@ plugin.methods.register_function(
     function=orient_seqs,
     inputs={'sequences': FeatureData[Sequence],
             'reference_sequences': FeatureData[Sequence]},
-    parameters=VSEARCH_PARAMS,
+    parameters={
+        'threads': VSEARCH_PARAMS['threads'],
+        'dbmask': VSEARCH_PARAMS['dbmask'],
+        'relabel': VSEARCH_PARAMS['relabel'],
+        'relabel_keep': VSEARCH_PARAMS['relabel_keep'],
+        'relabel_md5': VSEARCH_PARAMS['relabel_md5'],
+        'relabel_self': VSEARCH_PARAMS['relabel_self'],
+        'relabel_sha1': VSEARCH_PARAMS['relabel_sha1'],
+        'sizein': VSEARCH_PARAMS['sizein'],
+        'sizeout': VSEARCH_PARAMS['sizeout'],
+    },
     outputs=[('oriented_seqs', FeatureData[Sequence]),
              ('unmatched_seqs', FeatureData[Sequence])],
     input_descriptions={
@@ -567,7 +599,17 @@ plugin.methods.register_function(
                                 'will be reverse complemented and all '
                                 'parameters will be ignored.'
                                 )},
-    parameter_descriptions=VSEARCH_PARAM_DESCRIPTIONS,
+    parameter_descriptions={
+        'threads': VSEARCH_PARAM_DESCRIPTIONS['threads'],
+        'dbmask': VSEARCH_PARAM_DESCRIPTIONS['dbmask'],
+        'relabel': VSEARCH_PARAM_DESCRIPTIONS['relabel'],
+        'relabel_keep': VSEARCH_PARAM_DESCRIPTIONS['relabel_keep'],
+        'relabel_md5': VSEARCH_PARAM_DESCRIPTIONS['relabel_md5'],
+        'relabel_self': VSEARCH_PARAM_DESCRIPTIONS['relabel_self'],
+        'relabel_sha1': VSEARCH_PARAM_DESCRIPTIONS['relabel_sha1'],
+        'sizein': VSEARCH_PARAM_DESCRIPTIONS['sizein'],
+        'sizeout': VSEARCH_PARAM_DESCRIPTIONS['sizeout'],
+    },
     output_descriptions={
         'oriented_seqs': 'Query sequences in same orientation as top matching '
                          'reference sequence.',
@@ -582,8 +624,9 @@ plugin.methods.register_function(
         'sequences in either orientation. Alternatively, if no reference '
         'sequences are provided as input, all input sequences will be '
         'reverse-complemented. In this case, no alignment is performed, '
-        'and all alignment parameters (`perc_identity`, `query_cov`, '
-        '`threads`, and `left_justify`) are ignored.'
+        'and all alignment parameters (`dbmask`, `relabel`, '
+        '`relabel_keep`, `relabel_md5`, `relabel_self`, `relabel_sha1`, '
+        '`sizein`, `sizeout` and `threads`) are ignored.'
     ),
     citations=[citations['rognes2016vsearch']]
 )
