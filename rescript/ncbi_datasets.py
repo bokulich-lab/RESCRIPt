@@ -20,7 +20,7 @@ import pandas as pd
 import skbio
 from multiprocessing import Manager
 from ncbi.datasets import ApiException
-from q2_types.feature_data import DNAFASTAFormat
+from q2_types.feature_data import DNAFASTAFormat, DNAIterator
 from q2_types.genome_data import (LociDirectoryFormat,
                                   ProteinsDirectoryFormat)
 
@@ -31,8 +31,9 @@ def _get_assembly_descriptors(
         api_instance, assembly_levels, assembly_source, only_reference,
         page_size, taxon, tax_exact_match
 ):
-    all_acc_ids = []
-    all_tax_ids = []
+    # all_acc_ids = []
+    # all_tax_ids = []
+    assembly_to_taxon = {}
     next_page_token = ''
     while True:
         try:
@@ -73,12 +74,24 @@ def _get_assembly_descriptors(
 
         genome_assembly = [x.assembly for x in genome_summary.assemblies]
 
-        all_acc_ids.extend([x.assembly_accession for x in genome_assembly])
-        all_tax_ids.extend([x.org.tax_id for x in genome_assembly])
+        # all_acc_ids.extend([x.assembly_accession for x in genome_assembly])
+        # all_tax_ids.extend([x.org.tax_id for x in genome_assembly])
+        assembly_to_taxon.update(
+            {x.assembly_accession: x.org.tax_id for x in genome_assembly}
+        )
 
         if not next_page_token:
             break
-    return all_acc_ids, all_tax_ids
+    return assembly_to_taxon
+
+
+def _extract_accession_ids(path: str):
+    assembly_id = '_'.join(os.path.basename(path).split("_")[:2])
+    seq = skbio.read(
+        path, format='fasta', constructor=skbio.DNA, lowercase=True
+    )
+    accession_map = {s.metadata['id']: assembly_id for s in seq}
+    return accession_map
 
 
 def _fetch_and_extract_dataset(api_response):
@@ -95,12 +108,17 @@ def _fetch_and_extract_dataset(api_response):
         genome_seq_fps = glob.glob(
             os.path.join(tmp, 'ncbi_dataset', 'data', '*', '*_genomic.fna')
         )
+        accession_to_assembly = {}
         with open(str(genomes), 'a') as fin:
             for f in genome_seq_fps:
                 seq = skbio.read(
                     f, format='fasta', constructor=skbio.DNA, lowercase=True
                 )
                 skbio.io.write(seq, format='fasta', into=fin)
+                accession_to_assembly.update(_extract_accession_ids(f))
+        accession_to_assembly = pd.Series(
+            accession_to_assembly, name='assembly_id'
+        )
 
         # find and move all the gff files
         loci = LociDirectoryFormat()
@@ -118,10 +136,10 @@ def _fetch_and_extract_dataset(api_response):
             _id = f.split('/')[-2]
             shutil.move(f, os.path.join(
                 str(proteins), f'{_id}_proteins.fasta'))
-    return genomes, loci, proteins
+    return genomes, loci, proteins, accession_to_assembly
 
 
-def _fetch_taxonomy(all_acc_ids, all_tax_ids):
+def _fetch_taxonomy(all_acc_ids, all_tax_ids, accession_to_assembly):
     manager = Manager()
     taxa, bad_accs = get_taxonomies(
         taxids={k: v for k, v in zip(all_acc_ids, all_tax_ids)},
@@ -135,6 +153,10 @@ def _fetch_taxonomy(all_acc_ids, all_tax_ids):
                         f'{", ".join(bad_accs)}. Please check your query '
                         f'and try again.')
     taxa = pd.DataFrame(taxa, index=['Taxon']).T
+    taxa = accession_to_assembly.replace(
+        taxa.index, taxa.values, inplace=False
+    )
+    taxa.name = 'Taxon'
     taxa.index.name = 'Feature ID'
     return taxa
 
@@ -161,18 +183,23 @@ def get_ncbi_genomes(
     with DatasetsApiClient() as api_client:
         api_instance = nd.GenomeApi(api_client)
 
-        all_acc_ids, all_tax_ids = _get_assembly_descriptors(
+        assembly_to_taxon = _get_assembly_descriptors(
             api_instance=api_instance, **assembly_descriptors_params
         )
 
         api_response = api_instance.download_assembly_package(
-            all_acc_ids,
+            list(assembly_to_taxon.keys()),
             exclude_sequence=False,
             include_annotation_type=['PROT_FASTA', 'GENOME_GFF'],
             _preload_content=False
         )
 
-        genomes, loci, proteins = _fetch_and_extract_dataset(api_response)
-        taxa = _fetch_taxonomy(all_acc_ids, all_tax_ids)
+        results = _fetch_and_extract_dataset(api_response)
+        genomes, loci, proteins, accession_map = results
+        taxa = _fetch_taxonomy(
+            assembly_to_taxon.keys(),
+            assembly_to_taxon.values(),
+            accession_map
+        )
 
     return genomes, loci, proteins, taxa
