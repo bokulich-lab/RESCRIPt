@@ -13,6 +13,7 @@ import shutil
 import gzip
 import warnings
 import requests
+import tarfile
 
 import qiime2
 from urllib.request import urlretrieve
@@ -39,7 +40,7 @@ def _unite_dois_to_urls(DOIs):
     return URLs
 
 
-def _assemble_unite_data_urls(version, taxon_group, singletons=False):
+def _unite_get_url(version, taxon_group, singletons=False):
     '''Generate UNITE urls, given database version and reference target.'''
     # Lookup DOIs for various databases, source: https://unite.ut.ee/repository.php
     unite_dois = {
@@ -61,6 +62,42 @@ def _assemble_unite_data_urls(version, taxon_group, singletons=False):
         print('Unknown DOI for this value: ' + str(ke))
         raise
     return _unite_dois_to_urls(target_doi)
+
+_unite_get_url(version='9.0', taxon_group='fungi')
+
+def _unite_download_targz(url):
+    print('Downloading ' + url)
+    
+    # with tempfile.TemporaryDirectory() as tmp_dir:
+    tmp_dir = tempfile.mkdtemp()
+    
+    response = requests.get(url, stream=True)
+    if response.status_code != 200:
+        raise ValueError("Failed to download the file from " + url)
+    
+    tar_file_path = os.path.join(tmp_dir, 'unitefile.tar.gz')
+    with open(tar_file_path, 'wb') as f:
+        f.write(response.content)
+    
+    # Extract only the 'developer' subdirectory
+    with tarfile.open(tar_file_path, 'r:gz') as tar:
+        # Ensure that 'developer' exists in the tar file
+        members = [member for member in tar.getmembers() if member.name.startswith('developer')]
+        if not members:
+            raise ValueError("No 'developer' subdirectory found in the .tar.gz file.")
+        
+        for member in members:
+            member.name = os.path.basename(member.name) # Strip the 'developer' prefix
+            tar.extract(member, path=tmp_dir)
+    
+    return tmp_dir
+
+# Test it by downloading this file
+_unite_download_targz('https://files.plutof.ut.ee/public/orig/59/12/591225E8985EFC44B595C79AF5F467421B4D9A95093A0811B13CB4CC13A6DA46.tgz')
+
+    # import as artifacts
+    results[name] = qiime2.Artifact.import_data(dtype, destination)
+
 
 
 def get_silva_data(ctx,
