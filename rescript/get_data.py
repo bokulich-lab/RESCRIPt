@@ -19,12 +19,6 @@ from urllib.request import urlretrieve
 from urllib.error import HTTPError
 from q2_types.feature_data import RNAFASTAFormat
 
-# get json for testing
-# Human readable: https://api.plutof.ut.ee/v1/public/dois/?identifier=10.15156/BIO/2483915
-tempjson = requests.get('https://api.plutof.ut.ee/v1/public/dois/?format=vnd.api%2Bjson&identifier=10.15156/BIO/2938079').json()
-# tempjson['data'][0]['attributes']['media'][-1]['name'] # file name
-tempjson['data'][0]['attributes']['media'][-1]['url'] # download link
-# Get last item as it's the newest version ^^
 
 def _unite_dois_to_urls(DOIs):
     '''Generate UNITE urls, given their DOIs.'''
@@ -35,17 +29,39 @@ def _unite_dois_to_urls(DOIs):
                '?format=vnd.api%2Bjson&identifier='
     # Eventual output
     URLs = set()
-    # For each DOI, get download URL of .tar.gz file
+    # For each DOI, get download URL of file
     for DOI in DOIs:
         query_data = requests.get(base_url + DOI).json()
         # Updates can be made to files in a DOI, so on the advice of the devs,
         # only return the last file uploaded with this -1  vv
         URL = query_data['data'][0]['attributes']['media'][-1]['url']
         URLs.add(URL)
-    return(URLs)
+    return URLs
 
-# example
-_unite_dois_to_urls('10.15156/BIO/1264708')
+
+def _assemble_unite_data_urls(version, taxon_group, singletons=False):
+    '''Generate UNITE urls, given database version and reference target.'''
+    # Lookup DOIs for various databases, source: https://unite.ut.ee/repository.php
+    unite_dois = {
+        '9.0': {'fungi':      {False: '10.15156/BIO/2938079', True: '10.15156/BIO/2938080'},
+                'eukaryotes': {False: '10.15156/BIO/2938081', True: '10.15156/BIO/2938082'}},
+        # Old version 9.0 is not listed here
+        '8.3': {'fungi':      {False: '10.15156/BIO/1264708', True: '10.15156/BIO/1264763'},
+                'eukaryotes': {False: '10.15156/BIO/1264819', True: '10.15156/BIO/1264861'}},
+        '8.2': {'fungi':      {False: '10.15156/BIO/786385', True: '10.15156/BIO/786387'},
+                'eukaryotes': {False: '10.15156/BIO/786386', True: '10.15156/BIO/786388'}},
+        '8.0': {'fungi':      {False: '', True: '10.15156/BIO/786349'},
+                'eukaryotes': {False: '', True: ''}},  # All other 8.0 are in zip files
+    }
+    # There's got to be a better way! See https://stackoverflow.com/questions/25833613/safe-method-to-get-value-of-nested-dictionary
+    try:
+        # Check if we have the DOI requested
+        target_doi = unite_dois[version][taxon_group][singletons]
+    except KeyError as ke:
+        print('Unknown DOI for this value: ' + str(ke))
+        raise
+    return _unite_dois_to_urls(target_doi)
+
 
 def get_silva_data(ctx,
                    version='138.1',
