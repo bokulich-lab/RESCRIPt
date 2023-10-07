@@ -40,7 +40,7 @@ def _unite_dois_to_urls(DOIs):
     return URLs
 
 
-def _unite_get_url(version, taxon_group, singletons=False):
+def _unite_get_url(version, taxon_group, singletons):
     '''Generate UNITE urls, given database version and reference target.'''
     # Lookup DOIs for various databases, source: https://unite.ut.ee/repository.php
     unite_dois = {
@@ -61,21 +61,21 @@ def _unite_get_url(version, taxon_group, singletons=False):
     except KeyError as ke:
         print('Unknown DOI for this value: ' + str(ke))
         raise
-    return _unite_dois_to_urls(target_doi)
+    return _unite_dois_to_urls(target_doi).pop()
 
-_unite_get_url(version='9.0', taxon_group='fungi')
+_unite_get_url(version='9.0', taxon_group='fungi', singletons=False)
 
-def _unite_download_targz(url):
+# with tempfile.TemporaryDirectory() as tmp_dir:
+tmp_dir = tempfile.mkdtemp()
+
+def _unite_download_targz(url, download_path):
     print('Downloading ' + url)
-    
-    # with tempfile.TemporaryDirectory() as tmp_dir:
-    tmp_dir = tempfile.mkdtemp()
-    
+        
     response = requests.get(url, stream=True)
     if response.status_code != 200:
         raise ValueError("Failed to download the file from " + url)
     
-    tar_file_path = os.path.join(tmp_dir, 'unitefile.tar.gz')
+    tar_file_path = os.path.join(download_path, 'unitefile.tar.gz')
     with open(tar_file_path, 'wb') as f:
         f.write(response.content)
     
@@ -88,15 +88,53 @@ def _unite_download_targz(url):
         
         for member in members:
             member.name = os.path.basename(member.name) # Strip the 'developer' prefix
-            tar.extract(member, path=tmp_dir)
+            tar.extract(member, path=download_path)
     
-    return tmp_dir
+    return download_path
 
 # Test it by downloading this file
-_unite_download_targz('https://files.plutof.ut.ee/public/orig/59/12/591225E8985EFC44B595C79AF5F467421B4D9A95093A0811B13CB4CC13A6DA46.tgz')
+# _unite_download_targz('https://files.plutof.ut.ee/public/orig/59/12/591225E8985EFC44B595C79AF5F467421B4D9A95093A0811B13CB4CC13A6DA46.tgz', tmp_dir)
 
-    # import as artifacts
-    results[name] = qiime2.Artifact.import_data(dtype, destination)
+# import as artifacts
+# results[name] = qiime2.Artifact.import_data(dtype, destination)
+
+def get_unite_data(version, taxon_group, singletons=False):
+    url = _unite_get_url(version, taxon_group, singletons)
+    results = {'sequences': [], 'taxonomy': []}
+    
+    # with tempfile.TemporaryDirectory() as tmp_dir:
+    tmp_dir = tempfile.mkdtemp()
+    
+    print('Temporary directory:', tmp_dir)
+    _unite_download_targz(url, download_path=tmp_dir)
+    
+    for root, dirs, files in os.walk(tmp_dir):
+        for file in files:
+            print(results)
+            if file.endswith('.fasta'):
+                fasta_file_name = os.path.join(root, file)
+                print('found fasta: ' + fasta_file_name)
+                with open(fasta_file_name, 'r') as fasta_file:
+                    # Read the content of the file and append it as a Python object
+                    fasta_content = fasta_file.read()
+                    results['sequences'].append(qiime2.Artifact.import_data('FeatureData[RNASequence]', fasta_content))
+            elif file.endswith('.txt'):
+                txt_file_name = os.path.join(root, file)
+                print('found txt: ' + txt_file_name)
+                results['taxonomy'].append(qiime2.Artifact.import_data('FeatureData[Taxonomy]', txt_file_name))
+    return results
+
+get_unite_data(version='9.0', taxon_group='fungi')
+
+
+# How do I import data?
+with open("/tmp/tmpzprzopiu/sh_refs_qiime_ver9_97_25.07.2023_dev.fasta", 'r') as fasta_file:
+    qiime2.Artifact.import_data('FeatureData[RNASequence]', fasta_file)
+
+with open("/tmp/tmpzprzopiu/sh_refs_qiime_ver9_97_25.07.2023_dev.fasta", 'r') as fasta_file:
+    # Read the content of the file and append it as a Python object
+    fasta_content = fasta_file.read()
+    qiime2.Artifact.import_data('FeatureData[RNASequence]', fasta_content)
 
 
 
