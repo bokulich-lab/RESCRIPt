@@ -124,6 +124,7 @@ def get_unite_data(version, taxon_group, singletons=False):
                 results['taxonomy'].append(qiime2.Artifact.import_data('FeatureData[Taxonomy]', txt_file_name))
     return results
 
+
 get_unite_data(version='9.0', taxon_group='fungi')
 
 
@@ -131,11 +132,25 @@ get_unite_data(version='9.0', taxon_group='fungi')
 with open("/tmp/tmpzprzopiu/sh_refs_qiime_ver9_97_25.07.2023_dev.fasta", 'r') as fasta_file:
     qiime2.Artifact.import_data('FeatureData[RNASequence]', fasta_file)
 
+
 with open("/tmp/tmpzprzopiu/sh_refs_qiime_ver9_97_25.07.2023_dev.fasta", 'r') as fasta_file:
     # Read the content of the file and append it as a Python object
     fasta_content = fasta_file.read()
     qiime2.Artifact.import_data('FeatureData[RNASequence]', fasta_content)
 
+qiime2.Artifact.import_data('FeatureData[RNASequence]', "/tmp/tmpzprzopiu/sh_refs_qiime_ver9_97_25.07.2023_dev.fasta")
+
+
+
+with open("/tmp/tmpzprzopiu/sh_taxonomy_qiime_ver9_97_25.07.2023_dev.txt", 'r') as file:
+    qiime2.Artifact.import_data('FeatureData[Taxonomy]', file)
+
+with open("/tmp/tmpzprzopiu/sh_taxonomy_qiime_ver9_97_25.07.2023_dev.txt", 'r') as file:
+    # Read the content of the file and append it as a Python object
+    txt_content = file.read()
+    qiime2.Artifact.import_data('FeatureData[Taxonomy]', txt_content)
+
+qiime2.Artifact.import_data('FeatureData[Taxonomy]', "/tmp/tmpzprzopiu/sh_taxonomy_qiime_ver9_97_25.07.2023_dev.txt")
 
 
 def get_silva_data(ctx,
