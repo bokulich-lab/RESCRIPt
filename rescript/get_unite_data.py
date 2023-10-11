@@ -21,23 +21,19 @@ from urllib.error import HTTPError
 from q2_types.feature_data import RNAFASTAFormat
 
 
-def _unite_dois_to_urls(DOIs):
-    '''Generate UNITE urls, given their DOIs.'''
-    # Make DOIs iterable
-    DOIs = [DOIs] if isinstance(DOIs, str) else DOIs
-    print('Get URLs for these DOIs:', DOIs)
+def _unite_doi_to_url(doi):
+    '''Query plutof API for UNITE url'''
+    print('Get URLs for these DOIs:', doi)
     base_url = 'https://api.plutof.ut.ee/v1/public/dois/'\
                '?format=vnd.api%2Bjson&identifier='
-    # Eventual output
-    URLs = set()
-    # For each DOI, get download URL of file
-    for DOI in DOIs:
-        query_data = requests.get(base_url + DOI).json()
-        # Updates can be made to files in a DOI, so on the advice of the devs,
-        # only return the last file uploaded with this -1  vv
-        URL = query_data['data'][0]['attributes']['media'][-1]['url']
-        URLs.add(URL)
-    return URLs
+    query_data = requests.get(base_url + doi).json()
+    # Updates can be made to files in a DOI, so on the advice of the devs,
+    # only return the last (newest) file with this -1  vv
+    URL = query_data['data'][0]['attributes']['media'][-1]['url']
+    return URL
+
+# Testing
+_unite_doi_to_url(doi = '10.15156/BIO/2938079')
 
 
 def _unite_get_url(version, taxon_group, singletons):
@@ -61,8 +57,9 @@ def _unite_get_url(version, taxon_group, singletons):
     except KeyError as ke:
         print('Unknown DOI for this value: ' + str(ke))
         raise
-    return _unite_dois_to_urls(target_doi).pop()
+    return _unite_doi_to_url(target_doi)
 
+# Testing
 _unite_get_url(version='9.0', taxon_group='fungi', singletons=False)
 
 # with tempfile.TemporaryDirectory() as tmp_dir:
