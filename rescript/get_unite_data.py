@@ -8,9 +8,6 @@
 
 import os
 import tempfile
-import hashlib
-import shutil
-import gzip
 import warnings
 import requests
 import tarfile
@@ -90,70 +87,31 @@ def _unite_get_tgz(url, download_path):
 _unite_get_tgz(_unite_get_url(doi = '10.15156/BIO/2938079'), tmp_dir)
 
 
-# import as artifacts
-# results[name] = qiime2.Artifact.import_data(dtype, destination)
-
 def get_unite_data(version, taxon_group, singletons=False):
     doi = _unite_get_doi(version, taxon_group, singletons)
     url = _unite_get_url(doi)
     # Eventual output
     results = {'sequences': [], 'taxonomy': []}
     # open temp output files, somehow?
-    # with tempfile.TemporaryDirectory() as tmp_dir:
-    tmp_dir = tempfile.mkdtemp()
-    print('Temporary directory:', tmp_dir)
-    _unite_get_tgz(url, download_path=tmp_dir)
-    # Find and import artifacts based on suffix
-    for root, dirs, files in os.walk(tmp_dir):
-        for file in files:
-            print(results)
-            if file.endswith('.fasta'):
-                fasta_file_name = os.path.join(root, file)
-                print('found fasta: ' + fasta_file_name)
-                with open(fasta_file_name, 'r') as fasta_file:
-                    # Read the content of the file and append it as a Python object
-                    fasta_content = fasta_file.read()
-                    results['sequences'].append(qiime2.Artifact.import_data('FeatureData[RNASequence]', fasta_content))
-            elif file.endswith('.txt'):
-                txt_file_name = os.path.join(root, file)
-                print('found txt: ' + txt_file_name)
-                results['taxonomy'].append(qiime2.Artifact.import_data('FeatureData[Taxonomy]', txt_file_name))
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        # tmp_dir = tempfile.mkdtemp()
+        print('Temporary directory:', tmpdirname)
+        _unite_get_tgz(url, download_path=tmpdirname)
+        # Find and import artifacts based on suffix
+        for root, dirs, files in os.walk(tmpdirname):
+            for file in files:
+                print(results)
+                if file.endswith('.fasta'):
+                    fasta_file_name = os.path.join(root, file)
+                    print('found fasta: ' + fasta_file_name)
+                    results['sequences'].append(qiime2.Artifact.import_data('FeatureData[Sequence]', fasta_file_name))
+                elif file.endswith('.txt'):
+                    txt_file_name = os.path.join(root, file)
+                    print('found txt: ' + txt_file_name)
+                    results['taxonomy'].append(qiime2.Artifact.import_data('FeatureData[Taxonomy]', txt_file_name))
     return results
 
-get_unite_data(version='9.0', taxon_group='fungi')
+# Testing
+example_output = get_unite_data(version='9.0', taxon_group='fungi')
 
-
-# How do I import data?
-# head /tmp/tmpduape95o/sh_refs_qiime_ver9_97_25.07.2023_dev.fasta
-fasta_file = open("/tmp/tmpduape95o/sh_refs_qiime_ver9_97_25.07.2023_dev.fasta", 'r')
-
-qiime2.Artifact.import_data('FeatureData[Sequence]', fasta_file)
-qiime2.Artifact.import_data('FeatureData[Sequence]', str(fasta_file))
-qiime2.Artifact.import_data('FeatureData[RNASequence]', fasta_file)
-qiime2.Artifact.import_data('FeatureData[RNASequence]', str(fasta_file))
-qiime2.Artifact.import_data('FeatureData[DNASequence]', fasta_file)
-qiime2.Artifact.import_data('FeatureData[DNASequence]', str(fasta_file))
-
-fasta_content = fasta_file.read()
-qiime2.Artifact.import_data('FeatureData[Sequence]', str(fasta_content))
-qiime2.Artifact.import_data('FeatureData[Sequence]', fasta_content)
-qiime2.Artifact.import_data('FeatureData[RNASequence]', str(fasta_content))
-qiime2.Artifact.import_data('FeatureData[RNASequence]', fasta_content)
-
-qiime2.Artifact.import_data('FeatureData[RNASequence]', "/tmp/tmpduape95o/sh_refs_qiime_ver9_97_25.07.2023_dev.fasta")
-
-with open("/tmp/tmpduape95o/sh_refs_qiime_ver9_97_25.07.2023_dev.fasta", 'r') as fasta_file:
-    qiime2.Artifact.import_data('FeatureData[RNASequence]', str(fasta_file))
-
-
-
-with open("/tmp/tmpduape95o/sh_taxonomy_qiime_ver9_97_25.07.2023_dev.txt", 'r') as file:
-    qiime2.Artifact.import_data('FeatureData[Taxonomy]', file)
-
-with open("/tmp/tmpduape95o/sh_taxonomy_qiime_ver9_97_25.07.2023_dev.txt", 'r') as file:
-    # Read the content of the file and append it as a Python object
-    txt_content = file.read()
-    qiime2.Artifact.import_data('FeatureData[Taxonomy]', txt_content)
-
-qiime2.Artifact.import_data('FeatureData[Taxonomy]', "/tmp/tmpduape95o/sh_taxonomy_qiime_ver9_97_25.07.2023_dev.txt")
-
+example_output['sequences'][1]
