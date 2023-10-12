@@ -21,7 +21,7 @@ from urllib.error import HTTPError
 from q2_types.feature_data import RNAFASTAFormat
 
 
-def _get_unite_doi(version, taxon_group, singletons):
+def _unite_get_doi(version, taxon_group, singletons):
     '''Lookup UNITE DOIs from included list'''
     # Lookup DOIs for various databases, source: https://unite.ut.ee/repository.php
     unite_dois = {
@@ -45,9 +45,9 @@ def _get_unite_doi(version, taxon_group, singletons):
     return doi
 
 # Testing
-_get_unite_doi(version='9.0', taxon_group='fungi', singletons=False)
+_unite_get_doi(version='9.0', taxon_group='fungi', singletons=False)
 
-def _get_unite_url(doi):
+def _unite_get_url(doi):
     '''Query plutof API for UNITE url'''
     print('Get URLs for these DOIs:', doi)
     base_url = 'https://api.plutof.ut.ee/v1/public/dois/'\
@@ -59,29 +59,27 @@ def _get_unite_url(doi):
     return URL
 
 # Testing
-_get_unite_url(doi = '10.15156/BIO/2938079')
+_unite_get_url(doi = '10.15156/BIO/2938079')
 
 # with tempfile.TemporaryDirectory() as tmp_dir:
 tmp_dir = tempfile.mkdtemp()
 
-def _unite_download_targz(url, download_path):
+
+def _unite_get_tgz(url, download_path):
     print('Downloading ' + url)
-        
     response = requests.get(url, stream=True)
     if response.status_code != 200:
         raise ValueError("Failed to download the file from " + url)
-    
+    # Save .tgz file
     tar_file_path = os.path.join(download_path, 'unitefile.tar.gz')
     with open(tar_file_path, 'wb') as f:
         f.write(response.content)
-    
     # Extract only the 'developer' subdirectory
     with tarfile.open(tar_file_path, 'r:gz') as tar:
         # Ensure that 'developer' exists in the tar file
         members = [member for member in tar.getmembers() if member.name.startswith('developer')]
         if not members:
             raise ValueError("No 'developer' subdirectory found in the .tar.gz file.")
-        
         for member in members:
             member.name = os.path.basename(member.name) # Strip the 'developer' prefix
             tar.extract(member, path=download_path)
@@ -89,21 +87,23 @@ def _unite_download_targz(url, download_path):
     return download_path
 
 # Test it by downloading this file
-# _unite_download_targz('https://files.plutof.ut.ee/public/orig/59/12/591225E8985EFC44B595C79AF5F467421B4D9A95093A0811B13CB4CC13A6DA46.tgz', tmp_dir)
+_unite_get_tgz(_unite_get_url(doi = '10.15156/BIO/2938079'), tmp_dir)
+
 
 # import as artifacts
 # results[name] = qiime2.Artifact.import_data(dtype, destination)
 
 def get_unite_data(version, taxon_group, singletons=False):
-    url = _unite_get_url(version, taxon_group, singletons)
+    doi = _unite_get_doi(version, taxon_group, singletons)
+    url = _unite_get_url(doi)
+    # Eventual output
     results = {'sequences': [], 'taxonomy': []}
-    
+    # open temp output files, somehow?
     # with tempfile.TemporaryDirectory() as tmp_dir:
     tmp_dir = tempfile.mkdtemp()
-    
     print('Temporary directory:', tmp_dir)
-    _unite_download_targz(url, download_path=tmp_dir)
-    
+    _unite_get_tgz(url, download_path=tmp_dir)
+    # Find and import artifacts based on suffix
     for root, dirs, files in os.walk(tmp_dir):
         for file in files:
             print(results)
