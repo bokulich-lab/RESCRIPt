@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2021, QIIME 2 development team.
+# Copyright (c) 2019-2023, QIIME 2 development team.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -22,7 +22,7 @@ from skbio import DNA, Protein
 from qiime2 import Metadata
 from collections import OrderedDict
 from joblib import Parallel, delayed
-from joblib.externals.loky.backend.managers import LokyManager
+from multiprocessing import Manager
 
 # This the tool-email pair for this tool that is registered with NCBI.
 # If you change it, register a new tool-email pair with NCBI at
@@ -66,7 +66,7 @@ _allowed_ranks = OrderedDict([
     ('species subgroup', 'sgs__'),
     ('species', 's__'),
     ('subspecies', 'ssb__'),
-    ('forma', 'f__')
+    ('forma', 'for__')
 ])
 
 
@@ -115,8 +115,7 @@ def _get_ncbi_data(query: str = None, accession_ids: Metadata = None,
                    ranks: list = None, rank_propagation: bool = True,
                    logging_level: str = None, n_jobs: int = 1,
                    db: str = 'nuccore'):
-    manager = LokyManager()
-    manager.start()
+    manager = Manager()
     request_lock = manager.Lock()
 
     if query:

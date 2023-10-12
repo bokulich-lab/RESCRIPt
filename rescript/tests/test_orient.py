@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2021, QIIME 2 development team.
+# Copyright (c) 2019-2023, QIIME 2 development team.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -11,7 +11,7 @@ import qiime2
 from qiime2.plugin.testing import TestPluginBase
 from q2_types.feature_data import DNAIterator
 from qiime2.plugins import rescript
-
+from rescript.orient import _add_optional_parameters
 
 import_data = qiime2.Artifact.import_data
 
@@ -21,10 +21,16 @@ class TestOrientSeqs(TestPluginBase):
 
     def setUp(self):
         super().setUp()
-        self.seqs = import_data('FeatureData[Sequence]',
-                                self.get_data_path('mixed-orientations.fasta'))
+        self.seqs = \
+            import_data('FeatureData[Sequence]',
+                        self.get_data_path('mixed-orientations.fasta'))
         self.ref = import_data(
             'FeatureData[Sequence]', self.get_data_path('derep-test.fasta'))
+
+        self.rc = \
+            import_data('FeatureData[Sequence]',
+                        self.get_data_path('mixed-orientations-rc.fasta')
+                        )
 
     def test_reorient_default(self):
         # this test checks that expected IDs AND reoriented seqs are returned
@@ -61,34 +67,40 @@ class TestOrientSeqs(TestPluginBase):
         exp_unmatched_ids = {'JUNK', 'MOREJUNK'}
         self.assertEqual(unmatched_ids, exp_unmatched_ids)
 
-    def test_reorient_exact(self):
-        # just check correct IDs are returned; default test checks orientations
-        reoriented, unmatched, = rescript.actions.orient_seqs(
-            sequences=self.seqs, reference_sequences=self.ref,
-            perc_identity=1.0)
-        unmatched_ids = {
-            seq.metadata['id'] for seq in unmatched.view(DNAIterator)}
-        # seq A1 A2 and A3 were modified in self.seqs to have sundry mismatches
-        exp_unmatched_ids = {'JUNK', 'MOREJUNK', 'A1', 'A2', 'A3'}
-        self.assertEqual(unmatched_ids, exp_unmatched_ids)
-        reoriented_ids = {
-            seq.metadata['id'] for seq in reoriented.view(DNAIterator)}
-        exp_reoriented_ids = {seq.metadata['id'] for seq in
-                              self.ref.view(DNAIterator)} - exp_unmatched_ids
-        self.assertEqual(reoriented_ids, exp_reoriented_ids)
+    def test_reorient_no_ref(self):
+        reoriented, unmatched = rescript.actions.orient_seqs(
+            sequences=self.seqs, reference_sequences=None,
+            )
+        unmatched_ids = {seq.metadata['id']
+                         for seq in unmatched.view(DNAIterator)}
+        self.assertEqual(unmatched_ids, set([]))
+        exp_seqs = [seq for seq in self.rc.view(DNAIterator)]
+        test_seqs = [seq for seq in reoriented.view(DNAIterator)]
+        for exp, test in zip(*(exp_seqs, test_seqs)):
+            self.assertEqual(str(exp), str(test))
+            self.assertEqual(exp.metadata['id'], test.metadata['id'])
 
-    def test_reorient_left_justify(self):
-        # just check correct IDs are returned; default test checks orientations
-        reoriented, unmatched, = rescript.actions.orient_seqs(
-            sequences=self.seqs, reference_sequences=self.ref,
-            left_justify=True)
-        unmatched_ids = {
-            seq.metadata['id'] for seq in unmatched.view(DNAIterator)}
-        # seq A2 was modified in self.seqs to have gaps at the 5' end
-        exp_unmatched_ids = {'JUNK', 'MOREJUNK', 'A2'}
-        self.assertEqual(unmatched_ids, exp_unmatched_ids)
-        reoriented_ids = {
-            seq.metadata['id'] for seq in reoriented.view(DNAIterator)}
-        exp_reoriented_ids = {seq.metadata['id'] for seq in
-                              self.ref.view(DNAIterator)} - exp_unmatched_ids
-        self.assertEqual(reoriented_ids, exp_reoriented_ids)
+    def test_add_optional_parameters(self):
+        expected = [
+            "--dbmask", "dust",
+            "--relabel", "new_id",
+            "--relabel_keep",
+            "--relabel_md5",
+            "--relabel_self",
+            "--relabel_sha1",
+            "--sizein",
+            "--sizeout",
+        ]
+        result = []
+        _add_optional_parameters(
+            result,
+            dbmask="dust",
+            relabel="new_id",
+            relabel_keep=True,
+            relabel_md5=True,
+            relabel_self=True,
+            relabel_sha1=True,
+            sizein=True,
+            sizeout=True,
+        )
+        self.assertEqual(result, expected)

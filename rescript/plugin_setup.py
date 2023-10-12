@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2021, QIIME 2 development team.
+# Copyright (c) 2019-2023, QIIME 2 development team.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -8,6 +8,7 @@
 
 import importlib
 
+from q2_types_genomics.genome_data import GenomeData, Loci, Proteins
 from qiime2.core.type import TypeMatch
 from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int,
                            Float, Visualization, Bool, TypeMap, Metadata,
@@ -30,6 +31,8 @@ from .cross_validate import (evaluate_cross_validate,
 from .filter_length import (filter_seqs_length_by_taxon, filter_seqs_length,
                             filter_taxa)
 from .orient import orient_seqs
+from .extract_seq_segments import extract_seq_segments
+from .ncbi_datasets import get_ncbi_genomes
 from q2_types.feature_data import (FeatureData, Taxonomy, Sequence,
                                    AlignedSequence, RNASequence,
                                    AlignedRNASequence, ProteinSequence)
@@ -37,9 +40,7 @@ from q2_types.tree import Phylogeny, Rooted
 from q2_feature_classifier.classifier import (_parameter_descriptions,
                                               _classify_parameters)
 from q2_feature_classifier._taxonomic_classifier import TaxonomicClassifier
-
 import rescript
-from rescript._utilities import _rank_handles
 from rescript.types._format import (
     SILVATaxonomyFormat, SILVATaxonomyDirectoryFormat, SILVATaxidMapFormat,
     SILVATaxidMapDirectoryFormat)
@@ -47,7 +48,7 @@ from rescript.types._type import SILVATaxonomy, SILVATaxidMap
 from rescript.types.methods import reverse_transcribe
 from rescript.ncbi import (
     get_ncbi_data, _default_ranks, _allowed_ranks, get_ncbi_data_protein)
-
+from .get_gtdb import get_gtdb_data
 
 citations = Citations.load('citations.bib', package='rescript')
 
@@ -66,6 +67,12 @@ plugin = Plugin(
 SILVA_LICENSE_NOTE = (
     'NOTE: THIS ACTION ACQUIRES DATA FROM THE SILVA DATABASE. SEE '
     'https://www.arb-silva.de/silva-license-information/ FOR MORE INFORMATION '
+    'and be aware that earlier versions may be released under a different '
+    'license.')
+
+GTDB_LICENSE_NOTE = (
+    'NOTE: THIS ACTION ACQUIRES DATA FROM GTDB. SEE '
+    'https://gtdb.ecogenomic.org/about FOR MORE INFORMATION '
     'and be aware that earlier versions may be released under a different '
     'license.')
 
@@ -224,7 +231,8 @@ plugin.methods.register_function(
     parameters={
         'mode': Str % Choices(['len', 'lca', 'score', 'super', 'majority']),
         'rank_handle_regex': Str,
-        'new_rank_handle': Str % Choices(list(_rank_handles.keys())),
+        'new_rank_handles': List[Str % Choices(['disable'])] | List[
+                                 Str % Choices(_allowed_ranks)],
         'unclassified_label': Str
     },
     outputs=[('merged_data', FeatureData[Taxonomy])],
@@ -241,17 +249,18 @@ plugin.methods.register_function(
                 'taxonomy dataframe. "majority" finds the LCA consensus while '
                 'giving preference to majority labels. ' + super_lca_desc,
         'rank_handle_regex': rank_handle_description + rank_handle_extra_note,
-        'new_rank_handle': (
+        'new_rank_handles': (
             'Specifies the set of rank handles to prepend to taxonomic labels '
-            'at each rank. For example, "greengenes" will prepend 7-level '
-            'greengenes-style rank handles. Note that merged taxonomies will '
+            'at each rank. Note that merged taxonomies will '
             'only contain as many levels as there are handles if this '
-            'parameter is used. So "greengenes" will trim all taxonomies to '
-            'seven levels, even if longer annotations exist. Note that this '
+            'parameter is used. This will trim all taxonomies to the given '
+            'levels, even if longer annotations exist. Note that this '
             'parameter will prepend rank handles whether or not they already '
             'exist in the taxonomy, so should ALWAYS be used in conjunction '
             'with `rank_handle_regex` if rank handles exist in any of the '
-            'inputs.'),
+            'inputs. Use \'disable\' to prevent prepending '
+            '\'new_rank_handles\''
+            ),
         'unclassified_label': 'Specifies what label should be used for '
                               'taxonomies that could not be resolved (when '
                               'LCA modes are used).'
@@ -269,8 +278,14 @@ VSEARCH_PARAMS = {
     'threads': Int % Range(1, 256),
     'perc_identity': Float % Range(0, 1, inclusive_start=False,
                                    inclusive_end=True),
-    'left_justify': Bool,
-    'query_cov': Float % Range(0.0, 1.0, inclusive_end=True),
+    'dbmask': Str % Choices(['none', 'dust', 'soft']),
+    'relabel': Str,
+    'relabel_keep': Bool,
+    'relabel_md5': Bool,
+    'relabel_self': Bool,
+    'relabel_sha1': Bool,
+    'sizein': Bool,
+    'sizeout': Bool,
 }
 
 VSEARCH_PARAM_DESCRIPTIONS = {
@@ -280,9 +295,25 @@ VSEARCH_PARAM_DESCRIPTIONS = {
     'perc_identity': 'The percent identity at which clustering should be '
                      'performed. This parameter maps to vsearch\'s --id '
                      'parameter.',
-    'left_justify': 'Reject match if the pairwise alignment begins with gaps',
-    'query_cov': 'Reject match if query alignment coverage per high-scoring '
-                 'pair is lower.',
+    'dbmask': 'Mask regions in the target database sequences using the '
+              'dust method, or do not mask (none). When using soft '
+              'masking, search commands become case sensitive.',
+    'relabel': 'Relabel sequences using the prefix string and a ticker '
+               '(1, 2, 3, etc.) to construct the new headers. Use --sizeout'
+               ' to conserve the abundance annotations.',
+    'relabel_keep': 'When relabeling, keep the original identifier in the '
+                    'header after a space.',
+    'relabel_md5': 'When relabeling, use the MD5 digest of the sequence as '
+                   'the new identifier. Use --sizeout to conserve the '
+                   'abundance annotations.',
+    'relabel_self': 'Relabel sequences using the sequence itself as a label.',
+    'relabel_sha1': 'When relabeling, use the SHA1 digest of the sequence as '
+                    'the new identifier. The probability of a collision is '
+                    'smaller than the MD5 algorithm.',
+    'sizein': 'In de novo mode, abundance annotations (pattern '
+              '`[>;]size=integer[;]`) present in sequence headers '
+              'are taken into account.',
+    'sizeout': 'Add abundance annotations to the output FASTA files.',
 }
 
 
@@ -295,7 +326,8 @@ plugin.methods.register_function(
         'threads': VSEARCH_PARAMS['threads'],
         'perc_identity': VSEARCH_PARAMS['perc_identity'],
         'derep_prefix': Bool,
-        'rank_handles': Str % Choices(list(_rank_handles.keys()))},
+        'rank_handles': List[Str % Choices(['disable'])] | List[Str % Choices(
+                                                        _allowed_ranks)]},
     outputs=[('dereplicated_sequences', FeatureData[Sequence]),
              ('dereplicated_taxa', FeatureData[Taxonomy])],
     input_descriptions={
@@ -316,11 +348,10 @@ plugin.methods.register_function(
                         'longer sequences, it is clustered with the shortest '
                         'of them. If they are equally long, it is clustered '
                         'with the most abundant.',
-        'rank_handles': (
-            'Specifies the set of rank handles used to backfill '
-            'missing ranks in the resulting dereplicated taxonomy. The '
-            'default setting will backfill SILVA-style 7-level rank handles. '
-            'Set to "none" to disable backfilling.')
+        'rank_handles': 'Specifies the set of rank handles used to backfill '
+                        'missing ranks in the resulting dereplicated '
+                        'taxonomy. Use \'disable\' to prevent applying '
+                        '\'rank_handles\'. '
     },
     name='Dereplicate features with matching sequences and taxonomies.',
     description=(
@@ -331,7 +362,10 @@ plugin.methods.register_function(
         'sequences are duplicates (uniq); or return only dereplicated '
         'sequences labeled by either the least common ancestor (lca) or the '
         'most common taxonomic label associated with sequences in that '
-        'cluster (majority).'),
+        'cluster (majority). Note: all taxonomy strings will be coerced '
+        'to semicolon delimiters without any leading or trailing spaces. '
+        'If this is not desired, please use \'rescript edit-taxonomy\' '
+        'to make any changes.'),
     citations=[citations['rognes2016vsearch']]
 )
 
@@ -365,6 +399,7 @@ palettes = ['Set1', 'Set2', 'Set3', 'Pastel1', 'Pastel2', 'Paired',
             'viridis', 'plasma', 'inferno', 'magma', 'cividis', 'terrain',
             'rainbow', 'PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGy', 'RdBu',
             'RdYlBu', 'RdYlGn', 'Spectral', 'coolwarm', 'bwr', 'seismic']
+
 
 plugin.visualizers.register_function(
     function=evaluate_seqs,
@@ -540,29 +575,58 @@ FILTER_OUTPUT_DESCRIPTIONS = {
     'filtered_seqs': 'Sequences that pass the filtering thresholds.',
     'discarded_seqs': 'Sequences that fall outside the filtering thresholds.'}
 
-
 plugin.methods.register_function(
     function=orient_seqs,
     inputs={'sequences': FeatureData[Sequence],
             'reference_sequences': FeatureData[Sequence]},
-    parameters=VSEARCH_PARAMS,
+    parameters={
+        'threads': VSEARCH_PARAMS['threads'],
+        'dbmask': VSEARCH_PARAMS['dbmask'],
+        'relabel': VSEARCH_PARAMS['relabel'],
+        'relabel_keep': VSEARCH_PARAMS['relabel_keep'],
+        'relabel_md5': VSEARCH_PARAMS['relabel_md5'],
+        'relabel_self': VSEARCH_PARAMS['relabel_self'],
+        'relabel_sha1': VSEARCH_PARAMS['relabel_sha1'],
+        'sizein': VSEARCH_PARAMS['sizein'],
+        'sizeout': VSEARCH_PARAMS['sizeout'],
+    },
     outputs=[('oriented_seqs', FeatureData[Sequence]),
              ('unmatched_seqs', FeatureData[Sequence])],
     input_descriptions={
         'sequences': 'Sequences to be oriented.',
-        'reference_sequences': 'Reference sequences to orient against.'},
-    parameter_descriptions=VSEARCH_PARAM_DESCRIPTIONS,
+        'reference_sequences': ('Reference sequences to orient against. If '
+                                'no reference is provided, all the sequences '
+                                'will be reverse complemented and all '
+                                'parameters will be ignored.'
+                                )},
+    parameter_descriptions={
+        'threads': VSEARCH_PARAM_DESCRIPTIONS['threads'],
+        'dbmask': VSEARCH_PARAM_DESCRIPTIONS['dbmask'],
+        'relabel': VSEARCH_PARAM_DESCRIPTIONS['relabel'],
+        'relabel_keep': VSEARCH_PARAM_DESCRIPTIONS['relabel_keep'],
+        'relabel_md5': VSEARCH_PARAM_DESCRIPTIONS['relabel_md5'],
+        'relabel_self': VSEARCH_PARAM_DESCRIPTIONS['relabel_self'],
+        'relabel_sha1': VSEARCH_PARAM_DESCRIPTIONS['relabel_sha1'],
+        'sizein': VSEARCH_PARAM_DESCRIPTIONS['sizein'],
+        'sizeout': VSEARCH_PARAM_DESCRIPTIONS['sizeout'],
+    },
     output_descriptions={
         'oriented_seqs': 'Query sequences in same orientation as top matching '
                          'reference sequence.',
         'unmatched_seqs': 'Query sequences that fail to match at least one '
-                          'reference sequence in either + or - orientation.'},
+                          'reference sequence in either + or - orientation. '
+                          'This will be empty if no refrence is provided.'},
     name='Orient input sequences by comparison against reference.',
     description=(
         'Orient input sequences by comparison against a set of reference '
         'sequences using VSEARCH. This action can also be used to quickly '
         'filter out sequences that (do not) match a set of reference '
-        'sequences in either orientation.'
+        'sequences in either orientation. Alternatively, if no reference '
+        'sequences are provided as input, all input sequences will be '
+        'reverse-complemented. In this case, no alignment is performed, '
+        'and all alignment parameters (`dbmask`, `relabel`, '
+        '`relabel_keep`, `relabel_md5`, `relabel_self`, `relabel_sha1`, '
+        '`sizein`, `sizeout` and `threads`) are ignored.'
     ),
     citations=[citations['rognes2016vsearch']]
 )
@@ -879,6 +943,37 @@ plugin.methods.register_function(
 )
 
 
+plugin.pipelines.register_function(
+    function=get_gtdb_data,
+    inputs={},
+    parameters={
+        'version': Str % Choices(['202', '207', '214']),
+        'domain': Str % Choices(['Both', 'Bacteria', 'Archaea']),
+        },
+    outputs=[('gtdb_taxonomy', FeatureData[Taxonomy]),
+             ('gtdb_sequences', FeatureData[Sequence])],
+    input_descriptions={},
+    parameter_descriptions={
+        'version': 'GTDB database version to download.',
+        'domain': 'Sequence and taxonomy data to download from a given '
+                  'microbial domain from GTDB. \'Both\' will fetch both '
+                  'bacterial and archaeal data. \'Bacteria\' will only '
+                  'fetch bacterial data. \'Archaea\' will only fetch '
+                  'archaeal data.'},
+    output_descriptions={
+        'gtdb_taxonomy': 'GTDB reference taxonomy.',
+        'gtdb_sequences': 'GTDB reference sequences.'},
+    name='Download, parse, and import GTDB reference data.',
+    description=(
+        'Download, parse, and import GTDB files, given a version '
+        'number. Downloads data directly from GTDB, '
+        'parses the taxonomy files, and outputs ready-to-use sequence and '
+        'taxonomy artifacts. REQUIRES STABLE INTERNET CONNECTION. ' +
+        GTDB_LICENSE_NOTE),
+    citations=[citations['Parks2020gtdb'], citations['Parks2021gtdb']]
+)
+
+
 plugin.methods.register_function(
     function=filter_taxa,
     inputs={'taxonomy': FeatureData[Taxonomy]},
@@ -965,6 +1060,113 @@ plugin.methods.register_function(
     description=(
         "Subsample a set of sequences (either plain or aligned DNA)"
         "based on a fraction of original sequences."),
+)
+
+plugin.methods.register_function(
+    function=extract_seq_segments,
+    inputs={'input_sequences': FeatureData[Sequence],
+            'reference_segment_sequences': FeatureData[Sequence]},
+    parameters={'threads': VSEARCH_PARAMS['threads'],
+                'perc_identity': VSEARCH_PARAMS['perc_identity'],
+                'min_seq_len': Int % Range(1, None)
+                },
+    outputs=[('extracted_sequence_segments', FeatureData[Sequence]),
+             ('unmatched_sequences', FeatureData[Sequence])],
+    input_descriptions={
+        'input_sequences': 'Sequences from which matching shorter sequence '
+                           'segments (regions) can be extracted from. '
+                           'Sequences containing segments that match those '
+                           'from \'reference-segment-sequences\' will have '
+                           'those segments extracted and written to file.',
+        'reference_segment_sequences': 'Reference sequence segments that '
+                                       'will be used to search for and '
+                                       'extract matching segments from '
+                                       '\'sequences\'.',
+                        },
+    parameter_descriptions={
+                'threads': VSEARCH_PARAM_DESCRIPTIONS['threads'],
+                'perc_identity': VSEARCH_PARAM_DESCRIPTIONS['perc_identity'],
+                'min_seq_len': 'Minimum length of sequence allowed '
+                               'for searching. Any sequence less than '
+                               'this will be discarded. If not set, default '
+                               'program settings will be used.'},
+    output_descriptions={
+        'extracted_sequence_segments': 'Extracted sequence segments '
+                                       'from \'input-sequences\' '
+                                       'that succesfully aligned to '
+                                       '\'reference-segment-sequences\'.',
+        'unmatched_sequences': 'Sequences in \'input-sequences\' that did not '
+                               'have matching sequence segments within '
+                               '\'reference-segment-sequences\'.'
+                        },
+    name='Use reference sequences to extract shorter matching sequence '
+         'segments from longer sequences based on a user-defined '
+         '\'perc-identity\' value.',
+    description=(
+        'This action provides the ability to extract a region, or segment, '
+        'of sequence without the need to specify primer pairs. This is very '
+        'useful in cases when one or more of the primer sequences are not '
+        'present within the target sequences, which prevents extraction of '
+        'the (amplicon) region through primer-pair searching. Here, VSEARCH '
+        'is used to extract these segments based on a reference pool of '
+        'sequences that only span the region of interest.'
+        ),
+    citations=[citations['rognes2016vsearch']]
+)
+
+plugin.methods.register_function(
+    function=get_ncbi_genomes,
+    inputs={},
+    parameters={
+        'taxon': Str,
+        'assembly_source': Str % Choices(['refseq', 'genbank']),
+        'only_reference': Bool,
+        'assembly_levels': List[Str % Choices(
+            ['complete_genome', 'chromosome', 'scaffold', 'contig'])],
+        'tax_exact_match': Bool,
+        'page_size': Int % Range(20, 1000, inclusive_end=True)
+    },
+    outputs=[
+        ('genome_assemblies', FeatureData[Sequence]),
+        ('loci', GenomeData[Loci]),
+        ('proteins', GenomeData[Proteins]),
+        ('taxonomies', FeatureData[Taxonomy]),
+    ],
+    input_descriptions={},
+    parameter_descriptions={
+        'taxon': 'NCBI Taxonomy ID or name (common or scientific) '
+                 'at any taxonomic rank.',
+        'assembly_source': 'Fetch only RefSeq or GenBank genome assemblies.',
+        'only_reference': 'Fetch only reference and representative '
+                          'genome assemblies.',
+        'assembly_levels': 'Fetch only genome assemblies that are one of the '
+                           'specified assembly levels.',
+        'tax_exact_match': 'If true, only return assemblies with the given '
+                           'NCBI Taxonomy ID, or name. Otherwise, assemblies '
+                           'from taxonomy subtree are included, too.',
+        'page_size': 'The maximum number of genome assemblies to return per '
+                     'request. If number of genomes to fetch is higher than '
+                     'this number, requests will be repeated until all '
+                     'assemblies are fetched.',
+    },
+    output_descriptions={
+        'genome_assemblies': 'Nucleotide sequences of requested genomes.',
+        'loci': 'Loci features of requested genomes.',
+        'proteins': 'Protein sequences originating from requested genomes.',
+        'taxonomies': 'Taxonomies of requested genomes.',
+    },
+    name='Fetch entire genomes and associated taxonomies and metadata '
+         'using NCBI Datasets.',
+    description=(
+        'Uses NCBI Datasets to fetch genomes for indicated taxa. Nucleotide '
+        'sequences and protein/gene annotations will be fetched and '
+        'supplemented with full taxonomy of every sequence.'
+    ),
+    citations=[
+        citations['clark2016'],
+        citations['oleary2016'],
+        citations['schoch2020']
+    ]
 )
 
 # Registrations

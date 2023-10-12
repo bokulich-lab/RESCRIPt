@@ -18,13 +18,15 @@ requirements:
 
   run:
     - python {{ python }}
+    - ncbi-datasets-pylib >=14.13.0
     - requests
     - xmltodict
-    - pandas >=0.25.3
-    - scikit-learn
-    - scikit-bio
+    - pandas {{ pandas }}
+    - vsearch >=2.21.1
+    - scikit-learn {{ scikit_learn }}
+    - scikit-bio {{ scikit_bio }}
     - q2-types {{ qiime2_epoch }}.*
-    - q2-longitudinal {{ qiime2_epoch }}.*
+    - q2-types-genomics >2023.2
     - q2-feature-classifier {{ qiime2_epoch }}.*
     - qiime2 {{ qiime2_epoch }}.*
 
@@ -32,7 +34,6 @@ test:
   requires:
     - pytest
     - q2-types >={{ q2_types }}
-    - q2-longitudinal >={{ q2_longitudinal }}
     - q2-feature-classifier >={{ q2_feature_classifier }}
     - qiime2 >={{ qiime2 }}
 

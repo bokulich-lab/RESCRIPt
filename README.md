@@ -2,14 +2,12 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3891931.svg)](https://doi.org/10.5281/zenodo.3891931)
  ![lint-build-test](https://github.com/bokulich-lab/RESCRIPt/workflows/lint-build-test/badge.svg)
-
+ [![DOI](https://img.shields.io/badge/DOI-10.1371/journal.pcbi.1009581-B31B1B)](http://dx.doi.org/10.1371/journal.pcbi.1009581)
  <p align="left"><img src="logo.png" height="150" /></p>
 
 REference Sequence annotation and CuRatIon Pipeline
 
-**Note:** This is a beta release. Usage, and other details are forthcoming. See citation information below.
-
-RESCRIPt is a python 3 package to support a variety of operations for managing and curating reference sequence databases, DNA/RNA sequence data, and taxonomic data.
+RESCRIPt is a python 3 package to support a variety of operations for managing and curating reference sequence databases, DNA/RNA sequence data, and taxonomic data. See citation information below for a full benchmark and description.
 
 ## Install from source
 
@@ -22,8 +20,9 @@ First create a conda environment and install relevant dependencies:
 conda create -y -n rescript
 conda activate rescript
 conda install \
-  -c conda-forge -c bioconda -c qiime2 -c defaults \
-  qiime2 q2cli q2templates q2-types q2-longitudinal q2-feature-classifier "pandas>=0.25.3" xmltodict
+  -c conda-forge -c bioconda -c qiime2 -c https://packages.qiime2.org/qiime2/2023.5/tested/ -c defaults \
+  qiime2 q2cli q2templates q2-types q2-longitudinal q2-feature-classifier 'q2-types-genomics>2023.2' \
+  "pandas>=0.25.3" xmltodict ncbi-datasets-pylib
 ```
 Install source:
 
@@ -32,11 +31,12 @@ pip install git+https://github.com/bokulich-lab/RESCRIPt.git
 ```
 
 ### Option 2: Install within QIIME 2 environment
-First activate your QIIME 2 environment (ver 2021.4 or later) and install relevant dependencies:
+First activate your QIIME 2 environment (ver 2022.8 or later) and install relevant dependencies:
 
 ```
-conda activate qiime2-2021.4
-conda install -c conda-forge -c bioconda -c qiime2 -c defaults xmltodict
+conda activate qiime2-2023.2
+conda install -c conda-forge -c bioconda -c qiime2 -c https://packages.qiime2.org/qiime2/2023.5/tested/ -c defaults \
+  xmltodict 'q2-types-genomics>2023.2' ncbi-datasets-pylib
 ```
 Install source:
 
@@ -58,8 +58,9 @@ These tutorials demonstrate some of the basic functionality of RESCRIPt, via the
 - [Getting sequences and taxonomy with get-ncbi-data](https://forum.qiime2.org/t/using-rescript-to-compile-an-sequence-databases-and-taxonomy-classifiers-from-ncbi-genbank/15947)
 - [Building a COI database with BOLD sequences](https://forum.qiime2.org/t/building-a-coi-database-from-bold-references/16129)
 - [Building a COI database with NCBI sequences](https://forum.qiime2.org/t/building-a-coi-database-from-ncbi-references/16500)
+- [Using RESCRIPt's 'extract-seq-segments' to extract reference sequences without PCR primer pairs](https://forum.qiime2.org/t/using-rescripts-extract-seq-segments-to-extract-reference-sequences-without-pcr-primer-pairs/23618)
 
-Examples of visualizations produced by RESCRIPt actions can be found in this [Visualization Gallery](https://forum.qiime2.org/t/processing-filtering-and-evaluating-the-silva-database-and-other-reference-sequence-data-with-rescript/15494#heading--seventeenth-header).
+Examples of visualizations produced by RESCRIPt actions can be found in this [Visualization Gallery](https://forum.qiime2.org/t/processing-filtering-and-evaluating-the-silva-database-and-other-reference-sequence-data-with-rescript/15494#heading--seventeenth-header). Other code examples can be found [here](https://github.com/bokulich-lab/db-benchmarks-2020).
 
 ## Getting Help
 Problem? Suggestion? Technical errors and user support requests can be filed on the [QIIME 2 Forum](https://forum.qiime2.org/).
@@ -67,7 +68,7 @@ Problem? Suggestion? Technical errors and user support requests can be filed on 
 
 ## Citation
 
-If you use RESCRIPt in your research, please cite the following pre-print:
+If you use RESCRIPt in your research, please cite the following:
 
 Michael S Robeson II, Devon R O'Rourke, Benjamin D Kaehler, Michal Ziemski, Matthew R Dillon, Jeffrey T Foster, Nicholas A Bokulich. (2021) *RESCRIPt: Reproducible sequence taxonomy reference database management*. PLoS Computational Biology 17 (11): e1009581. doi: [10.1371/journal.pcbi.1009581](http://dx.doi.org/10.1371/journal.pcbi.1009581).
 

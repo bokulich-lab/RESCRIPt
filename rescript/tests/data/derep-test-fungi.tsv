@@ -1,0 +1,10 @@
+Feature ID	Taxon
+F01	d__Eukaryota; sk__Nucletmycea; k__Fungi; ks__Dikarya; p__Ascomycota
+F02	d__Eukaryota; sk__Nucletmycea; k__Fungi; ks__Dikarya; p__Ascomycota; ps__Saccharomycotina; c__Saccharomycetes; o__Saccharomycetales; sf__Debaryomycetaceae; g__Candida-Lodderomyces_clade; s__Candida_parapsilosis
+F03	d__Eukaryota; sk__Nucletmycea; k__Fungi; ks__Dikarya; p__Ascomycota; ps__Saccharomycotina; c__Saccharomycetes; o__Saccharomycetales; sf__Debaryomycetaceae; g__Candida-Lodderomyces_clade; s__Candida_parapsilosis
+F04	d__Eukaryota; sk__Nucletmycea; k__Fungi; ks__Dikarya; p__Ascomycota; ps__Saccharomycotina; c__Saccharomycetes; o__Saccharomycetales; sf__Debaryomycetaceae; g__Candida-Lodderomyces_clade; s__Candida_parapsilosis
+F05	d__Eukaryota; sk__Nucletmycea; k__Fungi; ks__Dikarya; p__Ascomycota; ps__Saccharomycotina; c__Saccharomycetes; o__Saccharomycetales; sf__Saccharomycetaceae; g__Lachancea
+F06	d__Eukaryota; sk__Nucletmycea; k__Fungi; ks__Dikarya; p__Ascomycota; ps__Saccharomycotina; c__Saccharomycetes; o__Saccharomycetales; sf__Saccharomycetaceae; g__Lachancea; s__Lachancea_thermotolerans
+F07	d__Eukaryota; sk__Nucletmycea; k__Fungi; ks__Dikarya; p__Ascomycota; ps__Saccharomycotina; c__Saccharomycetes; o__Saccharomycetales; sf__Saccharomycetaceae; g__Lachancea; s__Lachancea_thermotolerans
+F08	d__Eukaryota
+F09	d__Eukaryota; sk__Nucletmycea; k__Fungi; ks__Dikarya; p__Ascomycota; ps__Saccharomycotina; c__Saccharomycetes; o__Saccharomycetales; sf__Saccharomycetaceae; g__Saccharomyces; s__Saccharomyces_cerevisiae

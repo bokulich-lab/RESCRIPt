@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2021, QIIME 2 development team.
+# Copyright (c) 2019-2023, QIIME 2 development team.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -9,9 +9,9 @@
 
 import pandas as pd
 from ._utilities import (_rank_length, _taxon_to_list, _find_top_score,
-                         _rank_handles, _find_lca, _find_super_lca,
-                         _find_lca_majority)
-
+                         _find_lca, _find_super_lca, _find_lca_majority,
+                         _sort_rank_handles)
+from .ncbi import _allowed_ranks
 
 MODE_ERROR_SCORE = (
     'mode "score" can only operate on dataframes with taxonomy classification '
@@ -22,7 +22,8 @@ MODE_ERROR_SCORE = (
 def merge_taxa(data: pd.DataFrame,
                mode: str = 'len',
                rank_handle_regex: str = '^[dkpcofgs]__',
-               new_rank_handle: str = None,
+               new_rank_handles: list = ['domain', 'phylum', 'class', 'order',
+                                         'family', 'genus', 'species'],
                unclassified_label: str = 'Unassigned') -> pd.DataFrame:
     # Convert taxonomies to list; optionally remove rank handle
     for d in data:
@@ -72,10 +73,12 @@ def merge_taxa(data: pd.DataFrame,
             result = result[reordered_cols]
 
     # Insert new rank handles if selected
-    if new_rank_handle is not None:
-        new_rank_handle = _rank_handles[new_rank_handle]
+    if 'disable' not in new_rank_handles:
+        sorted_rank_handles = _sort_rank_handles(new_rank_handles,
+                                                 _allowed_ranks)
         result['Taxon'] = result['Taxon'].apply(
-            lambda x: ';'.join([''.join(t) for t in zip(new_rank_handle, x)]))
+            lambda x: ';'.join([''.join(t) for t in
+                               zip(sorted_rank_handles, x)]))
     else:
         result['Taxon'] = result['Taxon'].apply(lambda x: ';'.join(x))
 

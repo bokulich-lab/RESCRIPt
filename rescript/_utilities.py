@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2021, QIIME 2 development team.
+# Copyright (c) 2019-2023, QIIME 2 development team.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -12,14 +12,6 @@ import subprocess
 import skbio
 from collections import Counter
 from q2_types.feature_data import DNAFASTAFormat, AlignedDNAFASTAFormat
-
-
-_rank_handles = {
-    'silva': [' d__', ' p__', ' c__', ' o__', ' f__', ' g__', ' s__'],
-    'greengenes': ['k__', 'p__', 'c__', 'o__', 'f__', 'g__', 's__'],
-    'gtdb': ['k__', 'p__', 'c__', 'o__', 'f__', 'g__', 's__'],
-    'disable': None,
-}
 
 
 # modified version of _find_lca that prioritizes majority and supersets
@@ -123,3 +115,16 @@ def _dna_iterator_to_aligned_fasta(iterator):
     ff = AlignedDNAFASTAFormat()
     skbio.io.write(iter(iterator), format='fasta', into=str(ff))
     return ff
+
+
+def _sort_rank_handles(rank_handles, allowed_ranks):
+    # Sort user ranks relative to allowed_ranks, this ensures
+    # that the taxonomic ranks supplied by the user are in order
+    sorted_rank_handles = [p for r, p in allowed_ranks.items()
+                           if r in rank_handles]
+    return sorted_rank_handles
+
+
+def _return_stripped_taxon_rank_list(taxonomy_str):
+    # strips whitespace for each taxon rank returns as list
+    return [t.strip() for t in taxonomy_str.split(';')]
