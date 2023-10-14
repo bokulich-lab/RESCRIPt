@@ -58,110 +58,69 @@ def _unite_get_url(doi):
 # Testing
 _unite_get_url(doi = '10.15156/BIO/2938079')
 
-# with tempfile.TemporaryDirectory() as tmp_dir:
-tmp_dir = tempfile.mkdtemp()
-
-
-def _unite_get_tgz(url, download_path):
-    print('Downloading ' + url)
+# Make tmp_dir for standalone testing
+# tmp_dir = tempfile.mkdtemp()
+def _unite_get_raw_files(url, download_path):
+    '''Download and extract all fasta and txt files'''
     response = requests.get(url, stream=True)
     if response.status_code != 200:
         raise ValueError("Failed to download the file from " + url)
     # Save .tgz file
-    tar_file_path = os.path.join(download_path, 'unitefile.tar.gz')
-    with open(tar_file_path, 'wb') as f:
+    unite_file_path = os.path.join(download_path, 'unitefile.tar.gz')
+    with open(unite_file_path, 'wb') as f:
         f.write(response.content)
     # Extract only the 'developer' subdirectory
-    with tarfile.open(tar_file_path, 'r:gz') as tar:
+    with tarfile.open(unite_file_path, 'r:gz') as tar:
         # Ensure that 'developer' exists in the tar file
         members = [member for member in tar.getmembers() if member.name.startswith('developer')]
         if not members:
             raise ValueError("No 'developer' subdirectory found in the .tar.gz file.")
         for member in members:
-            member.name = os.path.basename(member.name) # Strip the 'developer' prefix
+            # Strip the 'developer' prefix
+            member.name = os.path.basename(member.name)
             tar.extract(member, path=download_path)
-    
-    return download_path
+    return
 
 # Test it by downloading this file
-_unite_get_tgz(_unite_get_url(doi = '10.15156/BIO/2938079'), tmp_dir)
+_unite_get_raw_files(_unite_get_url(doi = '10.15156/BIO/2938079'), tmp_dir)
+
+def _unite_get_qza(cluster_id, download_path):
+    '''
+    Find and import raw files with matching cluster_id
+    
+    Returns: Tuple containing tax_results and seq_results
+    '''
+    tax_results = []
+    seq_results = []
+    # Find all files...
+    for root, dirs, files in os.walk(download_path):
+        # ... with the matching cluster_id
+        filtered_files = [file for file in files if cluster_id in file]
+        for file in filtered_files:
+            file_path = os.path.join(root, file)
+            if file.endswith('.txt'):
+                tax_results.append(qiime2.Artifact.import_data('FeatureData[Taxonomy]', file_path))
+            elif file.endswith('.fasta'):
+                seq_results.append(qiime2.Artifact.import_data('FeatureData[Sequence]', file_path))
+    return tax_results, seq_results
+
+# Testing
+_unite_get_qza('99', tmp_dir)
 
 
-def get_unite_data(version, taxon_group, singletons=False):
+def get_unite_data(version, taxon_group, cluster_id = '99', singletons=False):
+    '''
+    Get Qiime2 artifacts for a given version of UNITE
+    
+    Returns: Tuple containing tax_results and seq_results
+    '''
     doi = _unite_get_doi(version, taxon_group, singletons)
     url = _unite_get_url(doi)
-    # Eventual output
-    results = {'sequences': [], 'taxonomy': []}
-    # open temp output files, somehow?
     with tempfile.TemporaryDirectory() as tmpdirname:
-        # tmp_dir = tempfile.mkdtemp()
         print('Temporary directory:', tmpdirname)
-        _unite_get_tgz(url, download_path=tmpdirname)
-        # Find and import artifacts based on suffix
-        for root, dirs, files in os.walk(tmpdirname):
-            for file in files:
-                print(results)
-                if file.endswith('.fasta'):
-                    fasta_file_name = os.path.join(root, file)
-                    print('found fasta: ' + fasta_file_name)
-                    results['sequences'].append(qiime2.Artifact.import_data('FeatureData[Sequence]', fasta_file_name))
-                elif file.endswith('.txt'):
-                    txt_file_name = os.path.join(root, file)
-                    print('found txt: ' + txt_file_name)
-                    results['taxonomy'].append(qiime2.Artifact.import_data('FeatureData[Taxonomy]', txt_file_name))
-    return results
+        _unite_get_raw_files(url, tmpdirname)
+        return _unite_get_qza(cluster_id, tmpdirname)
 
 # Testing
 example_output = get_unite_data(version='9.0', taxon_group='fungi')
-
-example_output['sequences'][1]
-
-
-# Unzip and import at the same time...
-# This function does not use _unite_get_tgz()
-def get_unite_data2(version, taxon_group, singletons=False):
-    # Get DOI and URL
-    doi = _unite_get_doi(version, taxon_group, singletons)
-    url = _unite_get_url(doi)
-    
-    # Eventual output
-    results = {'sequences': [], 'taxonomy': []}
-    
-    # Download .tgz file and extract
-    print('Downloading ' + url)
-    response = requests.get(url, stream=True)
-    if response.status_code != 200:
-        raise ValueError("Failed to download the file from " + url)
-    
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        print('Temporary directory:', tmpdirname)
-        
-        # Save .tgz file
-        tar_file_path = os.path.join(tmpdirname, 'unitefile.tar.gz')
-        with open(tar_file_path, 'wb') as f:
-            f.write(response.content)
-        
-        # Extract only the 'developer' subdirectory
-        with tarfile.open(tar_file_path, 'r:gz') as tar:
-            # Ensure that 'developer' directory exists in the tar file
-            members = [member for member in tar.getmembers() if member.name.startswith('developer')]
-            if not members:
-                raise ValueError("No 'developer' subdirectory found in the .tar.gz file.")
-            for member in members:
-                # Strip the 'developer' prefix
-                member.name = os.path.basename(member.name)
-                tar.extract(member, path=tmpdirname)
-                # Find and import artifacts based on suffix
-                if member.name.endswith('.fasta'):
-                    fasta_file_name = os.path.join(tmpdirname, member.name)
-                    print('found fasta: ' + fasta_file_name)
-                    results['sequences'].append(qiime2.Artifact.import_data('FeatureData[Sequence]', fasta_file_name))
-                elif member.name.endswith('.txt'):
-                    txt_file_name = os.path.join(tmpdirname, member.name)
-                    print('found txt: ' + txt_file_name)
-                    results['taxonomy'].append(qiime2.Artifact.import_data('FeatureData[Taxonomy]', txt_file_name))
-    return results
-
-example_output2 = get_unite_data2(version='9.0', taxon_group='fungi')
-
-example_output2['sequences'][1]
+example_output
