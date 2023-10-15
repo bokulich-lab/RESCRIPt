@@ -8,31 +8,36 @@
 
 import os
 import tempfile
-import warnings
 import requests
 import tarfile
 
 import qiime2
-from urllib.request import urlretrieve
-from urllib.error import HTTPError
 from q2_types.feature_data import DNAFASTAFormat
 
 
 def _unite_get_doi(version, taxon_group, singletons):
     '''Lookup UNITE DOIs from included list'''
-    # Lookup DOIs for various databases, source: https://unite.ut.ee/repository.php
+    # Lookup DOIs for databases, see: https://unite.ut.ee/repository.php
     unite_dois = {
-        '9.0': {'fungi':      {False: '10.15156/BIO/2938079', True: '10.15156/BIO/2938080'},
-                'eukaryotes': {False: '10.15156/BIO/2938081', True: '10.15156/BIO/2938082'}},
+        '9.0': {'fungi': {False: '10.15156/BIO/2938079',
+                          True: '10.15156/BIO/2938080'},
+                'eukaryotes': {False: '10.15156/BIO/2938081',
+                               True: '10.15156/BIO/2938082'}},
         # Old version 9.0 is not listed here
-        '8.3': {'fungi':      {False: '10.15156/BIO/1264708', True: '10.15156/BIO/1264763'},
-                'eukaryotes': {False: '10.15156/BIO/1264819', True: '10.15156/BIO/1264861'}},
-        '8.2': {'fungi':      {False: '10.15156/BIO/786385', True: '10.15156/BIO/786387'},
-                'eukaryotes': {False: '10.15156/BIO/786386', True: '10.15156/BIO/786388'}},
-        '8.0': {'fungi':      {False: '', True: '10.15156/BIO/786349'},
-                'eukaryotes': {False: '', True: ''}},  # All other 8.0 are in zip files
+        '8.3': {'fungi': {False: '10.15156/BIO/1264708',
+                          True: '10.15156/BIO/1264763'},
+                'eukaryotes': {False: '10.15156/BIO/1264819',
+                               True: '10.15156/BIO/1264861'}},
+        '8.2': {'fungi': {False: '10.15156/BIO/786385',
+                          True: '10.15156/BIO/786387'},
+                'eukaryotes': {False: '10.15156/BIO/786386',
+                               True: '10.15156/BIO/786388'}},
+        '8.0': {'fungi': {False: '',
+                          # All other 8.0 are in zip files
+                          True: '10.15156/BIO/786349'},
+                'eukaryotes': {False: '',
+                               True: ''}},
     }
-    # There's got to be a better way! See https://stackoverflow.com/questions/25833613/safe-method-to-get-value-of-nested-dictionary
     try:
         # Check if we have the DOI requested
         doi = unite_dois[version][taxon_group][singletons]
@@ -41,8 +46,10 @@ def _unite_get_doi(version, taxon_group, singletons):
         raise
     return doi
 
+
 # Testing
-_unite_get_doi(version='9.0', taxon_group='fungi', singletons=False)
+# _unite_get_doi(version='9.0', taxon_group='fungi', singletons=False)
+
 
 def _unite_get_url(doi):
     '''Query plutof API for UNITE url'''
@@ -55,8 +62,10 @@ def _unite_get_url(doi):
     URL = query_data['data'][0]['attributes']['media'][-1]['url']
     return URL
 
+
 # Testing
-_unite_get_url(doi = '10.15156/BIO/2938079')
+# _unite_get_url(doi='10.15156/BIO/2938079')
+
 
 # Make tmp_dir for standalone testing
 # tmp_dir = tempfile.mkdtemp()
@@ -72,22 +81,25 @@ def _unite_get_raw_files(url, download_path):
     # Extract only the 'developer' subdirectory
     with tarfile.open(unite_file_path, 'r:gz') as tar:
         # Ensure that 'developer' exists in the tar file
-        members = [member for member in tar.getmembers() if member.name.startswith('developer')]
+        members = [member for member in tar.getmembers()
+                   if member.name.startswith('developer')]
         if not members:
-            raise ValueError("No 'developer' subdirectory found in the .tar.gz file.")
+            raise ValueError("No 'developer' subdirectory found")
         for member in members:
             # Strip the 'developer' prefix
             member.name = os.path.basename(member.name)
             tar.extract(member, path=download_path)
     return
 
+
 # Test it by downloading this file
-_unite_get_raw_files(_unite_get_url(doi = '10.15156/BIO/2938079'), tmp_dir)
+# _unite_get_raw_files(_unite_get_url(doi='10.15156/BIO/2938079'), tmp_dir)
+
 
 def _unite_get_qza(cluster_id, download_path):
     '''
     Find and import raw files with matching cluster_id
-    
+
     Returns: Tuple containing tax_results and seq_results
     '''
     tax_results = []
@@ -97,21 +109,24 @@ def _unite_get_qza(cluster_id, download_path):
         # ... with the matching cluster_id
         filtered_files = [file for file in files if cluster_id in file]
         for file in filtered_files:
-            file_path = os.path.join(root, file)
+            fp = os.path.join(root, file)
             if file.endswith('.txt'):
-                tax_results.append(qiime2.Artifact.import_data('FeatureData[Taxonomy]', file_path))
+                tax_results.append(
+                    qiime2.Artifact.import_data('FeatureData[Taxonomy]', fp))
             elif file.endswith('.fasta'):
-                seq_results.append(qiime2.Artifact.import_data('FeatureData[Sequence]', file_path))
+                seq_results.append(
+                    qiime2.Artifact.import_data('FeatureData[Sequence]', fp))
     return tax_results, seq_results
 
+
 # Testing
-_unite_get_qza('99', tmp_dir)
+# _unite_get_qza('99', tmp_dir)
 
 
-def get_unite_data(version, taxon_group, cluster_id = '99', singletons=False):
+def get_unite_data(version, taxon_group, cluster_id='99', singletons=False):
     '''
     Get Qiime2 artifacts for a given version of UNITE
-    
+
     Returns: Tuple containing tax_results and seq_results
     '''
     doi = _unite_get_doi(version, taxon_group, singletons)
@@ -121,6 +136,7 @@ def get_unite_data(version, taxon_group, cluster_id = '99', singletons=False):
         _unite_get_raw_files(url, tmpdirname)
         return _unite_get_qza(cluster_id, tmpdirname)
 
+
 # Testing
-example_output = get_unite_data(version='9.0', taxon_group='fungi')
-example_output
+# example_output=get_unite_data(version='9.0', taxon_group='fungi')
+# example_output
