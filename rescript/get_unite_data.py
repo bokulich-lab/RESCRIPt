@@ -12,7 +12,6 @@ import requests
 import tarfile
 
 import qiime2
-from q2_types.feature_data import DNAFASTAFormat
 
 
 def _unite_get_doi(version, taxon_group, singletons):
