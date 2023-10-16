@@ -88,6 +88,8 @@ def _unite_get_raw_files(url, download_path):
             # Strip the 'developer' prefix
             member.name = os.path.basename(member.name)
             tar.extract(member, path=download_path)
+    # Remove .tgz file
+    os.remove(unite_file_path)
     return
 
 
@@ -106,7 +108,7 @@ def _unite_get_qza(cluster_id, download_path):
     # Find all files...
     for root, dirs, files in os.walk(download_path):
         # ... with the matching cluster_id
-        filtered_files = [file for file in files if cluster_id in file]
+        filtered_files = [file for file in files if file.split('_')[4]==cluster_id]
         for file in filtered_files:
             fp = os.path.join(root, file)
             if file.endswith('.txt'):
@@ -120,7 +122,8 @@ def _unite_get_qza(cluster_id, download_path):
 
 # Testing
 # _unite_get_qza('99', tmp_dir)
-
+# _unite_get_qza('97', tmp_dir)
+# _unite_get_qza('dynamic', tmp_dir)
 
 def get_unite_data(version, taxon_group, cluster_id='99', singletons=False):
     '''
