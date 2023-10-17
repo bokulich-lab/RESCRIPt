@@ -41,10 +41,6 @@ def _unite_get_doi(version, taxon_group, singletons):
     return doi
 
 
-# Testing
-# _unite_get_doi(version='9.0', taxon_group='fungi', singletons=False)
-
-
 def _unite_get_url(doi):
     '''Query plutof API for UNITE url'''
     print('Get URLs for these DOIs:', doi)
@@ -57,12 +53,10 @@ def _unite_get_url(doi):
     return URL
 
 
-# Testing
-# _unite_get_url(doi='10.15156/BIO/2938079')
-
-
 # Make tmp_dir for standalone testing
 # tmp_dir = tempfile.mkdtemp()
+# print(tmp_dir)
+
 def _unite_get_raw_files(url, download_path):
     '''Download and extract all fasta and txt files'''
     response = requests.get(url, stream=True)
@@ -70,13 +64,22 @@ def _unite_get_raw_files(url, download_path):
         raise ValueError("Failed to download the file from " + url)
     # Save .tgz file
     unite_file_path = os.path.join(download_path, 'unitefile.tar.gz')
+    # Initialize a variable to keep track of the downloaded size
+    downloaded_size = 0
     with open(unite_file_path, 'wb') as f:
-        f.write(response.content)
+        for chunk in response.iter_content(chunk_size=8192):
+            if chunk:
+                f.write(chunk)
+                downloaded_size += len(chunk)
+    # Check if the downloaded size matches the expected size
+    if downloaded_size != int(response.headers.get('content-length', 0)):
+        raise ValueError("File download incomplete!")
     # Extract only the 'developer' subdirectory
     with tarfile.open(unite_file_path, 'r:gz') as tar:
+        print(tar.getmembers())
         # Ensure that 'developer' exists in the tar file
         members = [member for member in tar.getmembers()
-                   if member.name.startswith('developer')]
+                   if '_dev' in member.name]
         if not members:
             raise ValueError("No 'developer' subdirectory found")
         for member in members:
@@ -89,6 +92,7 @@ def _unite_get_raw_files(url, download_path):
 
 
 # Test it by downloading this file
+# _unite_get_raw_files(_unite_get_url(doi='10.15156/BIO/786385'), tmp_dir)
 # _unite_get_raw_files(_unite_get_url(doi='10.15156/BIO/2938079'), tmp_dir)
 
 
