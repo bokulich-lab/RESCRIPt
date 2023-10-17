@@ -31,12 +31,7 @@ def _unite_get_doi(version, taxon_group, singletons):
                           True: '10.15156/BIO/786387'},
                 'eukaryotes': {False: '10.15156/BIO/786386',
                                True: '10.15156/BIO/786388'}},
-        '8.0': {'fungi': {False: '',
-                          # All other 8.0 are in zip files
-                          True: '10.15156/BIO/786349'},
-                'eukaryotes': {False: '',
-                               True: ''}},
-    }
+        }
     try:
         # Check if we have the DOI requested
         doi = unite_dois[version][taxon_group][singletons]
@@ -108,7 +103,7 @@ def _unite_get_qza(cluster_id, download_path):
     # Find all files...
     for root, dirs, files in os.walk(download_path):
         # ... with the matching cluster_id
-        filtered_files = [file for file in files if file.split('_')[4]==cluster_id]
+        filtered_files = [f for f in files if f.split('_')[4] == cluster_id]
         for file in filtered_files:
             fp = os.path.join(root, file)
             if file.endswith('.txt'):
