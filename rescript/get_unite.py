@@ -8,8 +8,9 @@
 
 import os
 import tempfile
-import requests
 import tarfile
+import requests
+from requests.exceptions import HTTPError
 
 import qiime2
 
@@ -57,23 +58,31 @@ def _unite_get_url(doi):
 # tmp_dir = tempfile.mkdtemp()
 # print(tmp_dir)
 
-def _unite_get_raw_files(url, download_path):
+def _unite_get_raw_files(url, download_path, retries=10):
     '''Download and extract all fasta and txt files'''
-    response = requests.get(url, stream=True)
-    if response.status_code != 200:
-        raise ValueError("Failed to download the file from " + url)
-    # Save .tgz file
-    unite_file_path = os.path.join(download_path, 'unitefile.tar.gz')
-    # Initialize a variable to keep track of the downloaded size
-    downloaded_size = 0
-    with open(unite_file_path, 'wb') as f:
-        for chunk in response.iter_content(chunk_size=8192):
-            if chunk:
-                f.write(chunk)
-                downloaded_size += len(chunk)
-    # Check if the downloaded size matches the expected size
-    if downloaded_size != int(response.headers.get('content-length', 0)):
-        raise ValueError("File download incomplete!")
+    for retry in range(retries):
+        # Track downloaded size
+        file_size = 0
+        try:
+            response = requests.get(url, stream=True)
+            # Save .tgz file
+            unite_file_path = os.path.join(download_path, 'unitefile.tar.gz')
+            # Initialize a variable to keep track of the downloaded size
+            with open(unite_file_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+                        file_size += len(chunk)
+            # Check if the downloaded size matches the expected size
+            if file_size == int(response.headers.get('content-length', 0)):
+                break  # done!
+            else:
+                raise ValueError("File download incomplete")
+        except HTTPError as e:
+            print('Request failed with code ' +
+                  str(e.response.status_code) + ', on try ' + str(retry))
+        except ValueError:
+            print('File incomplete, on try ' + str(retry))
     # Extract only files containing '_dev'
     with tarfile.open(unite_file_path, 'r:gz') as tar:
         print(tar.getmembers())
