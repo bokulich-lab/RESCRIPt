@@ -74,14 +74,13 @@ def _unite_get_raw_files(url, download_path):
     # Check if the downloaded size matches the expected size
     if downloaded_size != int(response.headers.get('content-length', 0)):
         raise ValueError("File download incomplete!")
-    # Extract only the 'developer' subdirectory
+    # Extract only files containing '_dev'
     with tarfile.open(unite_file_path, 'r:gz') as tar:
         print(tar.getmembers())
         # Ensure that 'developer' exists in the tar file
-        members = [member for member in tar.getmembers()
-                   if '_dev' in member.name]
+        members = [m for m in tar.getmembers() if '_dev' in m.name]
         if not members:
-            raise ValueError("No 'developer' subdirectory found")
+            raise ValueError("No '_dev' files found")
         for member in members:
             # Strip the 'developer' prefix
             member.name = os.path.basename(member.name)
