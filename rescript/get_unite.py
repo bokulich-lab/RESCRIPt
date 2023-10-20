@@ -44,7 +44,6 @@ def _unite_get_doi(version, taxon_group, singletons):
 
 def _unite_get_url(doi):
     '''Query plutof API for UNITE url'''
-    print('Get URLs for these DOIs:', doi)
     base_url = 'https://api.plutof.ut.ee/v1/public/dois/'\
                '?format=vnd.api%2Bjson&identifier='
     query_data = requests.get(base_url + doi).json()
@@ -58,8 +57,8 @@ def _unite_get_url(doi):
 # tmp_dir = tempfile.mkdtemp()
 # print(tmp_dir)
 
-def _unite_get_raw_files(url, download_path, retries=10):
-    '''Download and extract all fasta and txt files'''
+def _unite_get_tgz(url, download_path, retries=10):
+    '''Download compressed database'''
     for retry in range(retries):
         # Track downloaded size
         file_size = 0
@@ -67,7 +66,6 @@ def _unite_get_raw_files(url, download_path, retries=10):
             response = requests.get(url, stream=True)
             # Save .tgz file
             unite_file_path = os.path.join(download_path, 'unitefile.tar.gz')
-            # Initialize a variable to keep track of the downloaded size
             with open(unite_file_path, 'wb') as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     if chunk:
@@ -75,7 +73,7 @@ def _unite_get_raw_files(url, download_path, retries=10):
                         file_size += len(chunk)
             # Check if the downloaded size matches the expected size
             if file_size == int(response.headers.get('content-length', 0)):
-                break  # done!
+                return unite_file_path  # done!
             else:
                 raise ValueError("File download incomplete")
         except HTTPError as e:
@@ -83,54 +81,54 @@ def _unite_get_raw_files(url, download_path, retries=10):
                   str(e.response.status_code) + ', on try ' + str(retry))
         except ValueError:
             print('File incomplete, on try ' + str(retry))
-    # Extract only files containing '_dev'
-    with tarfile.open(unite_file_path, 'r:gz') as tar:
-        print(tar.getmembers())
-        # Ensure that 'developer' exists in the tar file
-        members = [m for m in tar.getmembers() if '_dev' in m.name]
-        if not members:
-            raise ValueError("No '_dev' files found")
-        for member in members:
-            # Strip the 'developer' prefix
-            member.name = os.path.basename(member.name)
-            tar.extract(member, path=download_path)
-    # Remove .tgz file
-    os.remove(unite_file_path)
-    return
 
 
 # Test it by downloading this file
-# _unite_get_raw_files(_unite_get_url(doi='10.15156/BIO/786385'), tmp_dir)
-# _unite_get_raw_files(_unite_get_url(doi='10.15156/BIO/2938079'), tmp_dir)
+# _unite_get_tgz(_unite_get_url(doi='10.15156/BIO/786385'), tmp_dir)
+# _unite_get_tgz(_unite_get_url(doi='10.15156/BIO/2938079'), tmp_dir)
 
 
-def _unite_get_qza(cluster_id, download_path):
+def _unite_get_artifacts(unite_file, cluster_id):
     '''
-    Find and import raw files with matching cluster_id
+    Find and import files with matching cluster_id from .tgz
 
     Returns: Tuple containing tax_results and seq_results
     '''
     tax_results = []
     seq_results = []
-    # Find all files...
-    for root, dirs, files in os.walk(download_path):
-        # ... with the matching cluster_id
-        filtered_files = [f for f in files if f.split('_')[4] == cluster_id]
-        for file in filtered_files:
-            fp = os.path.join(root, file)
-            if file.endswith('.txt'):
-                tax_results.append(
-                    qiime2.Artifact.import_data('FeatureData[Taxonomy]', fp))
-            elif file.endswith('.fasta'):
-                seq_results.append(
-                    qiime2.Artifact.import_data('FeatureData[Sequence]', fp))
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        print('Temporary directory:', tmpdirname)
+        # Extract from the .tgz file
+        with tarfile.open(unite_file, 'r:gz') as tar:
+            # Keep only _dev files
+            members = [m for m in tar.getmembers() if '_dev' in m.name]
+            if not members:
+                raise ValueError("No '_dev' files found")
+            for member in members:
+                # Keep only base name
+                member.name = os.path.basename(member.name)
+                tar.extract(member, path=tmpdirname)
+        # Find and import the raw files...
+        for root, dirs, files in os.walk(tmpdirname):
+            # ... with the matching cluster_id
+            filtered_files = [f for f in files if f.split('_')[4] == cluster_id]
+            for file in filtered_files:
+                fp = os.path.join(root, file)
+                if file.endswith('.txt'):
+                    tax_results.append(
+                        qiime2.Artifact.import_data(
+                            'FeatureData[Taxonomy]', fp, 'HeaderlessTSVTaxonomyFormat'))
+                elif file.endswith('.fasta'):
+                    seq_results.append(
+                        qiime2.Artifact.import_data(
+                            'FeatureData[Sequence]', fp, 'MixedCaseDNAFASTAFormat'))
     return tax_results, seq_results
 
 
 # Testing
-# _unite_get_qza('99', tmp_dir)
-# _unite_get_qza('97', tmp_dir)
-# _unite_get_qza('dynamic', tmp_dir)
+# _unite_get_artifacts('/tmp/tmpx8yn9dh2/unitefile.tar.gz', '99')
+# _unite_get_artifacts('/tmp/tmpx8yn9dh2/unitefile.tar.gz', '97')
+# _unite_get_artifacts('/tmp/tmpx8yn9dh2/unitefile.tar.gz', 'dynamic')
 
 def get_unite_data(version, taxon_group, cluster_id='99', singletons=False):
     '''
@@ -142,10 +140,10 @@ def get_unite_data(version, taxon_group, cluster_id='99', singletons=False):
     url = _unite_get_url(doi)
     with tempfile.TemporaryDirectory() as tmpdirname:
         print('Temporary directory:', tmpdirname)
-        _unite_get_raw_files(url, tmpdirname)
-        return _unite_get_qza(cluster_id, tmpdirname)
+        tar_file_path = _unite_get_tgz(url, tmpdirname)
+        return _unite_get_artifacts(tar_file_path, cluster_id)
 
 
 # Testing
-# example_output=get_unite_data(version='9.0', taxon_group='fungi')
+# example_output=get_unite_data(version='8.3', taxon_group='fungi')
 # example_output
