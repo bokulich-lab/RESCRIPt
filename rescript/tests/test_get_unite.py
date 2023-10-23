@@ -6,7 +6,6 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-import qiime2
 import pkg_resources
 import tempfile
 from qiime2.plugin.testing import TestPluginBase
@@ -28,6 +27,12 @@ obs_dois = []
 
 class TestGetUNITE(TestPluginBase):
     package = "rescript.tests"
+
+    def setUp(self):
+        super().setUp()
+        self.unitefile = pkg_resources.resource_filename(
+            "rescript.tests", "data/unitefile.tgz"
+        )
 
     def test_unite_get_doi(self):
         # All supported inputs to _unite_get_doi
@@ -79,7 +84,7 @@ class TestGetUNITE(TestPluginBase):
 
     ##########
     # Alternative versions of these two functions. Instead of using a
-    # hardcoded list of DOIs, they populate a global obs_dois list. 
+    # hardcoded list of DOIs, they populate a global obs_dois list.
     ##########
 
     # test by popbulating obs_dois list
@@ -107,14 +112,37 @@ class TestGetUNITE(TestPluginBase):
                 raise ValueError("Failed to open URL: " + url)
 
     # Download a single, small file from the API endpoint
-    def test_unite_get_raw_files(self):
-        # Use a single (unrelated) download URL
-        url = "https://files.plutof.ut.ee/doi/C8/E4/C8E4A8E6A7C4C00EACE3499C51E550744A259A98F8FE25993B1C7B9E7D2170B2.zip" # noqa
+    def test_unite_get_tgz(self):
+        # Use a single, small, and unrelated file for testing
+        # url = _unite_get_url('10.15156/BIO/587477')
+        url = "https://files.plutof.ut.ee/doi/C9/F6/C9F687C997F72F674AA539CB80BF5D5BF6D1F402A2ACF840B20322850D3DFBA4.zip"  # noqa E501
         with tempfile.TemporaryDirectory() as tmpdirname:
             _unite_get_tgz(url, tmpdirname)
-            # If function finished, pass this test
-            self.assertTrue(True)
 
     def test_unite_get_artifacts(self):
-        # with patch()
-        self.assertTrue(True)
+        # Test on small data/unitefile.tgz with two items inside
+        res_one, res_two = _unite_get_artifacts(
+            self.unitefile, cluster_id="97"
+        )
+        self.assertEqual(str(res_one[0].type), "FeatureData[Taxonomy]")
+        self.assertEqual(str(res_two[0].type), "FeatureData[Sequence]")
+        # test missing files or misspelled cluster_id
+        with self.assertRaises(ValueError):
+            _unite_get_artifacts(self.unitefile, "nothing")
+
+    # This tests the full get_unite_data pipeline with toy data.
+    # All relevant internals are tested elsewhere in this test class, so
+    # this just ensures that the full pipeline works.
+    # Downloading is mock`ed with patch.
+    def test_get_unite_data(self):
+        # def _toy_data(give_me_anything_i_shall_ignore_it):
+        #     res_one, res_two = _unite_get_artifacts(
+        #         self.unitefile, cluster_id="97"
+        #     )
+        #     return res_one, res_two
+        # default
+        with patch("rescript.get_unite._unite_get_tgz", new=self.unitefile):
+            rescript.actions.get_unite_data(
+                version='8.3', taxon_group='fungi', cluster_id = "97"
+            )
+            self.assertTrue(True)

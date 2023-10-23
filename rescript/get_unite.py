@@ -14,46 +14,47 @@ from requests.exceptions import HTTPError
 
 import qiime2
 
+# Source: https://unite.ut.ee/repository.php
+UNITE_DOIS = {
+    "9.0": {
+        "fungi": {
+            False: "10.15156/BIO/2938079",
+            True: "10.15156/BIO/2938080",
+        },
+        "eukaryotes": {
+            False: "10.15156/BIO/2938081",
+            True: "10.15156/BIO/2938082",
+        },
+    },
+    # Old version 9.0 is not listed here
+    "8.3": {
+        "fungi": {
+            False: "10.15156/BIO/1264708",
+            True: "10.15156/BIO/1264763",
+        },
+        "eukaryotes": {
+            False: "10.15156/BIO/1264819",
+            True: "10.15156/BIO/1264861",
+        },
+    },
+    "8.2": {
+        "fungi": {
+            False: "10.15156/BIO/786385",
+            True: "10.15156/BIO/786387",
+        },
+        "eukaryotes": {
+            False: "10.15156/BIO/786386",
+            True: "10.15156/BIO/786388",
+        },
+    },
+}
+
 
 def _unite_get_doi(version, taxon_group, singletons):
     """Lookup UNITE DOIs from included list"""
-    # Lookup DOIs for databases, see: https://unite.ut.ee/repository.php
-    unite_dois = {
-        "9.0": {
-            "fungi": {
-                False: "10.15156/BIO/2938079",
-                True: "10.15156/BIO/2938080",
-            },
-            "eukaryotes": {
-                False: "10.15156/BIO/2938081",
-                True: "10.15156/BIO/2938082",
-            },
-        },
-        # Old version 9.0 is not listed here
-        "8.3": {
-            "fungi": {
-                False: "10.15156/BIO/1264708",
-                True: "10.15156/BIO/1264763",
-            },
-            "eukaryotes": {
-                False: "10.15156/BIO/1264819",
-                True: "10.15156/BIO/1264861",
-            },
-        },
-        "8.2": {
-            "fungi": {
-                False: "10.15156/BIO/786385",
-                True: "10.15156/BIO/786387",
-            },
-            "eukaryotes": {
-                False: "10.15156/BIO/786386",
-                True: "10.15156/BIO/786388",
-            },
-        },
-    }
     try:
         # Check if we have the DOI requested
-        doi = unite_dois[version][taxon_group][singletons]
+        doi = UNITE_DOIS[version][taxon_group][singletons]
     except KeyError as ke:
         print("Unknown DOI for this value: " + str(ke))
         raise
