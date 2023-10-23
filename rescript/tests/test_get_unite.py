@@ -15,6 +15,7 @@ from rescript.get_unite import (
     _unite_get_url,
     _unite_get_tgz,
     _unite_get_artifacts,
+    get_unite_data
 )
 
 from urllib.request import urlopen
@@ -145,4 +146,15 @@ class TestGetUNITE(TestPluginBase):
             rescript.actions.get_unite_data(
                 version='8.3', taxon_group='fungi', cluster_id = "97"
             )
+            self.assertTrue(True)
+
+    def test_get_unite_data2(self):
+        # def _toy_data(give_me_anything_i_shall_ignore_it):
+        #     res_one, res_two = _unite_get_artifacts(
+        #         self.unitefile, cluster_id="97"
+        #     )
+        #     return res_one, res_two
+        # default
+        with patch("rescript.get_unite._unite_get_tgz", new=self.unitefile):
+            get_unite_data(version="8.3", taxon_group="fungi", cluster_id="97")
             self.assertTrue(True)
