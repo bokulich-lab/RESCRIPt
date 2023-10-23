@@ -113,18 +113,19 @@ def _unite_get_tgz(url, download_path, retries=10):
 # _unite_get_tgz(_unite_get_url(doi='10.15156/BIO/2938079'), tmp_dir)
 
 
-def _unite_get_artifacts(unite_file, cluster_id):
+def _unite_get_artifacts(tgz_file, cluster_id):
     """
     Find and import files with matching cluster_id from .tgz
 
     Returns: Tuple containing tax_results and seq_results
     """
+    # Eventual output
     tax_results = []
     seq_results = []
     with tempfile.TemporaryDirectory() as tmpdirname:
         print("Temporary directory:", tmpdirname)
         # Extract from the .tgz file
-        with tarfile.open(unite_file, "r:gz") as tar:
+        with tarfile.open(tgz_file, "r:gz") as tar:
             # Keep only _dev files
             members = [m for m in tar.getmembers() if "_dev" in m.name]
             if not members:
@@ -139,6 +140,10 @@ def _unite_get_artifacts(unite_file, cluster_id):
             filtered_files = [
                 f for f in files if f.split("_")[4] == cluster_id
             ]
+            if not filtered_files:
+                raise ValueError(
+                    "No files found with cluster_id = " + cluster_id
+                )
             for file in filtered_files:
                 fp = os.path.join(root, file)
                 if file.endswith(".txt"):
