@@ -78,10 +78,9 @@ GTDB_LICENSE_NOTE = (
     'license.')
 
 UNITE_LICENSE_NOTE = (
-    'NOTE: THIS ACTION ACQUIRES DATA FROM UNITE. SEE '
-    'https://unite.ut.ee/cite.php FOR MORE INFORMATION '
-    'and be aware that earlier versions may be released under a different '
-    'license.')
+    'NOTE: THIS ACTION ACQUIRES DATA FROM UNITE, which is licensed under '
+    'CC BY-SA 4.0. To learn more, please visit https://unite.ut.ee/cite.php '
+    'and https://creativecommons.org/licenses/by-sa/4.0/.')
 
 VOLATILITY_PLOT_XAXIS_INTERPRETATION = (
     'The x-axis in these plots represents the taxonomic '
@@ -1005,11 +1004,10 @@ plugin.methods.register_function(
         'sequences': 'UNITE reference sequences.'},
     name='Download and import UNITE reference data.',
     description=(
-        'Download and import UNITE files, given a version '
-        'number and taxon_group, with the option to '
-        'select a cluster_id and include singletons.'
-        'Downloads data directly from UNITE\'s PlutoF REST API, and outputs '
-        'ready-to-use sequence and taxonomy artifacts.' +
+        'Outputs ready-to-use sequence and taxonomy artifacts, given a '
+        'version number and taxon_group, with the option to select a '
+        'cluster_id and include singletons. '
+        'Downloads data directly from UNITE\'s PlutoF REST API. ' +
         UNITE_LICENSE_NOTE),
     citations=[citations['nilsson2019unite']]
 )
