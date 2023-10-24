@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2021, QIIME 2 development team.
+# Copyright (c) 2023, QIIME 2 development team.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -108,9 +108,6 @@ def _unite_get_artifacts(
 
     Returns: Tuple containing tax_results and seq_results
     """
-    # Eventual output
-    tax_results = []
-    seq_results = []
     with tempfile.TemporaryDirectory() as tmpdirname:
         print("Temporary directory:", tmpdirname)
         # Extract from the .tgz file
@@ -129,27 +126,26 @@ def _unite_get_artifacts(
             filtered_files = [
                 f for f in files if f.split("_")[4] == cluster_id
             ]
-            if not filtered_files:
+            if not filtered_files or len(filtered_files) > 2:
                 raise ValueError(
-                    "No files found with cluster_id = " + cluster_id
+                    "Found "
+                    + str(len(filtered_files))
+                    + " files found with cluster_id = "
+                    + cluster_id
                 )
             for file in filtered_files:
                 fp = os.path.join(root, file)
                 if file.endswith(".txt"):
-                    tax_results.append(
-                        qiime2.Artifact.import_data(
-                            "FeatureData[Taxonomy]",
-                            fp,
-                            "HeaderlessTSVTaxonomyFormat",
-                        )
+                    tax_results = qiime2.Artifact.import_data(
+                        "FeatureData[Taxonomy]",
+                        fp,
+                        "HeaderlessTSVTaxonomyFormat",
                     )
                 elif file.endswith(".fasta"):
-                    seq_results.append(
-                        qiime2.Artifact.import_data(
-                            "FeatureData[Sequence]",
-                            fp,
-                            "MixedCaseDNAFASTAFormat",
-                        )
+                    seq_results = qiime2.Artifact.import_data(
+                        "FeatureData[Sequence]",
+                        fp,
+                        "MixedCaseDNAFASTAFormat",
                     )
     return tax_results, seq_results
 

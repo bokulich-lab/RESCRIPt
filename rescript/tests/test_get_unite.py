@@ -56,8 +56,8 @@ class TestGetUNITE(TestPluginBase):
         res_one, res_two = _unite_get_artifacts(
             self.unitefile, cluster_id="97"
         )
-        self.assertEqual(str(res_one[0].type), "FeatureData[Taxonomy]")
-        self.assertEqual(str(res_two[0].type), "FeatureData[Sequence]")
+        self.assertEqual(str(res_one.type), "FeatureData[Taxonomy]")
+        self.assertEqual(str(res_two.type), "FeatureData[Sequence]")
         # test missing files or misspelled cluster_id
         with self.assertRaises(ValueError):
             _unite_get_artifacts(self.unitefile, "nothing")
