@@ -109,7 +109,6 @@ def _unite_get_artifacts(
     Returns: Tuple containing tax_results and seq_results
     """
     with tempfile.TemporaryDirectory() as tmpdirname:
-        print("Temporary directory:", tmpdirname)
         # Extract from the .tgz file
         with tarfile.open(tgz_file, "r:gz") as tar:
             # Keep only _dev files
@@ -163,6 +162,5 @@ def get_unite_data(
     """
     url = _unite_get_url(version, taxon_group, singletons)
     with tempfile.TemporaryDirectory() as tmpdirname:
-        print("Temporary directory:", tmpdirname)
         tar_file_path = _unite_get_tgz(url, tmpdirname)
         return _unite_get_artifacts(tar_file_path, cluster_id)
