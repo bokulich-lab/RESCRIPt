@@ -50,19 +50,13 @@ UNITE_DOIS = {
 }
 
 
-def _unite_get_doi(version, taxon_group, singletons):
-    """Lookup UNITE DOIs from included list"""
-    try:
-        # Check if we have the DOI requested
-        doi = UNITE_DOIS[version][taxon_group][singletons]
-    except KeyError as ke:
-        print("Unknown DOI for this value: " + str(ke))
-        raise
-    return doi
-
-
-def _unite_get_url(doi):
-    """Query plutof API for UNITE url"""
+def _unite_get_url(
+    version: str = None, taxon_group: str = None, singletons: bool = None
+) -> str:
+    """Get DOI from included list, then query plutof API for UNITE url"""
+    # Get matching DOI
+    doi = UNITE_DOIS[version][taxon_group][singletons]
+    # Build URL
     base_url = (
         "https://api.plutof.ut.ee/v1/public/dois/"
         "?format=vnd.api%2Bjson&identifier="
@@ -79,7 +73,9 @@ def _unite_get_url(doi):
 # print(tmp_dir)
 
 
-def _unite_get_tgz(url, download_path, retries=10):
+def _unite_get_tgz(
+    url: str = None, download_path: str = None, retries: int = 10
+) -> str:
     """Download compressed database"""
     for retry in range(retries):
         # Track downloaded size
@@ -110,11 +106,13 @@ def _unite_get_tgz(url, download_path, retries=10):
 
 
 # Test it by downloading this file
-# _unite_get_tgz(_unite_get_url(doi='10.15156/BIO/786385'), tmp_dir)
-# _unite_get_tgz(_unite_get_url(doi='10.15156/BIO/2938079'), tmp_dir)
+# _unite_get_tgz(_unite_get_url("8.3", "fungi", False), tmp_dir)
+# _unite_get_tgz(_unite_get_url("9.0", "fungi", False), tmp_dir)
 
 
-def _unite_get_artifacts(tgz_file, cluster_id):
+def _unite_get_artifacts(
+    tgz_file: str = None, cluster_id: str = None
+) -> (None, None):
     """
     Find and import files with matching cluster_id from .tgz
 
@@ -172,14 +170,18 @@ def _unite_get_artifacts(tgz_file, cluster_id):
 # _unite_get_artifacts('/tmp/tmpx8yn9dh2/unitefile.tar.gz', 'dynamic')
 
 
-def get_unite_data(version, taxon_group, cluster_id="99", singletons=False):
+def get_unite_data(
+    version: str = None,
+    taxon_group: str = None,
+    cluster_id: str = "99",
+    singletons: bool = False,
+) -> (None, None):
     """
     Get Qiime2 artifacts for a given version of UNITE
 
     Returns: Tuple containing tax_results and seq_results
     """
-    doi = _unite_get_doi(version, taxon_group, singletons)
-    url = _unite_get_url(doi)
+    url = _unite_get_url(version, taxon_group, singletons)
     with tempfile.TemporaryDirectory() as tmpdirname:
         print("Temporary directory:", tmpdirname)
         tar_file_path = _unite_get_tgz(url, tmpdirname)

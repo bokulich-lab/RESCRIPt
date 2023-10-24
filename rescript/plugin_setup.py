@@ -981,7 +981,7 @@ plugin.pipelines.register_function(
 )
 
 
-plugin.pipelines.register_function(
+plugin.methods.register_function(
     function=get_unite_data,
     inputs={},
     parameters={
