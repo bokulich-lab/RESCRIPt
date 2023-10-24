@@ -68,11 +68,6 @@ def _unite_get_url(
     return URL
 
 
-# Make tmp_dir for standalone testing
-# tmp_dir = tempfile.mkdtemp()
-# print(tmp_dir)
-
-
 def _unite_get_tgz(
     url: str = None, download_path: str = None, retries: int = 10
 ) -> str:
@@ -103,11 +98,6 @@ def _unite_get_tgz(
             )
         except ValueError:
             print("File incomplete, on try " + str(retry))
-
-
-# Test it by downloading this file
-# _unite_get_tgz(_unite_get_url("8.3", "fungi", False), tmp_dir)
-# _unite_get_tgz(_unite_get_url("9.0", "fungi", False), tmp_dir)
 
 
 def _unite_get_artifacts(
@@ -164,12 +154,6 @@ def _unite_get_artifacts(
     return tax_results, seq_results
 
 
-# Testing
-# _unite_get_artifacts('/tmp/tmpx8yn9dh2/unitefile.tar.gz', '99')
-# _unite_get_artifacts('/tmp/tmpx8yn9dh2/unitefile.tar.gz', '97')
-# _unite_get_artifacts('/tmp/tmpx8yn9dh2/unitefile.tar.gz', 'dynamic')
-
-
 def get_unite_data(
     version: str = None,
     taxon_group: str = None,
@@ -186,8 +170,3 @@ def get_unite_data(
         print("Temporary directory:", tmpdirname)
         tar_file_path = _unite_get_tgz(url, tmpdirname)
         return _unite_get_artifacts(tar_file_path, cluster_id)
-
-
-# Testing
-# example_output=get_unite_data(version='8.3', taxon_group='fungi')
-# example_output

@@ -21,9 +21,6 @@ from urllib.request import urlopen
 from urllib.error import HTTPError
 from unittest.mock import patch
 
-# Global vars for use between functions
-obs_dois = []
-
 
 class TestGetUNITE(TestPluginBase):
     package = "rescript.tests"
@@ -34,6 +31,7 @@ class TestGetUNITE(TestPluginBase):
             "rescript.tests", "data/unitefile.tgz"
         )
 
+    # Requires internet access
     def test_unite_get_url(self):
         # for all combinations...
         for v in UNITE_DOIS.keys():
@@ -46,9 +44,9 @@ class TestGetUNITE(TestPluginBase):
                     except HTTPError:
                         raise ValueError("No URL for combo: " + v + tg + s)
 
-    # Download a single, small file from the API endpoint
+    # Requires internet access
     def test_unite_get_tgz(self):
-        # Use a single, small, and unrelated file for testing
+        # Download a single, small, unrelated file for testing
         url = "https://files.plutof.ut.ee/doi/C9/F6/C9F687C997F72F674AA539CB80BF5D5BF6D1F402A2ACF840B20322850D3DFBA4.zip"  # noqa E501
         with tempfile.TemporaryDirectory() as tmpdirname:
             _unite_get_tgz(url, tmpdirname)
@@ -64,11 +62,10 @@ class TestGetUNITE(TestPluginBase):
         with self.assertRaises(ValueError):
             _unite_get_artifacts(self.unitefile, "nothing")
 
-    # This tests the full get_unite_data pipeline with toy data.
-    # All relevant internals are tested elsewhere in this test class, so
-    # this just ensures that the full pipeline works.
+    # This tests the function with toy data.
+    # All relevant internals are tested elsewhere in this test class.
     # Downloading is mock`ed with patch.
-    def test_get_unite_data2(self):
+    def test_get_unite_data(self):
         with patch(
             "rescript.get_unite._unite_get_tgz", return_value=self.unitefile
         ):
