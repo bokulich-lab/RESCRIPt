@@ -13,6 +13,7 @@ import requests
 from requests.exceptions import HTTPError
 
 import qiime2
+from q2_types.feature_data import HeaderlessTSVTaxonomyFormat, DNAFASTAFormat
 
 # Source: https://unite.ut.ee/repository.php
 UNITE_DOIS = {
@@ -102,7 +103,7 @@ def _unite_get_tgz(
 
 def _unite_get_artifacts(
     tgz_file: str = None, cluster_id: str = None
-) -> (None, None):
+) -> (HeaderlessTSVTaxonomyFormat, DNAFASTAFormat):
     """
     Find and import files with matching cluster_id from .tgz
 
@@ -154,7 +155,7 @@ def get_unite_data(
     taxon_group: str = None,
     cluster_id: str = "99",
     singletons: bool = False,
-) -> (None, None):
+) -> (HeaderlessTSVTaxonomyFormat, DNAFASTAFormat):
     """
     Get Qiime2 artifacts for a given version of UNITE
 
