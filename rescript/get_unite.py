@@ -12,8 +12,8 @@ import tarfile
 import requests
 from requests.exceptions import HTTPError
 
-import qiime2
-from q2_types.feature_data import HeaderlessTSVTaxonomyFormat, DNAFASTAFormat
+from pandas import DataFrame
+from q2_types.feature_data import TaxonomyFormat, DNAFASTAFormat, DNAIterator
 
 # Source: https://unite.ut.ee/repository.php
 UNITE_DOIS = {
@@ -103,7 +103,7 @@ def _unite_get_tgz(
 
 def _unite_get_artifacts(
     tgz_file: str = None, cluster_id: str = None
-) -> (HeaderlessTSVTaxonomyFormat, DNAFASTAFormat):
+) -> (DataFrame, DNAIterator):
     """
     Find and import files with matching cluster_id from .tgz
 
@@ -136,18 +136,10 @@ def _unite_get_artifacts(
             for file in filtered_files:
                 fp = os.path.join(root, file)
                 if file.endswith(".txt"):
-                    tax_results = qiime2.Artifact.import_data(
-                        "FeatureData[Taxonomy]",
-                        fp,
-                        "HeaderlessTSVTaxonomyFormat",
-                    )
+                    taxa = TaxonomyFormat(fp, mode="r").view(DataFrame)
                 elif file.endswith(".fasta"):
-                    seq_results = qiime2.Artifact.import_data(
-                        "FeatureData[Sequence]",
-                        fp,
-                        "MixedCaseDNAFASTAFormat",
-                    )
-    return tax_results, seq_results
+                    seqs = DNAFASTAFormat(fp, mode="r").view(DNAIterator)
+    return taxa, seqs
 
 
 def get_unite_data(
@@ -155,7 +147,7 @@ def get_unite_data(
     taxon_group: str = None,
     cluster_id: str = "99",
     singletons: bool = False,
-) -> (HeaderlessTSVTaxonomyFormat, DNAFASTAFormat):
+) -> (DataFrame, DNAIterator):
     """
     Get Qiime2 artifacts for a given version of UNITE
 
