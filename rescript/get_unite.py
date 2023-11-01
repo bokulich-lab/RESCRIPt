@@ -143,8 +143,8 @@ def _unite_get_artifacts(
 
 
 def get_unite_data(
-    version: str = None,
-    taxon_group: str = None,
+    version: str = '9.0',
+    taxon_group: str = 'fungi',
     cluster_id: str = "99",
     singletons: bool = False,
 ) -> (DataFrame, DNAIterator):
