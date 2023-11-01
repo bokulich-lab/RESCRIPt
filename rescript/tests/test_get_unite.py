@@ -30,6 +30,9 @@ class TestGetUNITE(TestPluginBase):
         self.unitefile = pkg_resources.resource_filename(
             "rescript.tests", "data/unitefile.tgz"
         )
+        self.unitefile_no_dev = pkg_resources.resource_filename(
+            "rescript.tests", "data/unitefile_no_dev.tgz"
+        )
 
     # Requires internet access
     def test_unite_get_url(self):
@@ -38,11 +41,9 @@ class TestGetUNITE(TestPluginBase):
             for tg in UNITE_DOIS[v].keys():
                 for s in UNITE_DOIS[v][tg].keys():
                     # ... try to get the URL
-                    try:
-                        url = _unite_get_url(v, tg, s)
-                        urlopen(url)
-                    except HTTPError:
-                        raise ValueError("No URL for combo: " + v + tg + s)
+                    url = _unite_get_url(v, tg, s)
+                    urlopen(url)
+        self.assertTrue(True)
 
     # Requires internet access
     def test_unite_get_tgz(self):
@@ -51,6 +52,9 @@ class TestGetUNITE(TestPluginBase):
         with tempfile.TemporaryDirectory() as tmpdirname:
             # Test working URL
             _unite_get_tgz(url, tmpdirname)
+            # Test bad url
+            with self.assertRaises(ValueError):
+                _unite_get_tgz("https://files.plutof.ut.ee/nope", tmpdirname)
 
     def test_unite_get_artifacts(self):
         # Test on small data/unitefile.tgz with two items inside
@@ -67,6 +71,9 @@ class TestGetUNITE(TestPluginBase):
             str(type(res_two)),
             "<class 'q2_types.feature_data._transformer.DNAIterator'>",
         )
+        # test no _dev files found
+        with self.assertRaises(ValueError):
+            _unite_get_artifacts(self.unitefile_no_dev, cluster_id="97")
         # test missing files or misspelled cluster_id
         with self.assertRaises(ValueError):
             _unite_get_artifacts(self.unitefile, "nothing")

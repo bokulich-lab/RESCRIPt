@@ -89,9 +89,11 @@ def _unite_get_tgz(
             if file_size == int(response.headers.get("content-length", 0)):
                 return unite_file_path  # done!
             else:
-                raise ValueError("File download incomplete")
+                raise ValueError("File download")
         except ValueError:
             print("File incomplete, on try " + str(retry))
+            if retry == retries - 1:
+                raise ValueError("File failed to download!")
 
 
 def _unite_get_artifacts(
@@ -108,7 +110,7 @@ def _unite_get_artifacts(
             # Keep only _dev files
             members = [m for m in tar.getmembers() if "_dev" in m.name]
             if not members:
-                raise ValueError("No '_dev' files found")
+                raise ValueError("No '_dev' files found in Unite .tgz file")
             for member in members:
                 # Keep only base name
                 member.name = os.path.basename(member.name)
