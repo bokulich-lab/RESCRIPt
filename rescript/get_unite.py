@@ -90,13 +90,6 @@ def _unite_get_tgz(
                 return unite_file_path  # done!
             else:
                 raise ValueError("File download incomplete")
-        except HTTPError as e:
-            print(
-                "Request failed with code "
-                + str(e.response.status_code)
-                + ", on try "
-                + str(retry)
-            )
         except ValueError:
             print("File incomplete, on try " + str(retry))
 
@@ -143,8 +136,8 @@ def _unite_get_artifacts(
 
 
 def get_unite_data(
-    version: str = '9.0',
-    taxon_group: str = 'fungi',
+    version: str = "9.0",
+    taxon_group: str = "fungi",
     cluster_id: str = "99",
     singletons: bool = False,
 ) -> (DataFrame, DNAIterator):

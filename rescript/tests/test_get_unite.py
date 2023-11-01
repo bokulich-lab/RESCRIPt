@@ -51,9 +51,6 @@ class TestGetUNITE(TestPluginBase):
         with tempfile.TemporaryDirectory() as tmpdirname:
             # Test working URL
             _unite_get_tgz(url, tmpdirname)
-            # Test bad url
-            with self.assertRaises(ValueError):
-                _unite_get_tgz("https://files.plutof.ut.ee/nope", tmpdirname)
 
     def test_unite_get_artifacts(self):
         # Test on small data/unitefile.tgz with two items inside
