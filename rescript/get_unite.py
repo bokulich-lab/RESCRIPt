@@ -97,7 +97,7 @@ def _unite_get_tgz(
 
 
 def _unite_get_artifacts(
-    tgz_file: str = None, cluster_id: str = None
+    tgz_file: str = None, cluster_id: str = "99"
 ) -> (DataFrame, DNAIterator):
     """
     Find and import files with matching cluster_id from .tgz
@@ -139,7 +139,7 @@ def _unite_get_artifacts(
 
 def get_unite_data(
     version: str = "9.0",
-    taxon_group: str = "fungi",
+    taxon_group: str = "eukaryotes",
     cluster_id: str = "99",
     singletons: bool = False,
 ) -> (DataFrame, DNAIterator):
