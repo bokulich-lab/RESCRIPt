@@ -18,7 +18,6 @@ from rescript.get_unite import (
 )
 
 from urllib.request import urlopen
-from urllib.error import HTTPError
 from unittest.mock import patch
 
 

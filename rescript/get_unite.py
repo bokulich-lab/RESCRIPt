@@ -10,7 +10,6 @@ import os
 import tempfile
 import tarfile
 import requests
-from requests.exceptions import HTTPError
 
 from pandas import DataFrame
 from q2_types.feature_data import TaxonomyFormat, DNAFASTAFormat, DNAIterator
