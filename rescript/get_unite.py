@@ -120,9 +120,9 @@ def _unite_get_artifacts(
             filtered_files = [
                 f for f in files if f.split("_")[4] == cluster_id
             ]
-            if not filtered_files or len(filtered_files) > 2:
+            if not filtered_files or len(filtered_files) != 2:
                 raise ValueError(
-                    "Found "
+                    "Expected 2, but found "
                     + str(len(filtered_files))
                     + " files found with cluster_id = "
                     + cluster_id
