@@ -88,7 +88,7 @@ def _unite_get_tgz(
             if file_size == int(response.headers.get("content-length", 0)):
                 return unite_file_path  # done!
             else:
-                raise ValueError("File download")
+                raise ValueError("File download failed")
         except ValueError:
             print("File incomplete, on try " + str(retry))
             if retry == retries - 1:

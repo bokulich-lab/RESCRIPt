@@ -8,6 +8,8 @@
 
 import pkg_resources
 import tempfile
+import pandas.core.frame
+import q2_types.feature_data
 from qiime2.plugin.testing import TestPluginBase
 from rescript.get_unite import (
     UNITE_DOIS,
@@ -84,5 +86,7 @@ class TestGetUNITE(TestPluginBase):
         with patch(
             "rescript.get_unite._unite_get_tgz", return_value=self.unitefile
         ):
-            get_unite_data(version="8.3", taxon_group="fungi", cluster_id="97")
-            self.assertTrue(True)
+            res = get_unite_data(version="8.3", taxon_group="fungi", cluster_id="97")
+            self.assertEqual(len(res), 2)
+            self.assertTrue(isinstance(res[0], (pandas.core.frame.DataFrame)))
+            self.assertTrue(isinstance(res[1], (q2_types.feature_data._transformer.DNAIterator)))
