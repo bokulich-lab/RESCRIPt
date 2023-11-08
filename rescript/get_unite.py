@@ -75,6 +75,8 @@ def _unite_get_tgz(
     for retry in range(retries):
         # Track downloaded size
         file_size = 0
+        # Prepair error text
+        dlfail = "File incomplete on try " + str(retry + 1)
         try:
             response = requests.get(url, stream=True)
             # Save .tgz file
@@ -88,11 +90,11 @@ def _unite_get_tgz(
             if file_size == int(response.headers.get("content-length", 0)):
                 return unite_file_path  # done!
             else:
-                raise ValueError("File download failed")
+                raise ValueError(dlfail)
         except ValueError:
-            print("File incomplete, on try " + str(retry))
-            if retry == retries - 1:
-                raise ValueError("File failed to download!")
+            print(dlfail)
+            if retry + 1 == retries:
+                raise ValueError(dlfail)
 
 
 def _unite_get_artifacts(
