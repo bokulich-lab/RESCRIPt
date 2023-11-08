@@ -20,8 +20,7 @@ from rescript.get_unite import (
 )
 
 from urllib.request import urlopen
-from unittest.mock import patch
-import os
+from unittest.mock import patch, Mock
 
 
 class TestGetUNITE(TestPluginBase):
@@ -53,6 +52,19 @@ class TestGetUNITE(TestPluginBase):
             # Test URL above
             _unite_get_tgz(url, tmpdirname)
             # Test bad url
+            with self.assertRaisesRegex(ValueError, "File incomplete on try"):
+                _unite_get_tgz("https://files.plutof.ut.ee/nope", tmpdirname)
+
+    def test_unite_get_tgz2(self):
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            # mock the response object
+            mock_response = Mock()
+            mock_response.iter_content.return_value = [b"mock"]
+            mock_response.headers.get.return_value = "4"  # matches content
+            # mock successful download
+            with patch("requests.get", return_value=mock_response):
+                _unite_get_tgz("fakeURL", tmpdirname)
+            # real failed download
             with self.assertRaisesRegex(ValueError, "File incomplete on try"):
                 _unite_get_tgz("https://files.plutof.ut.ee/nope", tmpdirname)
 
