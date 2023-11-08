@@ -21,6 +21,7 @@ from rescript.get_unite import (
 
 from urllib.request import urlopen
 from unittest.mock import patch
+import os
 
 
 class TestGetUNITE(TestPluginBase):
@@ -46,14 +47,20 @@ class TestGetUNITE(TestPluginBase):
                     urlopen(url)
         self.assertTrue(True)
 
-    # Requires internet access
     def test_unite_get_tgz(self):
-        # Download a single, small, unrelated file for testing
-        url = "https://files.plutof.ut.ee/doi/C9/F6/C9F687C997F72F674AA539CB80BF5D5BF6D1F402A2ACF840B20322850D3DFBA4.zip"  # noqa E501
         with tempfile.TemporaryDirectory() as tmpdirname:
-            # Test working URL
-            _unite_get_tgz(url, tmpdirname)
-            # Test bad url
+            # Simulate a successful download
+            with patch("rescript.get_unite.requests.get") as mock_requests_get:
+                response = mock_requests_get.return_value
+                content = b"fake content"  # Content
+                response.iter_content.return_value = [content]
+                # Set a content length that matches the content
+                response.headers.get.return_value = str(len(content))
+                result = _unite_get_tgz("fakeURL", tmpdirname)
+                self.assertEqual(
+                    result, os.path.join(tmpdirname, "unitefile.tar.gz")
+                )
+            # Test bad URL
             with self.assertRaisesRegex(ValueError, "File incomplete on try"):
                 _unite_get_tgz("https://files.plutof.ut.ee/nope", tmpdirname)
 
