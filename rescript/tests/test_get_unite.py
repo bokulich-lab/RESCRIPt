@@ -54,7 +54,7 @@ class TestGetUNITE(TestPluginBase):
             # Test working URL
             _unite_get_tgz(url, tmpdirname)
             # Test bad url
-            with self.assertRaises(ValueError):
+            with self.assertRaisesRegex(ValueError, "File incomplete on try"):
                 _unite_get_tgz("https://files.plutof.ut.ee/nope", tmpdirname)
 
     def test_unite_get_artifacts(self):
