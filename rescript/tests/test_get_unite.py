@@ -21,6 +21,7 @@ from rescript.get_unite import (
 
 from urllib.request import urlopen
 from unittest.mock import patch
+import os
 
 
 class TestGetUNITE(TestPluginBase):
@@ -46,10 +47,7 @@ class TestGetUNITE(TestPluginBase):
                     urlopen(url)
         self.assertTrue(True)
 
-    # Requires internet access
     def test_unite_get_tgz(self):
-        # Download a single, small, unrelated file for testing
-        url = "https://files.plutof.ut.ee/doi/C9/F6/C9F687C997F72F674AA539CB80BF5D5BF6D1F402A2ACF840B20322850D3DFBA4.zip"  # noqa E501
         with tempfile.TemporaryDirectory() as tmpdirname:
             # Test URL above
             _unite_get_tgz(url, tmpdirname)
