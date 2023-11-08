@@ -48,6 +48,7 @@ class TestGetUNITE(TestPluginBase):
         self.assertTrue(True)
 
     def test_unite_get_tgz(self):
+        url = "https://files.plutof.ut.ee/doi/C9/F6/C9F687C997F72F674AA539CB80BF5D5BF6D1F402A2ACF840B20322850D3DFBA4.zip"  # noqa E501
         with tempfile.TemporaryDirectory() as tmpdirname:
             # Test URL above
             _unite_get_tgz(url, tmpdirname)
