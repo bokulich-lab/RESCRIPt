@@ -994,17 +994,18 @@ plugin.methods.register_function(
     input_descriptions={},
     parameter_descriptions={
         'version': 'UNITE version to download.',
-        'taxon_group': 'Just \'fungi\' or all \'eukaryotes\' in '
-                       'the database.',
+        'taxon_group': 'Download a database with only \'fungi\' '
+                       'or including all \'eukaryotes\'.',
         'cluster_id': 'Percent similarity at which sequences in '
                       'the of database were clustered.',
-        'singletons': 'Included global and 3 percent distance singletons.'},
+        'singletons': 'Include singleton clusters in the database.'},
     output_descriptions={
         'taxonomy': 'UNITE reference taxonomy.',
         'sequences': 'UNITE reference sequences.'},
     name='Download and import UNITE reference data.',
     description=(
-        'Outputs ready-to-use sequence and taxonomy artifacts, given a '
+        'Download and import ITS sequences and taxonomy from the '
+        'UNITE database, given a '
         'version number and taxon_group, with the option to select a '
         'cluster_id and include singletons. '
         'Downloads data directly from UNITE\'s PlutoF REST API. ' +
