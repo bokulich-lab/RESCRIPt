@@ -12,7 +12,11 @@ import tarfile
 import requests
 
 from pandas import DataFrame
-from q2_types.feature_data import TaxonomyFormat, MixedCaseDNAFASTAFormat, DNAIterator
+from q2_types.feature_data import (
+    TaxonomyFormat,
+    MixedCaseDNAFASTAFormat,
+    DNAIterator,
+)
 
 # Source: https://unite.ut.ee/repository.php
 UNITE_DOIS = {
@@ -134,7 +138,9 @@ def _unite_get_artifacts(
                 if file.endswith(".txt"):
                     taxa = TaxonomyFormat(fp, mode="r").view(DataFrame)
                 elif file.endswith(".fasta"):
-                    seqs = MixedCaseDNAFASTAFormat(fp, mode="r").view(DNAIterator)
+                    seqs = MixedCaseDNAFASTAFormat(fp, mode="r").view(
+                        DNAIterator
+                    )
     return taxa, seqs
 
 
