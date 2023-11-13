@@ -49,6 +49,7 @@ from rescript.types.methods import reverse_transcribe
 from rescript.ncbi import (
     get_ncbi_data, _default_ranks, _allowed_ranks, get_ncbi_data_protein)
 from .get_gtdb import get_gtdb_data
+from .get_unite import get_unite_data
 
 citations = Citations.load('citations.bib', package='rescript')
 
@@ -75,6 +76,11 @@ GTDB_LICENSE_NOTE = (
     'https://gtdb.ecogenomic.org/about FOR MORE INFORMATION '
     'and be aware that earlier versions may be released under a different '
     'license.')
+
+UNITE_LICENSE_NOTE = (
+    'NOTE: THIS ACTION ACQUIRES DATA FROM UNITE, which is licensed under '
+    'CC BY-SA 4.0. To learn more, please visit https://unite.ut.ee/cite.php '
+    'and https://creativecommons.org/licenses/by-sa/4.0/.')
 
 VOLATILITY_PLOT_XAXIS_INTERPRETATION = (
     'The x-axis in these plots represents the taxonomic '
@@ -971,6 +977,40 @@ plugin.pipelines.register_function(
         'taxonomy artifacts. REQUIRES STABLE INTERNET CONNECTION. ' +
         GTDB_LICENSE_NOTE),
     citations=[citations['Parks2020gtdb'], citations['Parks2021gtdb']]
+)
+
+
+plugin.methods.register_function(
+    function=get_unite_data,
+    inputs={},
+    parameters={
+        'version': Str % Choices(['9.0', '8.3', '8.2']),
+        'taxon_group': Str % Choices(['fungi', 'eukaryotes']),
+        'cluster_id': Str % Choices(['99', '97', 'dynamic']),
+        'singletons': Bool,
+        },
+    outputs=[('taxonomy', FeatureData[Taxonomy]),
+             ('sequences', FeatureData[Sequence])],
+    input_descriptions={},
+    parameter_descriptions={
+        'version': 'UNITE version to download.',
+        'taxon_group': 'Download a database with only \'fungi\' '
+                       'or including all \'eukaryotes\'.',
+        'cluster_id': 'Percent similarity at which sequences in '
+                      'the of database were clustered.',
+        'singletons': 'Include singleton clusters in the database.'},
+    output_descriptions={
+        'taxonomy': 'UNITE reference taxonomy.',
+        'sequences': 'UNITE reference sequences.'},
+    name='Download and import UNITE reference data.',
+    description=(
+        'Download and import ITS sequences and taxonomy from the '
+        'UNITE database, given a '
+        'version number and taxon_group, with the option to select a '
+        'cluster_id and include singletons. '
+        'Downloads data directly from UNITE\'s PlutoF REST API. ' +
+        UNITE_LICENSE_NOTE),
+    citations=[citations['nilsson2019unite']]
 )
 
 
