@@ -10,10 +10,13 @@ import os
 import tempfile
 import tarfile
 import requests
-from requests.exceptions import HTTPError
 
 from pandas import DataFrame
-from q2_types.feature_data import TaxonomyFormat, DNAFASTAFormat, DNAIterator
+from q2_types.feature_data import (
+    TaxonomyFormat,
+    MixedCaseDNAFASTAFormat,
+    DNAIterator,
+)
 
 # Source: https://unite.ut.ee/repository.php
 UNITE_DOIS = {
@@ -76,6 +79,8 @@ def _unite_get_tgz(
     for retry in range(retries):
         # Track downloaded size
         file_size = 0
+        # Prepair error text
+        dlfail = "File incomplete on try " + str(retry + 1)
         try:
             response = requests.get(url, stream=True)
             # Save .tgz file
@@ -89,20 +94,15 @@ def _unite_get_tgz(
             if file_size == int(response.headers.get("content-length", 0)):
                 return unite_file_path  # done!
             else:
-                raise ValueError("File download incomplete")
-        except HTTPError as e:
-            print(
-                "Request failed with code "
-                + str(e.response.status_code)
-                + ", on try "
-                + str(retry)
-            )
+                raise ValueError(dlfail)
         except ValueError:
-            print("File incomplete, on try " + str(retry))
+            print(dlfail)
+            if retry + 1 == retries:
+                raise ValueError(dlfail)
 
 
 def _unite_get_artifacts(
-    tgz_file: str = None, cluster_id: str = None
+    tgz_file: str = None, cluster_id: str = "99"
 ) -> (DataFrame, DNAIterator):
     """
     Find and import files with matching cluster_id from .tgz
@@ -115,7 +115,7 @@ def _unite_get_artifacts(
             # Keep only _dev files
             members = [m for m in tar.getmembers() if "_dev" in m.name]
             if not members:
-                raise ValueError("No '_dev' files found")
+                raise ValueError("No '_dev' files found in Unite .tgz file")
             for member in members:
                 # Keep only base name
                 member.name = os.path.basename(member.name)
@@ -126,9 +126,9 @@ def _unite_get_artifacts(
             filtered_files = [
                 f for f in files if f.split("_")[4] == cluster_id
             ]
-            if not filtered_files or len(filtered_files) > 2:
+            if not filtered_files or len(filtered_files) != 2:
                 raise ValueError(
-                    "Found "
+                    "Expected 2, but found "
                     + str(len(filtered_files))
                     + " files found with cluster_id = "
                     + cluster_id
@@ -138,13 +138,15 @@ def _unite_get_artifacts(
                 if file.endswith(".txt"):
                     taxa = TaxonomyFormat(fp, mode="r").view(DataFrame)
                 elif file.endswith(".fasta"):
-                    seqs = DNAFASTAFormat(fp, mode="r").view(DNAIterator)
+                    seqs = MixedCaseDNAFASTAFormat(fp, mode="r").view(
+                        DNAIterator
+                    )
     return taxa, seqs
 
 
 def get_unite_data(
-    version: str = None,
-    taxon_group: str = None,
+    version: str = "9.0",
+    taxon_group: str = "eukaryotes",
     cluster_id: str = "99",
     singletons: bool = False,
 ) -> (DataFrame, DNAIterator):

@@ -8,6 +8,8 @@
 
 import pkg_resources
 import tempfile
+import pandas.core.frame
+import q2_types.feature_data
 from qiime2.plugin.testing import TestPluginBase
 from rescript.get_unite import (
     UNITE_DOIS,
@@ -18,8 +20,7 @@ from rescript.get_unite import (
 )
 
 from urllib.request import urlopen
-from urllib.error import HTTPError
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 
 class TestGetUNITE(TestPluginBase):
@@ -30,6 +31,9 @@ class TestGetUNITE(TestPluginBase):
         self.unitefile = pkg_resources.resource_filename(
             "rescript.tests", "data/unitefile.tgz"
         )
+        self.unitefile_no_dev = pkg_resources.resource_filename(
+            "rescript.tests", "data/unitefile_no_dev.tgz"
+        )
 
     # Requires internet access
     def test_unite_get_url(self):
@@ -38,18 +42,22 @@ class TestGetUNITE(TestPluginBase):
             for tg in UNITE_DOIS[v].keys():
                 for s in UNITE_DOIS[v][tg].keys():
                     # ... try to get the URL
-                    try:
-                        url = _unite_get_url(v, tg, s)
-                        urlopen(url)
-                    except HTTPError:
-                        raise ValueError("No URL for combo: " + v + tg + s)
+                    url = _unite_get_url(v, tg, s)
+                    urlopen(url)
+        self.assertTrue(True)
 
-    # Requires internet access
     def test_unite_get_tgz(self):
-        # Download a single, small, unrelated file for testing
-        url = "https://files.plutof.ut.ee/doi/C9/F6/C9F687C997F72F674AA539CB80BF5D5BF6D1F402A2ACF840B20322850D3DFBA4.zip"  # noqa E501
         with tempfile.TemporaryDirectory() as tmpdirname:
-            _unite_get_tgz(url, tmpdirname)
+            # mock the response object
+            mock_response = Mock()
+            mock_response.iter_content.return_value = [b"mock"]
+            mock_response.headers.get.return_value = "4"  # matches content
+            # mock successful download
+            with patch("requests.get", return_value=mock_response):
+                _unite_get_tgz("fakeURL", tmpdirname)
+            # real failed download
+            with self.assertRaisesRegex(ValueError, "File incomplete on try"):
+                _unite_get_tgz("https://files.plutof.ut.ee/nope", tmpdirname)
 
     def test_unite_get_artifacts(self):
         # Test on small data/unitefile.tgz with two items inside
@@ -66,6 +74,9 @@ class TestGetUNITE(TestPluginBase):
             str(type(res_two)),
             "<class 'q2_types.feature_data._transformer.DNAIterator'>",
         )
+        # test no _dev files found
+        with self.assertRaises(ValueError):
+            _unite_get_artifacts(self.unitefile_no_dev, cluster_id="97")
         # test missing files or misspelled cluster_id
         with self.assertRaises(ValueError):
             _unite_get_artifacts(self.unitefile, "nothing")
@@ -77,5 +88,13 @@ class TestGetUNITE(TestPluginBase):
         with patch(
             "rescript.get_unite._unite_get_tgz", return_value=self.unitefile
         ):
-            get_unite_data(version="8.3", taxon_group="fungi", cluster_id="97")
-            self.assertTrue(True)
+            res = get_unite_data(
+                version="8.3", taxon_group="fungi", cluster_id="97"
+            )
+            self.assertEqual(len(res), 2)
+            self.assertTrue(isinstance(res[0], pandas.core.frame.DataFrame))
+            self.assertTrue(
+                isinstance(
+                    res[1], q2_types.feature_data._transformer.DNAIterator
+                )
+            )
