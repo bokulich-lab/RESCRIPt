@@ -966,14 +966,16 @@ plugin.methods.register_function(
                   'microbial domain from GTDB. \'Both\' will fetch both '
                   'bacterial and archaeal data. \'Bacteria\' will only '
                   'fetch bacterial data. \'Archaea\' will only fetch '
-                  'archaeal data.',
-        'db_type': '\'All\': All SSU data that pass the QC criteria of '
-                   'the GTDB. \'SpeciesReps\': SSU gene sequences '
-                   'identified within the set of bacterial representative '
-                   'genomes. Note: if \'All\' is used, the\'domain\' '
+                  'archaeal data. This only applies to \'db-type '
+                  'SpeciesReps\'.',
+        'db_type': '\'All\': All SSU data that pass the quality-control '
+                   'of GTDB, but are not clustered into representative '
+                   'species. \'SpeciesReps\': SSU gene sequences '
+                   'identified within the set of representative '
+                   'species. Note: if \'All\' is used, the \'domain\' '
                    'parameter will be ignored as GTDB does not maintain '
-                   'separate domain-level files for non-species '
-                   'representative files.'},
+                   'separate domain-level files for these non-clustered '
+                   'data.'},
     output_descriptions={
         'gtdb_taxonomy': 'GTDB reference taxonomy.',
         'gtdb_sequences': 'GTDB reference sequences.'},
