@@ -949,12 +949,13 @@ plugin.methods.register_function(
 )
 
 
-plugin.pipelines.register_function(
+plugin.methods.register_function(
     function=get_gtdb_data,
     inputs={},
     parameters={
-        'version': Str % Choices(['202', '207', '214']),
+        'version': Str % Choices(['202.0', '207.0', '214.0', '214.1']),
         'domain': Str % Choices(['Both', 'Bacteria', 'Archaea']),
+        'db_type': Str % Choices(['All', 'SpeciesReps'])
         },
     outputs=[('gtdb_taxonomy', FeatureData[Taxonomy]),
              ('gtdb_sequences', FeatureData[Sequence])],
@@ -965,7 +966,14 @@ plugin.pipelines.register_function(
                   'microbial domain from GTDB. \'Both\' will fetch both '
                   'bacterial and archaeal data. \'Bacteria\' will only '
                   'fetch bacterial data. \'Archaea\' will only fetch '
-                  'archaeal data.'},
+                  'archaeal data.',
+        'db_type': '\'All\': All SSU data that pass the QC criteria of '
+                   'the GTDB. \'SpeciesReps\': SSU gene sequences '
+                   'identified within the set of bacterial representative '
+                   'genomes. Note: if \'All\' is used, the\'domain\' '
+                   'parameter will be ignored as GTDB does not maintain '
+                   'separate domain-level files for non-species '
+                   'representative files.'},
     output_descriptions={
         'gtdb_taxonomy': 'GTDB reference taxonomy.',
         'gtdb_sequences': 'GTDB reference sequences.'},
