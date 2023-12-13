@@ -36,14 +36,14 @@ def get_gtdb_data(
 
     if db_type == 'SpeciesReps':
         queries = _assemble_queries(version=version,
-                                    domain=domain,
-                                    db_type=db_type)
+                                    db_type=db_type,
+                                    domain=domain)
         tax_q, seqs_q = _retrieve_data_from_gtdb(queries)
 
     if db_type == 'All':
         queries = _assemble_queries(version=version,
-                                    domain=domain,
-                                    db_type=db_type)
+                                    db_type=db_type,
+                                    domain=domain)
         tax_q, seqs_q = _retrieve_data_from_gtdb(queries)
 
     print('\n Saving files...\n')
@@ -51,8 +51,8 @@ def get_gtdb_data(
 
 
 def _assemble_queries(version='214.1',
-                      domain='Both',
-                      db_type='SpeciesReps'):
+                      db_type='SpeciesReps',
+                      domain='Both'):
     queries = []
     base_url = 'https://data.gtdb.ecogenomic.org/releases/'
     base_version = version.split('.')[0]

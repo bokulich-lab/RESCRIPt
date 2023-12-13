@@ -962,7 +962,7 @@ plugin.methods.register_function(
     input_descriptions={},
     parameter_descriptions={
         'version': 'GTDB database version to download.',
-        'domain': 'Sequence and taxonomy data to download from a given '
+        'domain': 'SSU sequence and taxonomy data to download from a given '
                   'microbial domain from GTDB. \'Both\' will fetch both '
                   'bacterial and archaeal data. \'Bacteria\' will only '
                   'fetch bacterial data. \'Archaea\' will only fetch '
@@ -977,11 +977,11 @@ plugin.methods.register_function(
                    'separate domain-level files for these non-clustered '
                    'data.'},
     output_descriptions={
-        'gtdb_taxonomy': 'GTDB reference taxonomy.',
-        'gtdb_sequences': 'GTDB reference sequences.'},
-    name='Download, parse, and import GTDB reference data.',
+        'gtdb_taxonomy': 'SSU GTDB reference taxonomy.',
+        'gtdb_sequences': 'SSU GTDB reference sequences.'},
+    name='Download, parse, and import SSU GTDB reference data.',
     description=(
-        'Download, parse, and import GTDB files, given a version '
+        'Download, parse, and import SSU GTDB files, given a version '
         'number. Downloads data directly from GTDB, '
         'parses the taxonomy files, and outputs ready-to-use sequence and '
         'taxonomy artifacts. REQUIRES STABLE INTERNET CONNECTION. ' +
