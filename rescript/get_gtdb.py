@@ -97,6 +97,31 @@ def parse_gtdb_taxonomy(tax_str):
     return tax
 
 
+def _get_gtdb_data_path(tmpdirname, url, basename):
+    destination = os.path.join(tmpdirname, basename)
+    try:
+        print('Retrieving data from {0}'.format(url))
+        urlretrieve(url, destination)
+    except HTTPError:
+        msg = ("Unable to retrieve the followng file from GTDB:\n "
+               + url)
+        warnings.warn(msg, UserWarning)
+    return destination
+
+
+def _extract_seq_tar_file(tmpdirname, untarred_fn, destination):
+    if tarfile.is_tarfile(destination):
+        with tarfile.open(destination, 'r') as tar:
+            print('  Untarring {0}...\n'.format(untarred_fn))
+            tar.extract(member=untarred_fn,
+                        path=tmpdirname)
+            # read through gtdb fasta file
+            seqs = DNAFASTAFormat(os.path.join(
+                                  tmpdirname, untarred_fn),
+                                  mode="r").view(DNAIterator)
+    return seqs
+
+
 def _retrieve_data_from_gtdb(queries):
     proc_seqs = DNAFASTAFormat()
     proc_tax = TSVTaxonomyFormat()
@@ -110,35 +135,37 @@ def _retrieve_data_from_gtdb(queries):
 
         for domain, url in queries:
             # variable setup
-            bn = os.path.basename(url)
-            untarred_fn = bn.split('.')[0]+'.fna'
-            destination = os.path.join(tmpdirname, bn)
-            # grab url
-            print('Retrieving sequences for {0} from {1}'.format(
-                  domain, url))
-            try:
-                urlretrieve(url, destination)
-            except HTTPError:
-                msg = ("Unable to retrieve the followng file from GTDB:\n "
-                       + url)
-                warnings.warn(msg, UserWarning)
+            basename = os.path.basename(url)
+            untarred_fn = basename.split('.')[0]+'.fna'
+            destination = _get_gtdb_data_path(tmpdirname, url, basename)
+
+            # # grab url path
+            # print('Retrieving sequences for {0} from {1}'.format(
+            #       domain, url))
+            # try:
+            #     urlretrieve(url, destination)
+            # except HTTPError:
+            #     msg = ("Unable to retrieve the followng file from GTDB:\n "
+            #            + url)
+            #     warnings.warn(msg, UserWarning)
             # seq files are contained within `tar.gz`
             # we'll just sanity check this is the case
-            if tarfile.is_tarfile(destination):
-                with tarfile.open(destination, 'r') as tar:
-                    print('  Untarring {0}...\n'.format(bn))
-                    tar.extract(member=untarred_fn,
-                                path=tmpdirname)
-                    # read through gtdb fasta file
-                    seqs = DNAFASTAFormat(os.path.join(
-                            tmpdirname, untarred_fn),
-                            mode="r").view(DNAIterator)
-                    print('  Writing data from \'{0}\'.\n'.format(domain))
-                    for seq in seqs:
-                        seq.write(out_fasta)  # write seq to new fasta file
-                        # add taxonomy to dict:
-                        tax_dict[seq.metadata['id']] = parse_gtdb_taxonomy(
-                            seq.metadata['description'])
+            # if tarfile.is_tarfile(destination):
+            #     with tarfile.open(destination, 'r') as tar:
+            #         print('  Untarring {0}...\n'.format(bn))
+            #         tar.extract(member=untarred_fn,
+            #                     path=tmpdirname)
+            #         # read through gtdb fasta file
+            #         seqs = DNAFASTAFormat(os.path.join(
+            #                 tmpdirname, untarred_fn),
+            #                 mode="r").view(DNAIterator)
+            seqs = _extract_seq_tar_file(tmpdirname, untarred_fn, destination)
+            print('  Writing data from \'{0}\'.\n'.format(domain))
+            for seq in seqs:
+                seq.write(out_fasta)  # write seq to new fasta file
+                # add taxonomy to dict:
+                tax_dict[seq.metadata['id']] = parse_gtdb_taxonomy(
+                         seq.metadata['description'])
         # set up final taxonomy dataframe:
         print('  Sequences processed.')
         print('  Processing taxonomy...')
