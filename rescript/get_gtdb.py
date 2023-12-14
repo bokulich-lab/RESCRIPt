@@ -138,27 +138,6 @@ def _retrieve_data_from_gtdb(queries):
             basename = os.path.basename(url)
             untarred_fn = basename.split('.')[0]+'.fna'
             destination = _get_gtdb_data_path(tmpdirname, url, basename)
-
-            # # grab url path
-            # print('Retrieving sequences for {0} from {1}'.format(
-            #       domain, url))
-            # try:
-            #     urlretrieve(url, destination)
-            # except HTTPError:
-            #     msg = ("Unable to retrieve the followng file from GTDB:\n "
-            #            + url)
-            #     warnings.warn(msg, UserWarning)
-            # seq files are contained within `tar.gz`
-            # we'll just sanity check this is the case
-            # if tarfile.is_tarfile(destination):
-            #     with tarfile.open(destination, 'r') as tar:
-            #         print('  Untarring {0}...\n'.format(bn))
-            #         tar.extract(member=untarred_fn,
-            #                     path=tmpdirname)
-            #         # read through gtdb fasta file
-            #         seqs = DNAFASTAFormat(os.path.join(
-            #                 tmpdirname, untarred_fn),
-            #                 mode="r").view(DNAIterator)
             seqs = _extract_seq_tar_file(tmpdirname, untarred_fn, destination)
             print('  Writing data from \'{0}\'.\n'.format(domain))
             for seq in seqs:
