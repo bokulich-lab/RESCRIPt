@@ -34,17 +34,10 @@ def get_gtdb_data(
     db_type: str = 'SpeciesReps',
         ) -> (TSVTaxonomyFormat, DNAFASTAFormat):
 
-    if db_type == 'SpeciesReps':
-        queries = _assemble_queries(version=version,
-                                    db_type=db_type,
-                                    domain=domain)
-        tax_q, seqs_q = _retrieve_data_from_gtdb(queries)
-
-    if db_type == 'All':
-        queries = _assemble_queries(version=version,
-                                    db_type=db_type,
-                                    domain=domain)
-        tax_q, seqs_q = _retrieve_data_from_gtdb(queries)
+    queries = _assemble_queries(version=version,
+                                db_type=db_type,
+                                domain=domain)
+    tax_q, seqs_q = _retrieve_data_from_gtdb(queries)
 
     print('\n Saving files...\n')
     return tax_q, seqs_q
