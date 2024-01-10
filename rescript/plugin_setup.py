@@ -949,29 +949,39 @@ plugin.methods.register_function(
 )
 
 
-plugin.pipelines.register_function(
+plugin.methods.register_function(
     function=get_gtdb_data,
     inputs={},
     parameters={
-        'version': Str % Choices(['202', '207', '214']),
+        'version': Str % Choices(['202.0', '207.0', '214.0', '214.1']),
         'domain': Str % Choices(['Both', 'Bacteria', 'Archaea']),
+        'db_type': Str % Choices(['All', 'SpeciesReps'])
         },
     outputs=[('gtdb_taxonomy', FeatureData[Taxonomy]),
              ('gtdb_sequences', FeatureData[Sequence])],
     input_descriptions={},
     parameter_descriptions={
         'version': 'GTDB database version to download.',
-        'domain': 'Sequence and taxonomy data to download from a given '
+        'domain': 'SSU sequence and taxonomy data to download from a given '
                   'microbial domain from GTDB. \'Both\' will fetch both '
                   'bacterial and archaeal data. \'Bacteria\' will only '
                   'fetch bacterial data. \'Archaea\' will only fetch '
-                  'archaeal data.'},
+                  'archaeal data. This only applies to \'db-type '
+                  'SpeciesReps\'.',
+        'db_type': '\'All\': All SSU data that pass the quality-control '
+                   'of GTDB, but are not clustered into representative '
+                   'species. \'SpeciesReps\': SSU gene sequences '
+                   'identified within the set of representative '
+                   'species. Note: if \'All\' is used, the \'domain\' '
+                   'parameter will be ignored as GTDB does not maintain '
+                   'separate domain-level files for these non-clustered '
+                   'data.'},
     output_descriptions={
-        'gtdb_taxonomy': 'GTDB reference taxonomy.',
-        'gtdb_sequences': 'GTDB reference sequences.'},
-    name='Download, parse, and import GTDB reference data.',
+        'gtdb_taxonomy': 'SSU GTDB reference taxonomy.',
+        'gtdb_sequences': 'SSU GTDB reference sequences.'},
+    name='Download, parse, and import SSU GTDB reference data.',
     description=(
-        'Download, parse, and import GTDB files, given a version '
+        'Download, parse, and import SSU GTDB files, given a version '
         'number. Downloads data directly from GTDB, '
         'parses the taxonomy files, and outputs ready-to-use sequence and '
         'taxonomy artifacts. REQUIRES STABLE INTERNET CONNECTION. ' +
