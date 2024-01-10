@@ -70,9 +70,7 @@ def _assemble_queries(version='214.1',
                                 full_url.format(**{'ver': version,
                                                    'bver': base_version,
                                                    'cp': cp})))
-        return queries
-
-    if db_type == 'All':
+    elif db_type == 'All':
         # Note: GTDB does not maintain separate 'Bacteria' and
         # 'Archaea' files for 'All'. This is only done for
         # the 'SpeciesReps'.
@@ -82,7 +80,7 @@ def _assemble_queries(version='214.1',
         queries.append((db_type,
                         full_url.format(**{'ver': version,
                                            'bver': base_version})))
-        return queries
+    return queries
 
 
 def parse_gtdb_taxonomy(tax_str):
