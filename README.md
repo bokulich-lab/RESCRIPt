@@ -108,6 +108,3 @@ However, other resources accessible via RESCRIPt are released under different li
 **If using GTDB data** (*e.g.*, with `get-gtdb-data`): See the [GTDB "about" page](https://gtdb.ecogenomic.org/about) for more details.
 
 **If using UNITE data** (*e.g.*, with `get-unite-data`): See the [UNITE citation page](https://unite.ut.ee/cite.php) for more details.
-
-**If importing and processing RDP data**: See both the [RDP Staff GitHub page](https://github.com/rdpstaff) and the [RDP SourceForge page](https://sourceforge.net/projects/rdp-classifier/) for more details.
-
