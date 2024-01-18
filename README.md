@@ -20,25 +20,70 @@ First create a conda environment and install relevant dependencies:
 conda create -y -n rescript
 conda activate rescript
 conda install \
-  -c conda-forge -c bioconda -c qiime2 -c https://packages.qiime2.org/qiime2/2023.7/tested/ -c defaults \
-  qiime2 q2cli q2templates q2-types q2-longitudinal q2-feature-classifier 'q2-types-genomics>2023.2' \
-  "pandas>=0.25.3" xmltodict ncbi-datasets-pylib
+  -c conda-forge -c bioconda -c qiime2 \
+  -c https://packages.qiime2.org/qiime2/2024.2/amplicon/tested/ \
+  -c defaults qiime2 q2cli q2templates q2-types q2-longitudinal q2-feature-classifier \
+  'q2-types-genomics>2023.2' "pandas>=0.25.3" xmltodict ncbi-datasets-pylib
 ```
 Install source:
 
 ```
 pip install git+https://github.com/bokulich-lab/RESCRIPt.git
+
+qiime rescript --help
 ```
 
-### Option 2: Install within QIIME 2 environment
-First activate your QIIME 2 environment (ver `2023.2` or later) and install relevant dependencies. 
+### Option 2: Install within QIIME 2 environments `2024.2` and later.
+First activate your QIIME 2 environment and install relevant dependencies. 
+The typical apporoach will be something like the command below. *Make sure the qiime version within the 
+http string matches the version of the active qiime environment.*
+
+```
+conda activate qiime2-amplicon-2024.2
+conda install -c conda-forge -c bioconda -c qiime2 \
+    -c https://packages.qiime2.org/qiime2/2024.2/amplicon/tested/ \
+    -c defaults xmltodict 'q2-types-genomics>2023.2' ncbi-datasets-pylib
+```
+Install source:
+
+```
+pip install git+https://github.com/bokulich-lab/RESCRIPt.git
+
+qiime rescript --help
+```
+
+### Option 3: Older versions of QIIME 2 & RESCRIPt
+
+#### Install within the QIIME 2 `2023.9` environment: 
+
+For this version of QIIME 2, RESCRIPt is included within the [qiime2-shotgun-2023.9 distribution](https://docs.qiime2.org/2023.9/install/native/#qiime-2-shotgun-distribution). You'll be able to run your RESCRIPt commands within this environment, then switch back to [qiime2-amplicon-2023.9](https://docs.qiime2.org/2023.9/install/native/#qiime-2-amplicon-distribution) environment if needed. It is possible to install RESCRIPt within `qiime2-amplicon-2023.9` using the following commands:
+
+```
+conda activate qiime2-amplicon-2023.9
+conda install -c conda-forge -c bioconda -c qiime2 \
+    -c https://packages.qiime2.org/qiime2/2023.9/shotgun/released/  \
+    -c defaults   xmltodict 'q2-types-genomics>2023.5' ncbi-datasets-pylib
+```
+
+Install source:
+
+```
+pip install git+https://github.com/bokulich-lab/RESCRIPt.git
+
+qiime rescript --help
+```
+
+
+#### Install within QIIME 2 environments `2023.2` - `2023.7`.
+First activate your QIIME 2 environment and install relevant dependencies. 
 The typical apporoach will be something like the command below. *Make sure the qiime version within the 
 http string matches the version of the active qiime environment.*
 
 ```
 conda activate qiime2-2023.7
-conda install -c conda-forge -c bioconda -c qiime2 -c https://packages.qiime2.org/qiime2/2023.7/tested/ -c defaults \
-  xmltodict 'q2-types-genomics>2023.2' ncbi-datasets-pylib
+conda install -c conda-forge -c bioconda -c qiime2 \
+    -c https://packages.qiime2.org/qiime2/2023.7/tested/ \
+    -c defaults xmltodict 'q2-types-genomics>2023.2' ncbi-datasets-pylib
 ```
 Install source:
 
@@ -48,20 +93,8 @@ pip install git+https://github.com/bokulich-lab/RESCRIPt.git
 qiime rescript --help
 ```
 
-#### NOTE on installing RESCRIPt within `qiime2-amplicon-2023.9`: 
-As the QIIME 2 team is still refining some details on how the the various distributions 
-of QIIME 2 wil be handled  (*i.e.* `qiime2-amplicon-2023.9`, `qiime2-shotgun-2023.9`), you'll have to 
-install RESCIPt like so:
-```
-conda activate qiime2-amplicon-2023.9
-conda install -c conda-forge -c bioconda -c qiime2 \
--c https://packages.qiime2.org/qiime2/2023.9/shotgun/released/  \
--c defaults   xmltodict 'q2-types-genomics>2023.5' ncbi-datasets-pylib
-
-pip install git+https://github.com/bokulich-lab/RESCRIPt.git
-
-qiime rescript --help
-```
+#### Install within prior releases of QIIME 2 `2022.8` and earlier.
+Download any of the prior [Releases](https://github.com/bokulich-lab/RESCRIPt/releases) and consult that version's README file for appropriate Installation instructions.
 
 ### Read help documentation
 To view a help menu for using rescript via the QIIME 2 CLI:
