@@ -21,7 +21,7 @@ conda create -y -n rescript
 conda activate rescript
 conda install \
   -c conda-forge -c bioconda -c qiime2 \
-  -c https://packages.qiime2.org/qiime2/2024.2/amplicon/tested/ \
+  -c https://packages.qiime2.org/qiime2/2024.2/amplicon/passed/ \
   -c defaults qiime2 q2cli q2templates q2-types q2-longitudinal q2-feature-classifier \
   'q2-types-genomics>2023.2' "pandas>=0.25.3" xmltodict ncbi-datasets-pylib
 ```
@@ -34,14 +34,14 @@ qiime rescript --help
 ```
 
 ### Option 2: Install within QIIME 2 environments `2024.2` and later.
-First activate your QIIME 2 environment and install relevant dependencies. 
-The typical apporoach will be something like the command below. *Make sure the qiime version within the 
+This approach assumes you have the latest version of QIIME 2 installed. If not, please refer to the [QIIME 2 installation instructions](https://docs.qiime2.org/2024.2/install/native/). *Make sure the qiime version within the 
 http string matches the version of the active qiime environment.*
 
 ```
 conda activate qiime2-amplicon-2024.2
+
 conda install -c conda-forge -c bioconda -c qiime2 \
-    -c https://packages.qiime2.org/qiime2/2024.2/amplicon/tested/ \
+    -c https://packages.qiime2.org/qiime2/2024.2/amplicon/passed/ \
     -c defaults xmltodict 'q2-types-genomics>2023.2' ncbi-datasets-pylib
 ```
 Install source:
@@ -52,49 +52,8 @@ pip install git+https://github.com/bokulich-lab/RESCRIPt.git
 qiime rescript --help
 ```
 
-### Option 3: Older versions of QIIME 2 & RESCRIPt
-
-#### Install within the QIIME 2 `2023.9` environment: 
-
-For this version of QIIME 2, RESCRIPt is included within the [qiime2-shotgun-2023.9 distribution](https://docs.qiime2.org/2023.9/install/native/#qiime-2-shotgun-distribution). You'll be able to run your RESCRIPt commands within this environment, then switch back to [qiime2-amplicon-2023.9](https://docs.qiime2.org/2023.9/install/native/#qiime-2-amplicon-distribution) environment if needed. It is possible to install RESCRIPt within `qiime2-amplicon-2023.9` using the following commands:
-
-```
-conda activate qiime2-amplicon-2023.9
-conda install -c conda-forge -c bioconda -c qiime2 \
-    -c https://packages.qiime2.org/qiime2/2023.9/shotgun/released/  \
-    -c defaults   xmltodict 'q2-types-genomics>2023.5' ncbi-datasets-pylib
-```
-
-Install source:
-
-```
-pip install git+https://github.com/bokulich-lab/RESCRIPt.git
-
-qiime rescript --help
-```
-
-
-#### Install within QIIME 2 environments `2023.2` - `2023.7`.
-First activate your QIIME 2 environment and install relevant dependencies. 
-The typical apporoach will be something like the command below. *Make sure the qiime version within the 
-http string matches the version of the active qiime environment.*
-
-```
-conda activate qiime2-2023.7
-conda install -c conda-forge -c bioconda -c qiime2 \
-    -c https://packages.qiime2.org/qiime2/2023.7/tested/ \
-    -c defaults xmltodict 'q2-types-genomics>2023.2' ncbi-datasets-pylib
-```
-Install source:
-
-```
-pip install git+https://github.com/bokulich-lab/RESCRIPt.git
-
-qiime rescript --help
-```
-
-#### Install within prior releases of QIIME 2 `2022.8` and earlier.
-Download any of the prior [Releases](https://github.com/bokulich-lab/RESCRIPt/releases) and consult that version's README file for appropriate Installation instructions.
+### Prior versions of RESCRIPt.
+For details on how to install prior versions of RESCRIPt, please see the `install-prior-versions.md` document.
 
 ### Read help documentation
 To view a help menu for using rescript via the QIIME 2 CLI:
@@ -134,10 +93,10 @@ RESCRIPt is released under a BSD-3-Clause license. See LICENSE for more details.
 
 However, other resources accessible via RESCRIPt are released under different licenses, as detailed below.
 
-**If using the SILVA database** (*e.g.*, with `get-silva-data`): Versions are released under different licenses. Refer to the [current SILVA release license information](https://www.arb-silva.de/silva-license-information/) for more details.
+**If using the SILVA database** (*e.g.*, with `get-silva-data`): Versions are released under different licenses. Refer to the [current SILVA release license information](https://www.arb-silva.de/silva-license-information/) for more details. [How to cite SILVA](https://www.arb-silva.de/contact/) in your work.
 
-**If using NCBI Genbank data** (*e.g.*, with `get-ncbi-data`): See the [NCBI disclaimer and copyright notice](https://www.ncbi.nlm.nih.gov/home/about/policies/) for more details.
+**If using NCBI Genbank data** (*e.g.*, with `get-ncbi-data`): See the [NCBI disclaimer and copyright notice](https://www.ncbi.nlm.nih.gov/home/about/policies/) for more details. [How to cite NCBI](https://support.nlm.nih.gov/knowledgebase/article/KA-03391/en-us) in your work.
 
-**If using GTDB data** (*e.g.*, with `get-gtdb-data`): See the [GTDB "about" page](https://gtdb.ecogenomic.org/about) for more details.
+**If using GTDB data** (*e.g.*, with `get-gtdb-data`): See the [GTDB "about" page](https://gtdb.ecogenomic.org/about) for more details. [How to cite GTDB](https://gtdb.ecogenomic.org/about) in your work.
 
-**If using UNITE data** (*e.g.*, with `get-unite-data`): See the [UNITE citation page](https://unite.ut.ee/cite.php) for more details.
+**If using UNITE data** (*e.g.*, with `get-unite-data`): See the [UNITE citation page](https://unite.ut.ee/cite.php) for more details. [How to cite UNITE]((https://unite.ut.ee/cite.php)) in your work. 
