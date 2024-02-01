@@ -11,7 +11,7 @@ RESCRIPt is a python 3 package to support a variety of operations for managing a
 
 ## Install via QIIME 2.
 
-RESCRIPt is now installed as part of the QIIME 2, as outlined in the [QIIME 2 Documentation](https://docs.qiime2.org/), for:
+RESCRIPt is now installed as part of QIIME 2, as outlined in the [QIIME 2 Documentation](https://docs.qiime2.org/), for:
  -  "Shotgun Distribution" version `2023.9` and later. 
  -  "Amplicon Distrubtion" version `2024.2` and later.
 
