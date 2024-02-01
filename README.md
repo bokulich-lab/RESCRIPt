@@ -9,50 +9,23 @@ REference Sequence annotation and CuRatIon Pipeline
 
 RESCRIPt is a python 3 package to support a variety of operations for managing and curating reference sequence databases, DNA/RNA sequence data, and taxonomic data. See citation information below for a full benchmark and description.
 
-## Install from source
+## Install via QIIME 2.
 
-RESCRIPt will be installable as conda package in the near future. In the meantime, we provide two routes for source installation: a minimal RESCRIPt environment, or within an existing QIIME 2 environment:
+RESCRIPt is now installed as part of the QIIME 2, as outlined in the [QIIME 2 Documentation](https://docs.qiime2.org/), for:
+ -  "Shotgun Distribution" version `2023.9` and later. 
+ -  "Amplicon Distrubtion" version `2024.2` and later.
 
-### Option 1: Installed as part of a QIIME 2 distribution.
-
-For QIIME 2 versions `2023.9` and later, RESCRIPt is installed as part of the QIIME 2 "Shotgun Distribution", as outlined in the [QIIME 2 Documentation](https://docs.qiime2.org/). RESCRIPt is available as part of the "Amplicon Distrubtion" for QIIME 2 releases `2024.2` and later.
-
-### Option 2: Minimal RESCRIPt environment 
-
-To make use of the latest "minimal" RESCRIPt release, some components of QIIME 2 (releases `2023.9` and later) are required:
-
-First create a conda environment and install relevant dependencies using either `conda` or `mamba`. 
-*Note: update `{ENV_VERSION}` in the commands below to match the QIIME 2 release.*
-
-```
-conda create -y -n rescript
-conda activate rescript
-conda install \
-  -c https://packages.qiime2.org/qiime2/{ENV_VERSION}/shotgun/passed/ \
-  -c https://packages.qiime2.org/qiime2/{ENV_VERSION}/amplicon/passed/ \
-  -c conda-forge -c bioconda -c qiime2 -c defaults \
-  qiime2 q2cli q2templates q2-types q2-types-genomics q2-longitudinal q2-feature-classifier \
-  "pandas>=0.25.3" xmltodict ncbi-datasets-pylib
-```
-
-Install source:
-
-```
-pip install git+https://github.com/bokulich-lab/RESCRIPt.git
-
-qiime rescript --help
-```
 
 ### Prior versions of RESCRIPt / QIIME 2.
 
-For details on how to install prior versions of RESCRIPt / QIIME 2, please see the `install-prior-versions.md` document.
+For details on how to install prior and minimal versions of RESCRIPt for the various versions of QIIME 2, please see the `install-prior-versions.md` document.
 
 ### Read help documentation
 
-To view a help menu for using rescript via the QIIME 2 CLI:
+To view a help menu for using RESCRIPt via the QIIME 2 CLI:
 ```
 qiime dev refresh-cache
-qiime --help
+qiime rescript --help
 ```
 
 ## Using RESCRIPt
