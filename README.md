@@ -9,46 +9,23 @@ REference Sequence annotation and CuRatIon Pipeline
 
 RESCRIPt is a python 3 package to support a variety of operations for managing and curating reference sequence databases, DNA/RNA sequence data, and taxonomic data. See citation information below for a full benchmark and description.
 
-## Install from source
+## Install via QIIME 2.
 
-RESCRIPt will be installable as conda package in the near future. In the meantime, we provide two routes for source installation: a minimal RESCRIPt environment, or within an existing QIIME 2 environment:
+RESCRIPt is now installed as part of QIIME 2, and you can install as outlined in the [QIIME 2 Documentation](https://docs.qiime2.org/), for:
+ -  "Shotgun Distribution" version `2023.9` and later. 
+ -  "Amplicon Distrubtion" version `2024.2` and later.
 
-### Option 1: Minimal RESCRIPt environment:
-First create a conda environment and install relevant dependencies:
 
-```
-conda create -y -n rescript
-conda activate rescript
-conda install \
-  -c conda-forge -c bioconda -c qiime2 -c https://packages.qiime2.org/qiime2/2023.5/tested/ -c defaults \
-  qiime2 q2cli q2templates q2-types q2-longitudinal q2-feature-classifier 'q2-types-genomics>2023.2' \
-  "pandas>=0.25.3" xmltodict ncbi-datasets-pylib
-```
-Install source:
+### Prior versions of RESCRIPt / QIIME 2.
 
-```
-pip install git+https://github.com/bokulich-lab/RESCRIPt.git
-```
-
-### Option 2: Install within QIIME 2 environment
-First activate your QIIME 2 environment (ver 2022.8 or later) and install relevant dependencies:
-
-```
-conda activate qiime2-2023.2
-conda install -c conda-forge -c bioconda -c qiime2 -c https://packages.qiime2.org/qiime2/2023.5/tested/ -c defaults \
-  xmltodict 'q2-types-genomics>2023.2' ncbi-datasets-pylib
-```
-Install source:
-
-```
-pip install git+https://github.com/bokulich-lab/RESCRIPt.git
-```
+For details on how to install prior and minimal versions of RESCRIPt for the various versions of QIIME 2, please see the `install-prior-versions.md` document.
 
 ### Read help documentation
-To view a help menu for using rescript via the QIIME 2 CLI:
+
+To view a help menu for using RESCRIPt via the QIIME 2 CLI:
 ```
 qiime dev refresh-cache
-qiime --help
+qiime rescript --help
 ```
 
 ## Using RESCRIPt
@@ -59,10 +36,14 @@ These tutorials demonstrate some of the basic functionality of RESCRIPt, via the
 - [Building a COI database with BOLD sequences](https://forum.qiime2.org/t/building-a-coi-database-from-bold-references/16129)
 - [Building a COI database with NCBI sequences](https://forum.qiime2.org/t/building-a-coi-database-from-ncbi-references/16500)
 - [Using RESCRIPt's 'extract-seq-segments' to extract reference sequences without PCR primer pairs](https://forum.qiime2.org/t/using-rescripts-extract-seq-segments-to-extract-reference-sequences-without-pcr-primer-pairs/23618)
+- [How to train a GTDB SSU classifier using RESCRIPt](https://forum.qiime2.org/t/how-to-train-a-gtdb-ssu-classifier-using-rescript/25725)
+- [Constructing an RDP classifier](https://forum.qiime2.org/t/importing-sequence-data-with-lower-case-nucleotide-characters-constructing-an-rdp-classifier-as-an-example/25158)
+- [How to train a UNITE classifier using RESCRIPt](https://forum.qiime2.org/t/how-to-train-a-unite-classifier-using-rescript/28285)
 
 Examples of visualizations produced by RESCRIPt actions can be found in this [Visualization Gallery](https://forum.qiime2.org/t/processing-filtering-and-evaluating-the-silva-database-and-other-reference-sequence-data-with-rescript/15494#heading--seventeenth-header). Other code examples can be found [here](https://github.com/bokulich-lab/db-benchmarks-2020).
 
 ## Getting Help
+
 Problem? Suggestion? Technical errors and user support requests can be filed on the [QIIME 2 Forum](https://forum.qiime2.org/).
 
 
@@ -79,6 +60,10 @@ RESCRIPt is released under a BSD-3-Clause license. See LICENSE for more details.
 
 However, other resources accessible via RESCRIPt are released under different licenses, as detailed below.
 
-**The SILVA database** versions are released under different licenses. Refer to the [current SILVA release license information](https://www.arb-silva.de/silva-license-information/) for more details.
+**If using the SILVA database** (*e.g.*, with `get-silva-data`): Versions are released under different licenses. Refer to the [current SILVA release license information](https://www.arb-silva.de/silva-license-information/) for more details. [How to cite SILVA](https://www.arb-silva.de/contact/).
 
-**If using NCBI Genbank data** (e.g., with `get-ncbi-data`): See the [NCBI disclaimer and copyright notice](https://www.ncbi.nlm.nih.gov/home/about/policies/)
+**If using NCBI Genbank data** (*e.g.*, with `get-ncbi-data`): See the [NCBI disclaimer and copyright notice](https://www.ncbi.nlm.nih.gov/home/about/policies/) for more details. [How to cite NCBI](https://support.nlm.nih.gov/knowledgebase/article/KA-03391/en-us).
+
+**If using GTDB data** (*e.g.*, with `get-gtdb-data`): See the [GTDB "about" page](https://gtdb.ecogenomic.org/about) for more details. [How to cite GTDB](https://gtdb.ecogenomic.org/about).
+
+**If using UNITE data** (*e.g.*, with `get-unite-data`): See the [UNITE citation page](https://unite.ut.ee/cite.php) for more details. [How to cite UNITE](https://unite.ut.ee/cite.php). 
