@@ -1074,7 +1074,8 @@ plugin.pipelines.register_function(
                         'will end. If not provided, alignment will not be '
                         'trimmed at the end. If reverse primer is specified '
                         'this parameter will be ignored.',
-        'n_threads': 'The number of threads. (Use `auto` to automatically use '
+        'n_threads': 'Number of threads to use for primer-based trimming, '
+                     'otherwise ignored. (Use `auto` to automatically use '
                      'all available cores)'
     },
     output_descriptions={
