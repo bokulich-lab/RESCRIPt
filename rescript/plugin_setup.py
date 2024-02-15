@@ -8,7 +8,7 @@
 
 import importlib
 
-from q2_types_genomics.genome_data import GenomeData, Loci, Proteins
+from q2_types.genome_data import GenomeData, Loci, Proteins
 from qiime2.core.type import TypeMatch
 from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int,
                            Float, Visualization, Bool, TypeMap, Metadata,
