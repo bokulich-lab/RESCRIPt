@@ -22,7 +22,7 @@ from multiprocessing import Manager
 from ncbi.datasets import ApiException
 from q2_types.feature_data import DNAFASTAFormat
 from q2_types.genome_data import (LociDirectoryFormat,
-                                           ProteinsDirectoryFormat)
+                                  ProteinsDirectoryFormat)
 
 from rescript.ncbi import get_taxonomies, _default_ranks
 
