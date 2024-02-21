@@ -13,8 +13,8 @@ from unittest.mock import Mock, patch, call, ANY
 import pandas as pd
 from ncbi.datasets import GenomeApi, ApiClient, ApiException
 from q2_types.feature_data import DNAFASTAFormat
-from q2_types_genomics.genome_data import (LociDirectoryFormat,
-                                           ProteinsDirectoryFormat)
+from q2_types.genome_data import (LociDirectoryFormat,
+                                  ProteinsDirectoryFormat)
 from qiime2.plugin.testing import TestPluginBase
 from rescript.ncbi import _default_ranks
 from rescript.ncbi_datasets import (_get_assembly_descriptors,
