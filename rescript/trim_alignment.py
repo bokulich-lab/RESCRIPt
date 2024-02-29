@@ -190,11 +190,13 @@ def _trim_alignment(expand_alignment_action,
                     primer_fwd=None,
                     primer_rev=None,
                     position_start=None,
-                    position_end=None) -> AlignedDNAFASTAFormat:
+                    position_end=None,
+                    n_threads=1) -> AlignedDNAFASTAFormat:
     """
     Trim alignment based on primer alignment or explicitly specified
     positions. When at least one primer sequence is given, primer-based
-    trimming will be performed, otherwise position-based trimming is done.
+    trimming will be performed via the `addfragments` option of mafft,
+    otherwise position-based trimming is done.
 
     Arguments:
         expand_alignment_action: qiime action for multiple seq. alignment
@@ -222,7 +224,8 @@ def _trim_alignment(expand_alignment_action,
         alignment_with_primers, = expand_alignment_action(
             alignment=aligned_sequences,
             sequences=primers,
-            addfragments=True)
+            addfragments=True,
+            n_threads=n_threads)
 
         # find trim positions based on primer positions within alignment
         trim_positions = _locate_primer_positions(alignment_with_primers)
@@ -244,7 +247,8 @@ def trim_alignment(ctx,
                    primer_fwd=None,
                    primer_rev=None,
                    position_start=None,
-                   position_end=None):
+                   position_end=None,
+                   n_threads=1):
     """
     Trim an existing alignment based on provided primers or specific,
     pre-defined positions. Primers take precedence over the positions,
@@ -263,6 +267,7 @@ def trim_alignment(ctx,
         primer_fwd,
         primer_rev,
         position_start,
-        position_end)
+        position_end,
+        n_threads=n_threads)
 
     return qiime2.Artifact.import_data('FeatureData[AlignedSequence]', result)
