@@ -7,6 +7,7 @@
 # ----------------------------------------------------------------------------
 
 import glob
+import json
 import os
 import shutil
 import tempfile
@@ -85,16 +86,24 @@ def _get_assembly_descriptors(
     return assembly_to_taxon
 
 
-def _extract_accession_ids(path: str):
-    assembly_id = '_'.join(os.path.basename(path).split("_")[:2])
-    seq = skbio.read(
-        path, format='fasta', constructor=skbio.DNA, lowercase=True
-    )
-    accession_map = {s.metadata['id']: assembly_id for s in seq}
-    return accession_map
+def _extract_accession_ids(seq_reports: List[dict]):
+    # assembly_id = '_'.join(os.path.basename(path).split("_")[:2])
+    # seq = skbio.read(
+    #     path, format='fasta', constructor=skbio.DNA, lowercase=True
+    # )
+    # accession_map = {s.metadata['id']: assembly_id for s in seq}
+    accessions, assembly_id = {'refseq': [], 'genbank': []}, None
+    for rep in seq_reports:
+        if not assembly_id:
+            assembly_id = rep.get('assemblyAccession')
+        accessions['refseq'].append(rep.get('refseqAccession'))
+        accessions['genbank'].append(rep.get('genbankAccession'))
+    return assembly_id, accessions
 
 
-def _fetch_and_extract_dataset(api_response):
+def _fetch_and_extract_dataset(
+        api_response, genomes, loci, proteins, only_chromosomes=False
+):
     with tempfile.TemporaryDirectory() as tmp:
         result_path = os.path.join(tmp, 'datasets.zip')
         with open(result_path, 'wb') as f:
@@ -104,24 +113,39 @@ def _fetch_and_extract_dataset(api_response):
             zipped.extractall(tmp)
 
         # find and move all the genome sequences
-        genomes = DNAFASTAFormat()
         genome_seq_fps = glob.glob(
             os.path.join(tmp, 'ncbi_dataset', 'data', '*', '*_genomic.fna')
         )
-        accession_to_assembly = {}
+        acc_to_assembly, acc_to_assembly_final = {}, {}
         with open(str(genomes), 'a') as fin:
             for f in genome_seq_fps:
+                dp = os.path.dirname(f)
+                summary_fp = os.path.join(dp, 'sequence_report.jsonl')
+                with open(summary_fp, 'r') as jsonl_file:
+                    molecules = [json.loads(l) for l in jsonl_file]
+
+                if only_chromosomes:
+                    molecules = [
+                        x for x in molecules
+                        if x['assignedMoleculeLocationType'] == 'Chromosome'
+                    ]
+
+                assembly_id, accession_ids = _extract_accession_ids(molecules)
+                molecule_ids = [
+                    *accession_ids['refseq'], *accession_ids['genbank']
+                ]
+
                 seq = skbio.read(
                     f, format='fasta', constructor=skbio.DNA, lowercase=True
                 )
-                skbio.io.write(seq, format='fasta', into=fin)
-                accession_to_assembly.update(_extract_accession_ids(f))
-        accession_to_assembly = pd.Series(
-            accession_to_assembly, name='assembly_id'
-        )
+                acc_to_assembly[assembly_id] = []
+                for s in seq:
+                    _id = s.metadata['id']
+                    if s.metadata['id'] in molecule_ids:
+                        skbio.io.write(s, format='fasta', into=fin)
+                        acc_to_assembly[assembly_id].append(_id)
 
         # find and move all the gff files
-        loci = LociDirectoryFormat()
         loci_fps = glob.glob(
             os.path.join(tmp, 'ncbi_dataset', 'data', '*', 'genomic.gff'))
         for f in loci_fps:
@@ -129,14 +153,14 @@ def _fetch_and_extract_dataset(api_response):
             shutil.move(f, os.path.join(str(loci), f'{_id}_loci.gff'))
 
         # find and move all the protein translations
-        proteins = ProteinsDirectoryFormat()
         protein_fps = glob.glob(
             os.path.join(tmp, 'ncbi_dataset', 'data', '*', 'protein.faa'))
         for f in protein_fps:
             _id = f.split('/')[-2]
             shutil.move(f, os.path.join(
                 str(proteins), f'{_id}_proteins.fasta'))
-    return genomes, loci, proteins, accession_to_assembly
+
+    return acc_to_assembly
 
 
 def _fetch_taxonomy(all_acc_ids, all_tax_ids, accession_to_assembly):
@@ -153,12 +177,37 @@ def _fetch_taxonomy(all_acc_ids, all_tax_ids, accession_to_assembly):
                         f'{", ".join(bad_accs)}. Please check your query '
                         f'and try again.')
     taxa = pd.DataFrame(taxa, index=['Taxon']).T
-    taxa = accession_to_assembly.replace(
-        taxa.index, taxa.values, inplace=False
-    )
-    taxa.name = 'Taxon'
+    taxa = pd.merge(
+        taxa, accession_to_assembly, left_index=True, right_index=True, how="outer"
+    ).set_index('assembly_id')
     taxa.index.name = 'Feature ID'
     return taxa
+
+
+def _fetch_and_extract_all(api_instance, assemblies, only_chromosomes):
+    genomes = DNAFASTAFormat()
+    loci = LociDirectoryFormat()
+    proteins = ProteinsDirectoryFormat()
+    accession_map = {}
+
+    chunks = [
+        assemblies[i:i + 20] for i in range(0, len(assemblies), 20)
+    ]
+    for assembly_subset in chunks:
+        api_response = api_instance.download_assembly_package(
+            assembly_subset,
+            exclude_sequence=False,
+            include_annotation_type=['PROT_FASTA', 'GENOME_GFF'],
+            _preload_content=False
+        )
+        accessions = _fetch_and_extract_dataset(
+            api_response, genomes, loci, proteins,
+            only_chromosomes=only_chromosomes
+        )
+        accession_map.update(accessions)
+    accession_map = pd.Series(accession_map, name='assembly_id')
+
+    return genomes, loci, proteins, accession_map
 
 
 def get_ncbi_genomes(
@@ -166,6 +215,7 @@ def get_ncbi_genomes(
         assembly_source: str = 'refseq',
         assembly_levels: List[str] = ['complete_genome'],
         only_reference: bool = True,
+        only_chromosomes: bool = False,
         tax_exact_match: bool = False,
         page_size: int = 20,
 ) -> (DNAFASTAFormat, LociDirectoryFormat,
@@ -187,19 +237,16 @@ def get_ncbi_genomes(
             api_instance=api_instance, **assembly_descriptors_params
         )
 
-        api_response = api_instance.download_assembly_package(
-            list(assembly_to_taxon.keys()),
-            exclude_sequence=False,
-            include_annotation_type=['PROT_FASTA', 'GENOME_GFF'],
-            _preload_content=False
+        genomes, loci, proteins, accession_map = _fetch_and_extract_all(
+            api_instance, list(assembly_to_taxon.keys()), only_chromosomes
         )
 
-        results = _fetch_and_extract_dataset(api_response)
-        genomes, loci, proteins, accession_map = results
+        # accession_map is now a dict {'GCF_...': ['AB_123', 'CD_234']}
+        # so this here will need to change
         taxa = _fetch_taxonomy(
             assembly_to_taxon.keys(),
             assembly_to_taxon.values(),
-            accession_map
+            accession_map.explode()
         )
 
     return genomes, loci, proteins, taxa
