@@ -953,7 +953,8 @@ plugin.methods.register_function(
     function=get_gtdb_data,
     inputs={},
     parameters={
-        'version': Str % Choices(['202.0', '207.0', '214.0', '214.1']),
+        'version': Str % Choices(['202.0', '207.0', '214.0', '214.1',
+                                  '220.0']),
         'domain': Str % Choices(['Both', 'Bacteria', 'Archaea']),
         'db_type': Str % Choices(['All', 'SpeciesReps'])
         },

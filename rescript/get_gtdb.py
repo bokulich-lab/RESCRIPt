@@ -8,7 +8,9 @@
 
 import os
 import tempfile
+import shutil
 import tarfile
+import gzip
 import warnings
 import pandas as pd
 from urllib.request import urlretrieve
@@ -22,14 +24,15 @@ from q2_types.feature_data import (TSVTaxonomyFormat, DNAFASTAFormat,
 # bacteria. for example 'ar53' and 'bac120' mean that the GTDB phylogeny
 # is based on 53 and 120 concatenated proteins (cp), respectively.
 # If this changes we can set up a conditional statemnt below.
-VERSION_MAP_DICT = {'214.1': {'Archaea': 'ar53', 'Bacteria': 'bac120'},
+VERSION_MAP_DICT = {'220.0': {'Archaea': 'ar53', 'Bacteria': 'bac120'},
+                    '214.1': {'Archaea': 'ar53', 'Bacteria': 'bac120'},
                     '214.0': {'Archaea': 'ar53', 'Bacteria': 'bac120'},
                     '207.0': {'Archaea': 'ar53', 'Bacteria': 'bac120'},
                     '202.0': {'Archaea': 'ar122', 'Bacteria': 'bac120'}}
 
 
 def get_gtdb_data(
-    version: str = '214.1',
+    version: str = '220.0',
     domain: str = 'Both',
     db_type: str = 'SpeciesReps',
         ) -> (TSVTaxonomyFormat, DNAFASTAFormat):
@@ -43,7 +46,7 @@ def get_gtdb_data(
     return tax_q, seqs_q
 
 
-def _assemble_queries(version='214.1',
+def _assemble_queries(version='220.0',
                       db_type='SpeciesReps',
                       domain='Both'):
     queries = []
@@ -61,8 +64,14 @@ def _assemble_queries(version='214.1',
         else:
             ver_dom_dict[version][domain] = VERSION_MAP_DICT[version][domain]
 
-        full_url = (base_url + 'release{bver}/{ver}/genomic_files_reps/'
-                    '{cp}_ssu_reps_r{bver}.tar.gz')
+        # GTDB v220 started storing the ssu_reps FASTA files
+        # as 'fna.gz' instead of their usual 'tar.gz'.
+        if version == '220.0':
+            full_url = (base_url + 'release{bver}/{ver}/genomic_files_reps/'
+                        '{cp}_ssu_reps_r{bver}.fna.gz')
+        else:
+            full_url = (base_url + 'release{bver}/{ver}/genomic_files_reps/'
+                        '{cp}_ssu_reps_r{bver}.tar.gz')
 
         for version, dcp in ver_dom_dict.items():
             for dom, cp in dcp.items():
@@ -73,9 +82,14 @@ def _assemble_queries(version='214.1',
     elif db_type == 'All':
         # Note: GTDB does not maintain separate 'Bacteria' and
         # 'Archaea' files for 'All'. This is only done for
-        # the 'SpeciesReps'.
-        full_url = (base_url + 'release{bver}/{ver}/genomic_files_all/'
-                    'ssu_all_r{bver}.tar.gz')
+        # the 'SpeciesReps'. Again, account for filename changes
+        # to 'fna.gz' in v220.
+        if version == '220.0':
+            full_url = (base_url + 'release{bver}/{ver}/genomic_files_all/'
+                        'ssu_all_r{bver}.fna.gz')
+        else:
+            full_url = (base_url + 'release{bver}/{ver}/genomic_files_all/'
+                        'ssu_all_r{bver}.tar.gz')
 
         queries.append((db_type,
                         full_url.format(**{'ver': version,
@@ -100,16 +114,26 @@ def _get_gtdb_data_path(tmpdirname, url, basename):
     return destination
 
 
-def _extract_seq_tar_file(tmpdirname, untarred_fn, destination):
+def _extract_seq_file(tmpdirname, uncompressed_fn, destination):
+    # GTDB v220 updated the file format for the "ssu_rep" FASTA files
+    # to 'fna.gz' instead of `tar.gz`. We now need to check which
+    # form the file is in.
+    out_path = os.path.join(tmpdirname, uncompressed_fn)
+
     if tarfile.is_tarfile(destination):
         with tarfile.open(destination, 'r') as tar:
-            print('  Untarring {0}...\n'.format(untarred_fn))
-            tar.extract(member=untarred_fn,
+            print('  Untarring {0}...\n'.format(uncompressed_fn))
+            tar.extract(member=uncompressed_fn,
                         path=tmpdirname)
-            # read through gtdb fasta file
-            seqs = DNAFASTAFormat(os.path.join(
-                                  tmpdirname, untarred_fn),
+            seqs = DNAFASTAFormat(out_path,
                                   mode="r").view(DNAIterator)
+    if destination.endswith('fna.gz'):
+        with gzip.open(destination, 'rt') as gz_in:
+            print('  Unzipping {0}...\n'.format(uncompressed_fn))
+            with open(out_path, 'w') as gz_out:
+                shutil.copyfileobj(gz_in, gz_out)
+                seqs = DNAFASTAFormat(out_path,
+                                      mode="r").view(DNAIterator)
     return seqs
 
 
@@ -127,9 +151,9 @@ def _retrieve_data_from_gtdb(queries):
         for domain, url in queries:
             # variable setup
             basename = os.path.basename(url)
-            untarred_fn = basename.split('.')[0]+'.fna'
+            uncompressed_fn = basename.split('.')[0]+'.fna'
             destination = _get_gtdb_data_path(tmpdirname, url, basename)
-            seqs = _extract_seq_tar_file(tmpdirname, untarred_fn, destination)
+            seqs = _extract_seq_file(tmpdirname, uncompressed_fn, destination)
             print('  Writing data from \'{0}\'.\n'.format(domain))
             for seq in seqs:
                 seq.write(out_fasta)  # write seq to new fasta file
