@@ -55,6 +55,12 @@ def _assemble_queries(version='220.0',
     # ^^ Set `base_version` variable becuase number after the decimal is
     # only used for the directory. GTDB trims this off for the actual
     # file names...
+    # GTDB v220 started storing the ssu_reps FASTA files
+    # as 'fna.gz' instead of their usual 'tar.gz'.
+    if version == '220.0':
+        stype = 'fna'
+    else:
+        stype = 'tar'
 
     if db_type == 'SpeciesReps':
         ver_dom_dict = defaultdict(lambda: defaultdict(dict))
@@ -64,36 +70,28 @@ def _assemble_queries(version='220.0',
         else:
             ver_dom_dict[version][domain] = VERSION_MAP_DICT[version][domain]
 
-        # GTDB v220 started storing the ssu_reps FASTA files
-        # as 'fna.gz' instead of their usual 'tar.gz'.
-        if version == '220.0':
-            full_url = (base_url + 'release{bver}/{ver}/genomic_files_reps/'
-                        '{cp}_ssu_reps_r{bver}.fna.gz')
-        else:
-            full_url = (base_url + 'release{bver}/{ver}/genomic_files_reps/'
-                        '{cp}_ssu_reps_r{bver}.tar.gz')
+        full_url = (base_url + 'release{bver}/{ver}/genomic_files_reps/'
+                    '{cp}_ssu_reps_r{bver}.{stype}.gz')
 
         for version, dcp in ver_dom_dict.items():
             for dom, cp in dcp.items():
                 queries.append((dom,
                                 full_url.format(**{'ver': version,
                                                    'bver': base_version,
-                                                   'cp': cp})))
+                                                   'cp': cp,
+                                                   'stype': stype})))
     elif db_type == 'All':
         # Note: GTDB does not maintain separate 'Bacteria' and
         # 'Archaea' files for 'All'. This is only done for
         # the 'SpeciesReps'. Again, account for filename changes
-        # to 'fna.gz' in v220.
-        if version == '220.0':
-            full_url = (base_url + 'release{bver}/{ver}/genomic_files_all/'
-                        'ssu_all_r{bver}.fna.gz')
-        else:
-            full_url = (base_url + 'release{bver}/{ver}/genomic_files_all/'
-                        'ssu_all_r{bver}.tar.gz')
+        # to 'fna.gz' in v220, i.e. 'stype'.
+        full_url = (base_url + 'release{bver}/{ver}/genomic_files_all/'
+                    'ssu_all_r{bver}.{stype}.gz')
 
         queries.append((db_type,
                         full_url.format(**{'ver': version,
-                                           'bver': base_version})))
+                                           'bver': base_version,
+                                           'stype': stype})))
     return queries
 
 
