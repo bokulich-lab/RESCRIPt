@@ -40,6 +40,9 @@ test:
     - rescript
     - qiime2.plugins.rescript
 
+  commands:
+    - py.test --pyargs rescript
+
 about:
   home: https://github.com/bokulich-lab/RESCRIPt
   license: BSD-3-Clause
