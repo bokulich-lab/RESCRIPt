@@ -11,7 +11,7 @@ from qiime2.plugins import rescript
 import qiime2
 import pandas as pd
 import numpy as np
-import pandas.util.testing as pdt
+import pandas.testing as pdt
 
 
 import_data = qiime2.Artifact.import_data

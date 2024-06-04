@@ -260,7 +260,7 @@ def _plot_eval_seqs(results, lengths, palette):
 
 def _visualize(output_dir, results, plot):
 
-    pd.set_option('display.max_colwidth', -1)
+    pd.set_option('display.max_colwidth', None)
 
     # save results
     results.to_csv(join(output_dir, 'evaluate_seqs_results.tsv'), sep='\t')
