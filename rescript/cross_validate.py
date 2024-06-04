@@ -31,7 +31,7 @@ def evaluate_fit_classifier(ctx,
     # Validate inputs
     start = timeit.default_timer()
     taxa, seq_ids = _validate_cross_validate_inputs(taxonomy, sequences)
-    taxa = taxa.loc[seq_ids]
+    taxa = taxa.loc[list(seq_ids)]
     taxonomy = q2.Artifact.import_data('FeatureData[Taxonomy]', taxa)
     new_time = _check_time(start, 'Validation')
 

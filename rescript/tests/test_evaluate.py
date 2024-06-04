@@ -11,7 +11,7 @@ from qiime2.plugins import rescript
 import qiime2
 import pandas as pd
 import numpy as np
-import pandas.util.testing as pdt
+import pandas.testing as pdt
 from q2_types.feature_data import DNAIterator
 
 from rescript import evaluate

@@ -9,7 +9,7 @@
 
 import pandas as pd
 import qiime2
-import pandas.util.testing as pdt
+import pandas.testing as pdt
 from qiime2.plugin.testing import TestPluginBase
 from q2_types.feature_data import DNAIterator
 from qiime2.plugins import rescript

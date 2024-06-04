@@ -12,7 +12,7 @@ from qiime2.plugin.testing import TestPluginBase
 from qiime2.plugins import rescript
 import qiime2
 import pandas as pd
-import pandas.util.testing as pdt
+import pandas.testing as pdt
 
 from rescript import cross_validate
 
@@ -28,8 +28,8 @@ class TestPipelines(TestPluginBase):
 
         # drop feature C1b because it is missing species level
         self.taxa_series = pd.read_csv(
-            self.get_data_path('derep-taxa.tsv'), sep='\t', index_col=0,
-            squeeze=True).drop('C1b')
+            self.get_data_path('derep-taxa.tsv'),
+            sep='\t', index_col=0).squeeze('columns').drop('C1b')
         self.taxa = import_data('FeatureData[Taxonomy]', self.taxa_series)
         seqs = import_data(
             'FeatureData[Sequence]', self.get_data_path('derep-test.fasta'))
