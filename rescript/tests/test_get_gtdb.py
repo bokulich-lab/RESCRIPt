@@ -55,17 +55,19 @@ class TestGetGTDB(TestPluginBase):
 
     # test that appropriate URLs are assembled
     def test_assemble_species_rep_queries(self):
-        obs_query_urls = _assemble_queries('214.1', 'SpeciesReps', 'Both')
+        # checking v220 as GTDB updated the file format for the "ssu_rep"
+        # FASTA files to 'fna.gz' from their usual 'tar.gz'.
+        obs_query_urls = _assemble_queries('220.0', 'SpeciesReps', 'Both')
         print('obs queries: ', obs_query_urls)
 
         exp_query_urls = [('Archaea',
                            'https://data.gtdb.ecogenomic.org/releases/'
-                           'release214/214.1/genomic_files_reps/'
-                           'ar53_ssu_reps_r214.tar.gz'),
+                           'release220/220.0/genomic_files_reps/'
+                           'ar53_ssu_reps_r220.fna.gz'),
                           ('Bacteria',
                            'https://data.gtdb.ecogenomic.org/releases/'
-                           'release214/214.1/genomic_files_reps/'
-                           'bac120_ssu_reps_r214.tar.gz')]
+                           'release220/220.0/genomic_files_reps/'
+                           'bac120_ssu_reps_r220.fna.gz')]
         print('exp queries: ', exp_query_urls)
         self.assertEqual(obs_query_urls, exp_query_urls)
 
