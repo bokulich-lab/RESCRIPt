@@ -21,7 +21,7 @@ from rescript import evaluate
 import_data = qiime2.Artifact.import_data
 
 try:
-    from qiime2.plugins import longitudinal
+    from qiime2.plugins import longitudinal # noqa
     import_q2l = True
 except ImportError:
     import_q2l = False
