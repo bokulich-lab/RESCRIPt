@@ -13,13 +13,21 @@ from qiime2.plugins import rescript
 import qiime2
 import pandas as pd
 import pandas.testing as pdt
+import pytest
 
 from rescript import cross_validate
 
 
 import_data = qiime2.Artifact.import_data
 
+try:
+    from qiime2.plugins import longitudinal
+    import_q2l = True
+except ImportError:
+    import_q2l = False
 
+
+@pytest.mark.skipif(not import_q2l, reason="requires q2-longitudinal")
 class TestPipelines(TestPluginBase):
     package = 'rescript.tests'
 

@@ -13,11 +13,18 @@ import pandas as pd
 import numpy as np
 import pandas.testing as pdt
 from q2_types.feature_data import DNAIterator
+import pytest
 
 from rescript import evaluate
 
 
 import_data = qiime2.Artifact.import_data
+
+try:
+    from qiime2.plugins import longitudinal
+    import_q2l = True
+except ImportError:
+    import_q2l = False
 
 
 class TestEvaluateUtilities(TestPluginBase):
@@ -56,7 +63,9 @@ class TestEvaluateTaxonomy(TestPluginBase):
         self.taxa = import_data(
             'FeatureData[Taxonomy]', self.get_data_path('derep-taxa.tsv'))
 
-    # this just tests that the pipeline runs, other tests test proper function
+    # This just tests that the pipeline runs, other tests test proper function.
+    # We skip this if q2-longitudinal is not installed.
+    @pytest.mark.skipif(not import_q2l, reason="requires q2-longitudinal")
     def test_pipeline(self):
         rescript.actions.evaluate_taxonomy([self.taxa], ["name"], "")
 
