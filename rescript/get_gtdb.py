@@ -84,7 +84,7 @@ def _assemble_queries(version='214.1',
 
 
 def parse_gtdb_taxonomy(tax_str):
-    tax = tax_str.split()[0]
+    tax = ' '.join(tax_str.split()[0:2])
     return tax
 
 
