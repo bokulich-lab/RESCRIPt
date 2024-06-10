@@ -9,7 +9,7 @@
 import pkg_resources
 from qiime2.plugin.testing import TestPluginBase
 from qiime2.plugins import rescript
-from rescript.get_gtdb import _assemble_queries
+from rescript.get_gtdb import _assemble_queries, parse_gtdb_taxonomy
 from q2_types.feature_data import (TSVTaxonomyFormat, DNAFASTAFormat)
 
 from urllib.request import urlopen
@@ -155,3 +155,12 @@ class TestGetGTDB(TestPluginBase):
                 version='214.1', db_type='All')
             self.assertEqual(str(resc[0].type), 'FeatureData[Taxonomy]')
             self.assertEqual(str(resc[1].type), 'FeatureData[Sequence]')
+
+    def test_parse_gtdb_taxonomy(self):
+        tax_in = ('d__Bacteria;p__Bacillota;c__Bacilli;o__Lactobacillales;'
+                  'f__Lactobacillaceae;g__Oenococcus;s__Oenococcus oeni '
+                  '[locus_tag=NZ_AQVA01000009.1] [location=77871..79431] '
+                  '[ssu_len=1561] [contig_len=79790]')
+        exp = ('d__Bacteria;p__Bacillota;c__Bacilli;o__Lactobacillales;'
+               'f__Lactobacillaceae;g__Oenococcus;s__Oenococcus oeni')
+        self.assertEqual(parse_gtdb_taxonomy(tax_in), exp)
