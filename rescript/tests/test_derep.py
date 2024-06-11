@@ -10,7 +10,7 @@ from qiime2.plugin.testing import TestPluginBase
 from qiime2.plugins import rescript
 import qiime2
 import pandas as pd
-import pandas.util.testing as pdt
+import pandas.testing as pdt
 
 from rescript.dereplicate import _backfill_taxonomy
 from rescript._utilities import _return_stripped_taxon_rank_list

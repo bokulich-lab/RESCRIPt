@@ -953,7 +953,8 @@ plugin.methods.register_function(
     function=get_gtdb_data,
     inputs={},
     parameters={
-        'version': Str % Choices(['202.0', '207.0', '214.0', '214.1']),
+        'version': Str % Choices(['202.0', '207.0', '214.0', '214.1',
+                                  '220.0']),
         'domain': Str % Choices(['Both', 'Bacteria', 'Archaea']),
         'db_type': Str % Choices(['All', 'SpeciesReps'])
         },
@@ -1056,15 +1057,16 @@ plugin.pipelines.register_function(
         'primer_fwd': Str,
         'primer_rev': Str,
         'position_start': Int % Range(1, None),
-        'position_end': Int % Range(1, None)
+        'position_end': Int % Range(1, None),
+        'n_threads': Int % Range(1, None),
     },
     outputs=[('trimmed_sequences', FeatureData[AlignedSequence]), ],
     input_descriptions={'aligned_sequences': 'Aligned DNA sequences.', },
     parameter_descriptions={
         'primer_fwd': 'Forward primer used to find the start position '
-                      'for alignment trimming.',
+                      'for alignment trimming. Provide as 5\'-3\'.',
         'primer_rev': 'Reverse primer used to find the end position '
-                      'for alignment trimming.',
+                      'for alignment trimming. Provide as 5\'-3\'.',
         'position_start': 'Position within the alignment where the trimming '
                           'will begin. If not provided, alignment will not'
                           'be trimmed at the beginning. If forward primer is'
@@ -1072,7 +1074,10 @@ plugin.pipelines.register_function(
         'position_end': 'Position within the alignment where the trimming '
                         'will end. If not provided, alignment will not be '
                         'trimmed at the end. If reverse primer is specified '
-                        'this parameter will be ignored.'
+                        'this parameter will be ignored.',
+        'n_threads': 'Number of threads to use for primer-based trimming, '
+                     'otherwise ignored. (Use `auto` to automatically use '
+                     'all available cores)'
     },
     output_descriptions={
         'trimmed_sequences': 'Trimmed sequence alignment.', },
