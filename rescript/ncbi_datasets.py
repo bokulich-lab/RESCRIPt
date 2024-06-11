@@ -13,7 +13,7 @@ import shutil
 import tempfile
 import zipfile
 from copy import deepcopy
-from typing import List
+from typing import List, Dict
 
 import ncbi.datasets as nd
 from ncbi.datasets.openapi import ApiClient as DatasetsApiClient
@@ -31,9 +31,7 @@ from rescript.ncbi import get_taxonomies, _default_ranks
 def _get_assembly_descriptors(
         api_instance, assembly_levels, assembly_source, only_reference,
         page_size, taxon, tax_exact_match
-):
-    # all_acc_ids = []
-    # all_tax_ids = []
+) -> Dict[str, str]:
     assembly_to_taxon = {}
     next_page_token = ''
     while True:
@@ -74,9 +72,6 @@ def _get_assembly_descriptors(
         next_page_token = genome_summary.next_page_token
 
         genome_assembly = [x.assembly for x in genome_summary.assemblies]
-
-        # all_acc_ids.extend([x.assembly_accession for x in genome_assembly])
-        # all_tax_ids.extend([x.org.tax_id for x in genome_assembly])
         assembly_to_taxon.update(
             {x.assembly_accession: x.org.tax_id for x in genome_assembly}
         )
@@ -87,11 +82,6 @@ def _get_assembly_descriptors(
 
 
 def _extract_accession_ids(seq_reports: List[dict]):
-    # assembly_id = '_'.join(os.path.basename(path).split("_")[:2])
-    # seq = skbio.read(
-    #     path, format='fasta', constructor=skbio.DNA, lowercase=True
-    # )
-    # accession_map = {s.metadata['id']: assembly_id for s in seq}
     accessions, assembly_id = {'refseq': [], 'genbank': []}, None
     for rep in seq_reports:
         if not assembly_id:
@@ -102,7 +92,7 @@ def _extract_accession_ids(seq_reports: List[dict]):
 
 
 def _fetch_and_extract_dataset(
-        api_response, genomes, loci, proteins, only_chromosomes=False
+        api_response, genomes, loci, proteins, only_genomic=False
 ):
     with tempfile.TemporaryDirectory() as tmp:
         result_path = os.path.join(tmp, 'datasets.zip')
@@ -124,7 +114,7 @@ def _fetch_and_extract_dataset(
                 with open(summary_fp, 'r') as jsonl_file:
                     molecules = [json.loads(l) for l in jsonl_file]
 
-                if only_chromosomes:
+                if only_genomic:
                     molecules = [
                         x for x in molecules
                         if x['assignedMoleculeLocationType'] == 'Chromosome'
@@ -163,7 +153,11 @@ def _fetch_and_extract_dataset(
     return acc_to_assembly
 
 
-def _fetch_taxonomy(all_acc_ids, all_tax_ids, accession_to_assembly):
+def _fetch_taxonomy(
+        all_acc_ids: list,
+        all_tax_ids: list,
+        accession_to_assembly: pd.Series
+):
     manager = Manager()
     taxa, bad_accs = get_taxonomies(
         taxids={k: v for k, v in zip(all_acc_ids, all_tax_ids)},
@@ -178,13 +172,14 @@ def _fetch_taxonomy(all_acc_ids, all_tax_ids, accession_to_assembly):
                         f'and try again.')
     taxa = pd.DataFrame(taxa, index=['Taxon']).T
     taxa = pd.merge(
-        taxa, accession_to_assembly, left_index=True, right_index=True, how="outer"
+        taxa, accession_to_assembly,
+        left_index=True, right_index=True, how="outer"
     ).set_index('assembly_id')
     taxa.index.name = 'Feature ID'
     return taxa
 
 
-def _fetch_and_extract_all(api_instance, assemblies, only_chromosomes):
+def _fetch_and_extract_all(api_instance, assemblies, only_genomic):
     genomes = DNAFASTAFormat()
     loci = LociDirectoryFormat()
     proteins = ProteinsDirectoryFormat()
@@ -202,7 +197,7 @@ def _fetch_and_extract_all(api_instance, assemblies, only_chromosomes):
         )
         accessions = _fetch_and_extract_dataset(
             api_response, genomes, loci, proteins,
-            only_chromosomes=only_chromosomes
+            only_genomic=only_genomic
         )
         accession_map.update(accessions)
     accession_map = pd.Series(accession_map, name='assembly_id')
@@ -215,7 +210,7 @@ def get_ncbi_genomes(
         assembly_source: str = 'refseq',
         assembly_levels: List[str] = ['complete_genome'],
         only_reference: bool = True,
-        only_chromosomes: bool = False,
+        only_genomic: bool = False,
         tax_exact_match: bool = False,
         page_size: int = 20,
 ) -> (DNAFASTAFormat, LociDirectoryFormat,
@@ -238,11 +233,9 @@ def get_ncbi_genomes(
         )
 
         genomes, loci, proteins, accession_map = _fetch_and_extract_all(
-            api_instance, list(assembly_to_taxon.keys()), only_chromosomes
+            api_instance, list(assembly_to_taxon.keys()), only_genomic
         )
 
-        # accession_map is now a dict {'GCF_...': ['AB_123', 'CD_234']}
-        # so this here will need to change
         taxa = _fetch_taxonomy(
             assembly_to_taxon.keys(),
             assembly_to_taxon.values(),
