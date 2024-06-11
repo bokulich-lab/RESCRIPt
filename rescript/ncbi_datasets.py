@@ -21,7 +21,7 @@ import pandas as pd
 import skbio
 from multiprocessing import Manager
 from ncbi.datasets import ApiException
-from q2_types.feature_data import DNAFASTAFormat, DNAIterator
+from q2_types.feature_data import DNAFASTAFormat
 from q2_types.genome_data import (LociDirectoryFormat,
                                   ProteinsDirectoryFormat)
 
@@ -106,13 +106,13 @@ def _fetch_and_extract_dataset(
         genome_seq_fps = glob.glob(
             os.path.join(tmp, 'ncbi_dataset', 'data', '*', '*_genomic.fna')
         )
-        acc_to_assembly, acc_to_assembly_final = {}, {}
+        acc_to_assembly = {}
         with open(str(genomes), 'a') as fin:
             for f in genome_seq_fps:
                 dp = os.path.dirname(f)
                 summary_fp = os.path.join(dp, 'sequence_report.jsonl')
                 with open(summary_fp, 'r') as jsonl_file:
-                    molecules = [json.loads(l) for l in jsonl_file]
+                    molecules = [json.loads(line) for line in jsonl_file]
 
                 if only_genomic:
                     molecules = [

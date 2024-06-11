@@ -96,7 +96,7 @@ class TestNCBIDatasets(TestPluginBase):
                 True, 10, 'some taxon', True
             )
 
-            exp = {'GCF_123': '1234',}
+            exp = {'GCF_123': '1234', }
             self.assertDictEqual(obs, exp)
             p.assert_has_calls(
                 [call(taxon='some taxon', page_size=10,
@@ -151,7 +151,7 @@ class TestNCBIDatasets(TestPluginBase):
                     only_genomic=True
                 )
 
-        exp_accessions = {'GCA_000008865.2': ['BA000007.3'],}
+        exp_accessions = {'GCA_000008865.2': ['BA000007.3'], }
         self.assertDictEqual(obs_accessions, exp_accessions)
 
         for f in [f'{x}_loci.gff' for x in exp_accessions.keys()]:
