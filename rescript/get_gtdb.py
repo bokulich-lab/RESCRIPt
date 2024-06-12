@@ -84,8 +84,7 @@ def _assemble_queries(version='214.1',
 
 
 def parse_gtdb_taxonomy(tax_str):
-    tax = ' '.join(tax_str.split()[0:2])
-    return tax
+    return tax_str.split("[")[0].strip()
 
 
 def _get_gtdb_data_path(tmpdirname, url, basename):
