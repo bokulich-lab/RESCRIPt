@@ -92,7 +92,7 @@ def _extract_accession_ids(seq_reports: List[dict]):
 
 
 def _fetch_and_extract_dataset(
-        api_response, genomes, loci, proteins, only_genomic=False
+        api_response, genomes, loci, proteins, only_genomic
 ):
     with tempfile.TemporaryDirectory() as tmp:
         result_path = os.path.join(tmp, 'datasets.zip')
