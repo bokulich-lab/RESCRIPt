@@ -23,7 +23,11 @@ setup(
     url="https://github.com/nbokulich/RESCRIPt",
     entry_points={'qiime2.plugins': ['rescript=rescript.plugin_setup:plugin']},
     package_data={
-        'rescript.tests': ['data/*'],
+        'rescript.tests': [
+            'data/*', 'data/ncbi-dataset/*',
+            'data/ncbi-dataset/ncbi_dataset/data/*',
+            'data/ncbi-dataset/ncbi_dataset/data/GCA_000008865.2/*',
+        ],
         'rescript.types.tests': ['data/*'],
         'rescript': ['citations.bib', 'assets/*'],
     },

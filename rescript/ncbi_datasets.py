@@ -7,12 +7,13 @@
 # ----------------------------------------------------------------------------
 
 import glob
+import json
 import os
 import shutil
 import tempfile
 import zipfile
 from copy import deepcopy
-from typing import List
+from typing import List, Dict
 
 import ncbi.datasets as nd
 from ncbi.datasets.openapi import ApiClient as DatasetsApiClient
@@ -30,9 +31,8 @@ from rescript.ncbi import get_taxonomies, _default_ranks
 def _get_assembly_descriptors(
         api_instance, assembly_levels, assembly_source, only_reference,
         page_size, taxon, tax_exact_match
-):
-    all_acc_ids = []
-    all_tax_ids = []
+) -> Dict[str, str]:
+    assembly_to_taxon = {}
     next_page_token = ''
     while True:
         try:
@@ -72,16 +72,28 @@ def _get_assembly_descriptors(
         next_page_token = genome_summary.next_page_token
 
         genome_assembly = [x.assembly for x in genome_summary.assemblies]
-
-        all_acc_ids.extend([x.assembly_accession for x in genome_assembly])
-        all_tax_ids.extend([x.org.tax_id for x in genome_assembly])
+        assembly_to_taxon.update(
+            {x.assembly_accession: x.org.tax_id for x in genome_assembly}
+        )
 
         if not next_page_token:
             break
-    return all_acc_ids, all_tax_ids
+    return assembly_to_taxon
 
 
-def _fetch_and_extract_dataset(api_response):
+def _extract_accession_ids(seq_reports: List[dict]):
+    accessions, assembly_id = {'refseq': [], 'genbank': []}, None
+    for rep in seq_reports:
+        if not assembly_id:
+            assembly_id = rep.get('assemblyAccession')
+        accessions['refseq'].append(rep.get('refseqAccession'))
+        accessions['genbank'].append(rep.get('genbankAccession'))
+    return assembly_id, accessions
+
+
+def _fetch_and_extract_dataset(
+        api_response, genomes, loci, proteins, only_genomic
+):
     with tempfile.TemporaryDirectory() as tmp:
         result_path = os.path.join(tmp, 'datasets.zip')
         with open(result_path, 'wb') as f:
@@ -91,19 +103,39 @@ def _fetch_and_extract_dataset(api_response):
             zipped.extractall(tmp)
 
         # find and move all the genome sequences
-        genomes = DNAFASTAFormat()
         genome_seq_fps = glob.glob(
             os.path.join(tmp, 'ncbi_dataset', 'data', '*', '*_genomic.fna')
         )
+        acc_to_assembly = {}
         with open(str(genomes), 'a') as fin:
             for f in genome_seq_fps:
+                dp = os.path.dirname(f)
+                summary_fp = os.path.join(dp, 'sequence_report.jsonl')
+                with open(summary_fp, 'r') as jsonl_file:
+                    molecules = [json.loads(line) for line in jsonl_file]
+
+                if only_genomic:
+                    molecules = [
+                        x for x in molecules
+                        if x['assignedMoleculeLocationType'] == 'Chromosome'
+                    ]
+
+                assembly_id, accession_ids = _extract_accession_ids(molecules)
+                molecule_ids = [
+                    *accession_ids['refseq'], *accession_ids['genbank']
+                ]
+
                 seq = skbio.read(
                     f, format='fasta', constructor=skbio.DNA, lowercase=True
                 )
-                skbio.io.write(seq, format='fasta', into=fin)
+                acc_to_assembly[assembly_id] = []
+                for s in seq:
+                    _id = s.metadata['id']
+                    if s.metadata['id'] in molecule_ids:
+                        skbio.io.write(s, format='fasta', into=fin)
+                        acc_to_assembly[assembly_id].append(_id)
 
         # find and move all the gff files
-        loci = LociDirectoryFormat()
         loci_fps = glob.glob(
             os.path.join(tmp, 'ncbi_dataset', 'data', '*', 'genomic.gff'))
         for f in loci_fps:
@@ -111,17 +143,21 @@ def _fetch_and_extract_dataset(api_response):
             shutil.move(f, os.path.join(str(loci), f'{_id}_loci.gff'))
 
         # find and move all the protein translations
-        proteins = ProteinsDirectoryFormat()
         protein_fps = glob.glob(
             os.path.join(tmp, 'ncbi_dataset', 'data', '*', 'protein.faa'))
         for f in protein_fps:
             _id = f.split('/')[-2]
             shutil.move(f, os.path.join(
                 str(proteins), f'{_id}_proteins.fasta'))
-    return genomes, loci, proteins
+
+    return acc_to_assembly
 
 
-def _fetch_taxonomy(all_acc_ids, all_tax_ids):
+def _fetch_taxonomy(
+        all_acc_ids: list,
+        all_tax_ids: list,
+        accession_to_assembly: pd.Series
+):
     manager = Manager()
     taxa, bad_accs = get_taxonomies(
         taxids={k: v for k, v in zip(all_acc_ids, all_tax_ids)},
@@ -135,8 +171,38 @@ def _fetch_taxonomy(all_acc_ids, all_tax_ids):
                         f'{", ".join(bad_accs)}. Please check your query '
                         f'and try again.')
     taxa = pd.DataFrame(taxa, index=['Taxon']).T
+    taxa = pd.merge(
+        taxa, accession_to_assembly,
+        left_index=True, right_index=True, how="outer"
+    ).set_index('assembly_id')
     taxa.index.name = 'Feature ID'
     return taxa
+
+
+def _fetch_and_extract_all(api_instance, assemblies, only_genomic):
+    genomes = DNAFASTAFormat()
+    loci = LociDirectoryFormat()
+    proteins = ProteinsDirectoryFormat()
+    accession_map = {}
+
+    chunks = [
+        assemblies[i:i + 20] for i in range(0, len(assemblies), 20)
+    ]
+    for assembly_subset in chunks:
+        api_response = api_instance.download_assembly_package(
+            assembly_subset,
+            exclude_sequence=False,
+            include_annotation_type=['PROT_FASTA', 'GENOME_GFF'],
+            _preload_content=False
+        )
+        accessions = _fetch_and_extract_dataset(
+            api_response, genomes, loci, proteins,
+            only_genomic=only_genomic
+        )
+        accession_map.update(accessions)
+    accession_map = pd.Series(accession_map, name='assembly_id')
+
+    return genomes, loci, proteins, accession_map
 
 
 def get_ncbi_genomes(
@@ -144,6 +210,7 @@ def get_ncbi_genomes(
         assembly_source: str = 'refseq',
         assembly_levels: List[str] = ['complete_genome'],
         only_reference: bool = True,
+        only_genomic: bool = False,
         tax_exact_match: bool = False,
         page_size: int = 20,
 ) -> (DNAFASTAFormat, LociDirectoryFormat,
@@ -161,18 +228,18 @@ def get_ncbi_genomes(
     with DatasetsApiClient() as api_client:
         api_instance = nd.GenomeApi(api_client)
 
-        all_acc_ids, all_tax_ids = _get_assembly_descriptors(
+        assembly_to_taxon = _get_assembly_descriptors(
             api_instance=api_instance, **assembly_descriptors_params
         )
 
-        api_response = api_instance.download_assembly_package(
-            all_acc_ids,
-            exclude_sequence=False,
-            include_annotation_type=['PROT_FASTA', 'GENOME_GFF'],
-            _preload_content=False
+        genomes, loci, proteins, accession_map = _fetch_and_extract_all(
+            api_instance, list(assembly_to_taxon.keys()), only_genomic
         )
 
-        genomes, loci, proteins = _fetch_and_extract_dataset(api_response)
-        taxa = _fetch_taxonomy(all_acc_ids, all_tax_ids)
+        taxa = _fetch_taxonomy(
+            assembly_to_taxon.keys(),
+            assembly_to_taxon.values(),
+            accession_map.explode()
+        )
 
     return genomes, loci, proteins, taxa

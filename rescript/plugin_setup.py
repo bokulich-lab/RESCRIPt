@@ -1174,8 +1174,9 @@ plugin.methods.register_function(
     inputs={},
     parameters={
         'taxon': Str,
-        'assembly_source': Str % Choices(['refseq', 'genbank']),
+        'assembly_source': Str % Choices(['refseq', 'genbank', 'all']),
         'only_reference': Bool,
+        'only_genomic': Bool,
         'assembly_levels': List[Str % Choices(
             ['complete_genome', 'chromosome', 'scaffold', 'contig'])],
         'tax_exact_match': Bool,
@@ -1194,6 +1195,9 @@ plugin.methods.register_function(
         'assembly_source': 'Fetch only RefSeq or GenBank genome assemblies.',
         'only_reference': 'Fetch only reference and representative '
                           'genome assemblies.',
+        'only_genomic': 'Exclude plasmid, mitochondrial and chloroplast '
+                        'molecules from the final results (i.e., keep '
+                        'only genomic DNA).',
         'assembly_levels': 'Fetch only genome assemblies that are one of the '
                            'specified assembly levels.',
         'tax_exact_match': 'If true, only return assemblies with the given '
