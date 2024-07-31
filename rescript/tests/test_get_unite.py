@@ -70,10 +70,7 @@ class TestGetUNITE(TestPluginBase):
             "k__Fungi;p__Basidiomycota;c__Agaricomycetes;o__Thelephorales;"
             "f__Thelephoraceae;g__Tomentella;s__unidentified",
         )
-        self.assertEqual(
-            str(type(res_two)),
-            "<class 'q2_types.feature_data._transformer.DNAIterator'>",
-        )
+        self.assertTrue(isinstance(res_two, q2_types.feature_data.DNAIterator))
         # test no _dev files found
         with self.assertRaises(ValueError):
             _unite_get_artifacts(self.unitefile_no_dev, cluster_id="97")
@@ -94,7 +91,5 @@ class TestGetUNITE(TestPluginBase):
             self.assertEqual(len(res), 2)
             self.assertTrue(isinstance(res[0], pandas.core.frame.DataFrame))
             self.assertTrue(
-                isinstance(
-                    res[1], q2_types.feature_data._transformer.DNAIterator
-                )
+                isinstance(res[1], q2_types.feature_data.DNAIterator)
             )
