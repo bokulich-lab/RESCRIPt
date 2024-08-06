@@ -729,7 +729,7 @@ RANK_DESCRIPTION = ('List of taxonomic ranks for building a taxonomy from the '
                     "[default: '" +
                     "', '".join(DEFAULT_RANKS) + "']")
 
-_SILVA_VERSIONS = ['128', '132', '138', '138.1']
+_SILVA_VERSIONS = ['128', '132', '138', '138.1', '138.2']
 _SILVA_TARGETS = ['SSURef_NR99', 'SSURef', 'LSURef_NR99', 'LSURef']
 
 version_map, target_map, _ = TypeMap({
@@ -737,7 +737,7 @@ version_map, target_map, _ = TypeMap({
      Str % Choices('SSURef_NR99', 'SSURef', 'LSURef')): Visualization,
     (Str % Choices('138'),
      Str % Choices('SSURef_NR99', 'SSURef')): Visualization,
-    (Str % Choices('138.1'),
+    (Str % Choices('138.1', '138.2'),
      Str % Choices('SSURef_NR99', 'SSURef', 'LSURef_NR99',
                    'LSURef')): Visualization,
 })
