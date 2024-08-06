@@ -14,6 +14,7 @@ from ._utilities import run_command
 def extract_seq_segments(input_sequences: DNAFASTAFormat,
                          reference_segment_sequences: DNAFASTAFormat,
                          perc_identity: float = 0.7,
+                         target_coverage: float = 0.9,
                          min_seq_len: int = None,
                          threads: int = 1
                          ) -> (DNAFASTAFormat, DNAFASTAFormat):
@@ -25,7 +26,7 @@ def extract_seq_segments(input_sequences: DNAFASTAFormat,
     # See here for more details:
     # https://www.drive5.com/usearch/manual8.1/utax_user_train.html
     #
-    # Warning: I hard set '--strand both', as multiple segments can be
+    # Warning: I hard set '--strand plus', otherwise multiple segments can be
     # extracted from the same sequence, resulting in multiple output
     # seqeunces to have the same ID, causing this action to fail.,
     #
@@ -40,6 +41,7 @@ def extract_seq_segments(input_sequences: DNAFASTAFormat,
                '--usearch_global', str(input_sequences),
                '--db', str(reference_segment_sequences),
                '--id', str(perc_identity),
+               '--target_cov', str(target_coverage),
                '--strand', 'plus',
                '--threads', str(threads),
                '--qmask', 'none',
