@@ -1123,7 +1123,10 @@ plugin.methods.register_function(
             'reference_segment_sequences': FeatureData[Sequence]},
     parameters={'threads': VSEARCH_PARAMS['threads'],
                 'perc_identity': VSEARCH_PARAMS['perc_identity'],
-                'min_seq_len': Int % Range(1, None)
+                'target_coverage': Float % Range(0, 1,
+                                                 inclusive_start=False,
+                                                 inclusive_end=True),
+                'min_seq_len': Int % Range(1, None),
                 },
     outputs=[('extracted_sequence_segments', FeatureData[Sequence]),
              ('unmatched_sequences', FeatureData[Sequence])],
@@ -1141,6 +1144,8 @@ plugin.methods.register_function(
     parameter_descriptions={
                 'threads': VSEARCH_PARAM_DESCRIPTIONS['threads'],
                 'perc_identity': VSEARCH_PARAM_DESCRIPTIONS['perc_identity'],
+                'target_coverage': 'Minimum coverage of reference segment '
+                                   'sequence to input sequence.',
                 'min_seq_len': 'Minimum length of sequence allowed '
                                'for searching. Any sequence less than '
                                'this will be discarded. If not set, default '
