@@ -9,11 +9,13 @@
 import importlib
 
 from q2_types.genome_data import GenomeData, Loci, Proteins
+from q2_types.metadata import ImmutableMetadata
 from qiime2.core.type import TypeMatch
 from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int,
                            Float, Visualization, Bool, TypeMap, Metadata,
                            MetadataColumn, Categorical)
 
+from .bv_brc import fetch_genomes_bv_brc
 from .subsample import subsample_fasta
 from .trim_alignment import trim_alignment
 from .merge import merge_taxa
@@ -1226,6 +1228,21 @@ plugin.methods.register_function(
         citations['oleary2016'],
         citations['schoch2020']
     ]
+)
+
+plugin.methods.register_function(
+    function=fetch_genomes_bv_brc,
+    inputs={},
+    parameters={'rql_query': Str},
+    outputs=[('genomes', FeatureData[Sequence]),
+             ('metadata', ImmutableMetadata)],
+    input_descriptions={},
+    parameter_descriptions={'rql_query': 'query'},
+    output_descriptions={
+        'genomes': 'genomes',
+        'metadata': 'metadata'},
+    name='fetch genomes',
+    description="fetch genomes",
 )
 
 # Registrations
