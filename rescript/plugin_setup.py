@@ -1144,7 +1144,7 @@ plugin.methods.register_function(
     parameter_descriptions={
                 'threads': VSEARCH_PARAM_DESCRIPTIONS['threads'],
                 'perc_identity': VSEARCH_PARAM_DESCRIPTIONS['perc_identity'],
-                'target_coverage': 'The minimum fraction of coverage that'
+                'target_coverage': 'The minimum fraction of coverage that '
                                    '\'reference-segment-sequences\' must have '
                                    'in order to extract matching segments '
                                    'from \'input-sequences\'.',
