@@ -20,7 +20,7 @@ from q2_types.feature_data import RNAFASTAFormat
 
 
 def get_silva_data(ctx,
-                   version='138.1',
+                   version='138.2',
                    target='SSURef_NR99',
                    include_species_labels=False,
                    rank_propagation=True,
@@ -86,7 +86,7 @@ def _assemble_silva_data_urls(version, target, download_sequences=True):
     tax_url = base_url_tax + '.txt'
 
     # add ".gz" for the following versions:
-    if version in ['138', '138.1']:
+    if version in ['138', '138.1', '138.2']:
         tree_url += '.gz'
         tax_url += '.gz'
 
