@@ -1139,13 +1139,15 @@ plugin.methods.register_function(
         'reference_segment_sequences': 'Reference sequence segments that '
                                        'will be used to search for and '
                                        'extract matching segments from '
-                                       '\'sequences\'.',
+                                       '\'input-sequences\'.',
                         },
     parameter_descriptions={
                 'threads': VSEARCH_PARAM_DESCRIPTIONS['threads'],
                 'perc_identity': VSEARCH_PARAM_DESCRIPTIONS['perc_identity'],
-                'target_coverage': 'Minimum coverage of reference segment '
-                                   'sequence to input sequence.',
+                'target_coverage': 'The minimum fraction of coverage that'
+                                   '\'reference-segment-sequences\' must have '
+                                   'in order to extract matching segments '
+                                   'from \'input-sequences\'.',
                 'min_seq_len': 'Minimum length of sequence allowed '
                                'for searching. Any sequence less than '
                                'this will be discarded. If not set, default '
