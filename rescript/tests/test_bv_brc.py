@@ -361,7 +361,7 @@ class TestFetchMetadataBVBR(TestPluginBase):
         mock_metadata.return_value = mock_metadata_instance
 
         # Call the function
-        result = fetch_metadata_bv_brc(
+        fetch_metadata_bv_brc(
             data_type="genome",
             rql_query="genome_id=in(1,2)"
         )
@@ -405,7 +405,7 @@ class TestFetchTaxonomyBVBR(TestPluginBase):
         mock_download_data.return_value = mock_response
 
         # Prepare mocks for file output
-        with patch('builtins.open', unittest.mock.mock_open()) as mock_file:
+        with patch('builtins.open', unittest.mock.mock_open()):
             directory = fetch_taxonomy_bv_brc(
                 rql_query="taxon_id=in(taxon1,taxon2)",
                 ranks=['rank1', 'rank2'],

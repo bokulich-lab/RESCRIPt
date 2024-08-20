@@ -1301,15 +1301,16 @@ plugin.methods.register_function(
     outputs=[('metadata', ImmutableMetadata)],
     input_descriptions={},
     parameter_descriptions={
-        'data_type': 'BV-BCR data type. Check https://www.bv-brc.org/api/doc/ for '
-                     'documentation.',
-        'rql_query': 'Query in RQL format. Check https://www.bv-brc.org/api/doc/ for '
-                     'documentation.'
+        'data_type': 'BV-BCR data type. Check https://www.bv-brc.org/api/doc/ '
+                     'for documentation.',
+        'rql_query': 'Query in RQL format. Check '
+                     'https://www.bv-brc.org/api/doc/ for documentation.'
     },
     output_descriptions={
         'metadata': 'metadata'},
     name='Fetch BV-BCR metadata.',
-    description="Fetch BV-BCR metadata for a specific data type with an RQL query.",
+    description="Fetch BV-BCR metadata for a specific data type with an RQL "
+                "query.",
 )
 
 plugin.methods.register_function(
@@ -1364,7 +1365,8 @@ plugin.methods.register_function(
 
 },
     name='Fetch genome features from BV-BRC.',
-    description='Fetch DNA and protein sequences of genome features from BV-BRC.',
+    description='Fetch DNA and protein sequences of genome features from '
+                'BV-BRC.',
 )
 
 # Registrations
