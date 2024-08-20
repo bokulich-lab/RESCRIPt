@@ -1231,6 +1231,7 @@ plugin.methods.register_function(
     ]
 )
 
+
 datatypes_metadata = [
     "antibiotics",
     "enzyme_class_ref",
@@ -1291,6 +1292,7 @@ plugin.methods.register_function(
     description="fetch genomes",
 )
 
+
 plugin.methods.register_function(
     function=fetch_metadata_bv_brc,
     inputs={},
@@ -1312,6 +1314,7 @@ plugin.methods.register_function(
     description="Fetch BV-BCR metadata for a specific data type with an RQL "
                 "query.",
 )
+
 
 plugin.methods.register_function(
     function=fetch_taxonomy_bv_brc,
@@ -1339,6 +1342,7 @@ plugin.methods.register_function(
     name='Fetch taxonomy data from BV-BRC.',
     description='Fetch taxonomy data from BV-BRC.',
 )
+
 
 plugin.methods.register_function(
     function=fetch_genome_features_bv_brc,
@@ -1368,6 +1372,7 @@ plugin.methods.register_function(
     description='Fetch DNA and protein sequences of genome features from '
                 'BV-BRC.',
 )
+
 
 # Registrations
 plugin.register_semantic_types(SILVATaxonomy, SILVATaxidMap)
