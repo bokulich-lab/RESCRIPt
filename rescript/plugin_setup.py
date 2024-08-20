@@ -8,14 +8,15 @@
 
 import importlib
 
-from q2_types.genome_data import GenomeData, Loci, Proteins
+from q2_types.genome_data import GenomeData, Loci, Proteins, Genes, DNASequence
 from q2_types.metadata import ImmutableMetadata
 from qiime2.core.type import TypeMatch
 from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int,
                            Float, Visualization, Bool, TypeMap, Metadata,
                            MetadataColumn, Categorical)
 
-from .bv_brc import fetch_genomes_bv_brc
+from .bv_brc import fetch_genomes_bv_brc, fetch_metadata_bv_brc, \
+    fetch_genome_features_bv_brc, fetch_taxonomy_bv_brc
 from .subsample import subsample_fasta
 from .trim_alignment import trim_alignment
 from .merge import merge_taxa
@@ -1230,19 +1231,140 @@ plugin.methods.register_function(
     ]
 )
 
+datatypes_metadata = [
+    "antibiotics",
+    "enzyme_class_ref",
+    "epitope",
+    "epitope_assay",
+    "experiment",
+    "bioset",
+    "bioset_result",
+    "gene_ontology_ref",
+    "genome",
+    "strain",
+    "genome_amr",
+    "feature_sequence",
+    "genome_feature",
+    "genome_sequence",
+    "id_ref",
+    "misc_niaid_sgc",
+    "pathway",
+    "pathway_ref",
+    "ppi",
+    "protein_family_ref",
+    "sequence_feature",
+    "sequence_feature_vt",
+    "sp_gene",
+    "sp_gene_ref",
+    "spike_lineage",
+    "spike_variant",
+    "structured_assertion",
+    "subsystem",
+    "subsystem_ref",
+    "taxonomy",
+    "protein_structure",
+    "protein_feature",
+    "surveillance",
+    "serology"
+]
+
 plugin.methods.register_function(
     function=fetch_genomes_bv_brc,
     inputs={},
-    parameters={'rql_query': Str},
-    outputs=[('genomes', FeatureData[Sequence]),
-             ('metadata', ImmutableMetadata)],
+    parameters={
+        'rql_query': Str,
+        'genome_ids': List[Str],
+    },
+    outputs=[('genomes', GenomeData[DNASequence])],
     input_descriptions={},
-    parameter_descriptions={'rql_query': 'query'},
+    parameter_descriptions={
+        'rql_query': 'Query in RQL format. Check '
+                     'https://www.bv-brc.org/api/doc/genome_sequence '
+                     'for documentation.',
+        'genome_ids': 'List of genome IDs from BV-BRC.',
+
+},
     output_descriptions={
         'genomes': 'genomes',
-        'metadata': 'metadata'},
+    },
     name='fetch genomes',
     description="fetch genomes",
+)
+
+plugin.methods.register_function(
+    function=fetch_metadata_bv_brc,
+    inputs={},
+    parameters={
+        'data_type': Str % Choices(datatypes_metadata),
+        'rql_query': Str
+    },
+    outputs=[('metadata', ImmutableMetadata)],
+    input_descriptions={},
+    parameter_descriptions={
+        'data_type': 'BV-BCR data type. Check https://www.bv-brc.org/api/doc/ for '
+                     'documentation.',
+        'rql_query': 'Query in RQL format. Check https://www.bv-brc.org/api/doc/ for '
+                     'documentation.'
+    },
+    output_descriptions={
+        'metadata': 'metadata'},
+    name='Fetch BV-BCR metadata.',
+    description="Fetch BV-BCR metadata for a specific data type with an RQL query.",
+)
+
+plugin.methods.register_function(
+    function=fetch_taxonomy_bv_brc,
+    inputs={},
+    parameters={
+        'rql_query': Str,
+        'ranks': List[Str % Choices(_allowed_ranks)],
+        'taxon_ids': List[Str],
+    },
+    outputs=[('taxonomy', FeatureData[Taxonomy])],
+    input_descriptions={},
+    parameter_descriptions={
+        'rql_query': 'Query in RQL format. Check '
+                     'https://www.bv-brc.org/api/doc/taxonomy '
+                     'for documentation.',
+        'ranks': 'List of taxonomic ranks for building a taxonomy from the '
+                 "NCBI Taxonomy database. [default: '" +
+                 "', '".join(_default_ranks) + "']",
+        'taxon_ids': 'List of taxon IDs from BV-BRC.',
+    },
+    output_descriptions={
+        'taxonomy': 'Taxonomy data.'
+
+},
+    name='Fetch taxonomy data from BV-BRC.',
+    description='Fetch taxonomy data from BV-BRC.',
+)
+
+plugin.methods.register_function(
+    function=fetch_genome_features_bv_brc,
+    inputs={},
+    parameters={
+        'rql_query': Str,
+        'feature_ids': List[Str],
+
+    },
+    outputs=[
+        ('genes', GenomeData[Genes]),
+        ('proteins', GenomeData[Proteins])
+    ],
+    input_descriptions={},
+    parameter_descriptions={
+        'rql_query': 'Query in RQL format. Check '
+                     'https://www.bv-brc.org/api/doc/genome_feature '
+                     'for documentation.',
+        'feature_ids': 'List of feature IDs from BV-BRC.',
+    },
+    output_descriptions={
+        'genes': 'genes',
+        'proteins': 'proteins'
+
+},
+    name='Fetch genome features from BV-BRC.',
+    description='Fetch DNA and protein sequences of genome features from BV-BRC.',
 )
 
 # Registrations
