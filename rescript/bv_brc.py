@@ -10,7 +10,8 @@ import os
 import qiime2
 import pandas as pd
 import requests
-from q2_types.feature_data import MixedCaseDNAFASTAFormat, ProteinFASTAFormat, TSVTaxonomyDirectoryFormat
+from q2_types.feature_data import (MixedCaseDNAFASTAFormat, ProteinFASTAFormat,
+                                   TSVTaxonomyDirectoryFormat)
 from q2_types.genome_data import GenomeSequencesDirectoryFormat
 
 from rescript.ncbi import _allowed_ranks, _default_ranks
@@ -46,17 +47,19 @@ def fetch_genomes_bv_brc(
 
 def fetch_metadata_bv_brc(data_type: str, rql_query: str) -> qiime2.Metadata:
 
-    # Get requests response
+    # Download data
     response = download_data(
         url=f"https://www.bv-brc.org/api/{data_type}/?{rql_query}&http_accept=text/tsv",
         data_type=data_type
     )
 
+    # Convert data to data frame
     tsv_data = StringIO(response.text)
     metadata = pd.read_csv(tsv_data, sep='\t')
     metadata.index.name = "id"
     metadata.index = metadata.index.astype(str)
 
+    # Return as qiime2 metadata
     return qiime2.Metadata(metadata)
 
 
@@ -249,11 +252,13 @@ def error_handling(response, data_type):
                 f"Allowed fields for data type {data_type}: \n{data_fields[data_type]}"
             )
 
+        # Handling any other errors that start with "A Database Error Occured:"
         else:
             raise ValueError(
                 f"Error code {response_dict['code']}: {response_dict['msg']}."
             )
 
+    # Handling any other error codes
     else:
         raise ValueError(response.text)
 
@@ -269,7 +274,7 @@ def id_list_handling(rql_query: str, ids: list, parameter_name: str, data_field:
         raise ValueError("At least one of the parameters rql_query and "
                          f"{parameter_name} has to be given.")
 
-    # construct the RQL queries
+    # Construct the RQL queries
     elif ids:
         rql_query = f"in({data_field},({','.join(map(str, ids))}))"
 

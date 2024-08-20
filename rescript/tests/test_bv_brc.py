@@ -6,7 +6,6 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 import unittest
-from typing import Any
 from unittest.mock import Mock, patch, mock_open, MagicMock
 
 import pandas as pd
@@ -324,7 +323,8 @@ class TestFetchMetadataBVBR(TestPluginBase):
     @patch('rescript.bv_brc.qiime2.Metadata')
     @patch('rescript.bv_brc.pd.read_csv')
     @patch('rescript.bv_brc.download_data')
-    def test_fetch_metadata_bv_brc(self, mock_download_data, mock_read_csv, mock_metadata):
+    def test_fetch_metadata_bv_brc(self, mock_download_data,
+                                   mock_read_csv, mock_metadata):
         # Mock the download_data response
         mock_response = MagicMock()
         mock_response.text = "id\tcolumn1\tcolumn2\n1\tdata1\tdata2\n2\tdata3\tdata4"
@@ -349,7 +349,8 @@ class TestFetchMetadataBVBR(TestPluginBase):
 
         # Assertions
         mock_download_data.assert_called_once_with(
-            url="https://www.bv-brc.org/api/genome/?genome_id=in(1,2)&http_accept=text/tsv",
+            url="https://www.bv-brc.org/api/genome/"
+                "?genome_id=in(1,2)&http_accept=text/tsv",
             data_type="genome"
         )
 
@@ -357,7 +358,8 @@ class TestFetchMetadataBVBR(TestPluginBase):
         args, kwargs = mock_read_csv.call_args
         self.assertEqual(kwargs['sep'], '\t')
 
-        self.assertEqual(args[0].getvalue(), "id\tcolumn1\tcolumn2\n1\tdata1\tdata2\n2\tdata3\tdata4")
+        self.assertEqual(args[0].getvalue(),
+                         "id\tcolumn1\tcolumn2\n1\tdata1\tdata2\n2\tdata3\tdata4")
 
         mock_metadata.assert_called_once_with(mock_df)
         self.assertEqual(result, mock_metadata_instance)
@@ -372,7 +374,8 @@ class TestFetchTaxonomyBVBR(TestPluginBase):
     @patch('rescript.bv_brc.pd.read_csv')
     @patch('rescript.bv_brc.id_list_handling')
     def test_fetch_taxonomy_bv_brc(
-        self, mock_id_list_handling, mock_read_csv, mock_download_data, mock_transform_taxonomy_df, mock_to_csv
+        self, mock_id_list_handling, mock_read_csv, mock_download_data,
+            mock_transform_taxonomy_df, mock_to_csv
     ):
         # Mock the id_list_handling function
         mock_id_list_handling.return_value = "taxon_id=in(taxon1,taxon2)"
@@ -381,7 +384,6 @@ class TestFetchTaxonomyBVBR(TestPluginBase):
         mock_response = MagicMock()
         mock_response.text = "id\trank1\trank2\n1\tdata1\tdata2\n2\tdata3\tdata4"
         mock_download_data.return_value = mock_response
-
 
         # Prepare mocks for file output
         with patch('builtins.open', unittest.mock.mock_open()) as mock_file:
@@ -400,7 +402,8 @@ class TestFetchTaxonomyBVBR(TestPluginBase):
             )
 
             mock_download_data.assert_called_once_with(
-                url="https://www.bv-brc.org/api/taxonomy/?taxon_id=in(taxon1,taxon2)&http_accept=text/tsv",
+                url="https://www.bv-brc.org/api/taxonomy/?taxon_id=in(taxon1,taxon2)"
+                    "&http_accept=text/tsv",
                 data_type="taxonomy"
             )
 
