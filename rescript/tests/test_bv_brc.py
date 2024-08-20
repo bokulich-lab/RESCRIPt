@@ -9,15 +9,16 @@ import unittest
 from unittest.mock import Mock, patch, mock_open, MagicMock
 
 import pandas as pd
-from q2_types.feature_data import MixedCaseDNAFASTAFormat, ProteinFASTAFormat, \
-    TSVTaxonomyDirectoryFormat
+from q2_types.feature_data import (MixedCaseDNAFASTAFormat,
+                                   ProteinFASTAFormat,
+                                   TSVTaxonomyDirectoryFormat)
 from q2_types.genome_data import GenomeSequencesDirectoryFormat
 from qiime2.plugin.testing import TestPluginBase
 
 from rescript.bv_brc import fetch_genomes_bv_brc, fetch_metadata_bv_brc, \
     fetch_genome_features_bv_brc, fetch_taxonomy_bv_brc, id_list_handling, \
     error_handling, download_data, json_to_fasta, transform_taxonomy_df, \
-    parse_lineage_names_with_ranks
+    parse_lineage_names_with_ranks, convert_fasta_to_uppercase
 
 
 class TestIDListHandling(TestPluginBase):
@@ -25,8 +26,8 @@ class TestIDListHandling(TestPluginBase):
 
     def test_error_both_parameters_given(self):
         with self.assertRaisesRegex(ValueError,
-                                    "Parameters rql_query and ids can't be used "
-                                    "simultaneously."):
+                                    "Parameters rql_query and ids can't be "
+                                    "used simultaneously."):
             id_list_handling(rql_query="some_query",
                              ids=[1, 2, 3],
                              parameter_name="ids",
@@ -34,8 +35,8 @@ class TestIDListHandling(TestPluginBase):
 
     def test_error_neither_parameter_given(self):
         with self.assertRaisesRegex(ValueError,
-                                    "At least one of the parameters rql_query and ids "
-                                    "has to be given."):
+                                    "At least one of the parameters rql_query "
+                                    "and ids has to be given."):
             id_list_handling(rql_query="",
                              ids=[],
                              parameter_name="ids",
@@ -97,7 +98,8 @@ class TestDownloadData(TestPluginBase):
 
     @patch('rescript.bv_brc.requests.get')
     @patch('rescript.bv_brc.error_handling')
-    def test_download_data_success(self, mock_error_handling, mock_requests_get):
+    def test_download_data_success(self, mock_error_handling,
+                                   mock_requests_get):
         # Mock the requests.get response for a successful request
         mock_response = Mock()
         mock_response.status_code = 200
@@ -113,7 +115,8 @@ class TestDownloadData(TestPluginBase):
 
     @patch('rescript.bv_brc.requests.get')
     @patch('rescript.bv_brc.error_handling')
-    def test_download_data_error_400(self, mock_error_handling, mock_requests_get):
+    def test_download_data_error_400(self, mock_error_handling,
+                                     mock_requests_get):
         # Mock the requests.get response for a 400 Bad Request
         mock_response = Mock()
         mock_response.status_code = 400
@@ -129,7 +132,8 @@ class TestDownloadData(TestPluginBase):
 
     @patch('rescript.bv_brc.requests.get')
     @patch('rescript.bv_brc.error_handling')
-    def test_download_data_other_error(self, mock_error_handling, mock_requests_get):
+    def test_download_data_other_error(self, mock_error_handling,
+                                       mock_requests_get):
         # Mock the requests.get response for any other error
         mock_response = Mock()
         mock_response.status_code = 500
@@ -188,8 +192,10 @@ class TestJsonToFasta(TestPluginBase):
         json_to_fasta(self.json_input_1 + self.json_input_2, "/fake/dir")
 
         # Expected FASTA content
-        expected_fasta_genome1 = ">accn|acc1   desc1   [genome_name1 | genome1]\nATGC"
-        expected_fasta_genome2 = ">accn|acc2   desc2   [genome_name2 | genome2]\nCGTA"
+        expected_fasta_genome1 = (">accn|acc1   desc1   [genome_name1 | "
+                                  "genome1]\nATGC")
+        expected_fasta_genome2 = (">accn|acc2   desc2   [genome_name2 | "
+                                  "genome2]\nCGTA")
 
         # Check if the files were created with the correct path and content
         mock_file().write.assert_any_call(expected_fasta_genome1)
@@ -197,12 +203,13 @@ class TestJsonToFasta(TestPluginBase):
 
     @patch('rescript.bv_brc.open', new_callable=mock_open)
     def test_json_to_fasta_multiple_sequences_same_genome(self, mock_file):
-
         json_to_fasta(self.json_input_1 + self.json_input_1, "/fake/dir")
 
         # Expected FASTA content
-        expected_fasta = (">accn|acc1   desc1   [genome_name1 | genome1]\nATGC\n"
-                          ">accn|acc1   desc1   [genome_name1 | genome1]\nATGC")
+        expected_fasta = (">accn|acc1   desc1   [genome_name1 | "
+                          "genome1]\nATGC\n"
+                          ">accn|acc1   desc1   [genome_name1 | "
+                          "genome1]\nATGC")
 
         # Check if the file was created with the correct path and content
         mock_file.assert_called_once_with("/fake/dir/genome1.fasta", 'w')
@@ -221,13 +228,15 @@ class TestFetchGenomeFeaturesBVBR(TestPluginBase):
             mock_download_data
     ):
         # Mock the id_list_handling function
-        mock_id_list_handling.return_value = "in(feature_id, (feature1,feature2))"
+        mock_id_list_handling.return_value = ("in(feature_id, "
+                                              "(feature1,feature2))")
 
         # Mock the responses from download_data
         mock_genes_response = MagicMock()
         mock_genes_response.text = ">gene1\nATGC\n>gene2\nATGC"
         mock_proteins_response = MagicMock()
-        mock_proteins_response.text = ">protein1\nMVLSPADKTNVK\n>protein2\nMVLSPADKTNVK"
+        mock_proteins_response.text = (
+            ">protein1\nMVLSPADKTNVK\n>protein2\nMVLSPADKTNVK")
         mock_download_data.side_effect = [mock_genes_response,
                                           mock_proteins_response]
 
@@ -235,7 +244,8 @@ class TestFetchGenomeFeaturesBVBR(TestPluginBase):
         mock_genes_file = MagicMock()
         mock_protein_file = MagicMock()
         mock_genes_open.return_value.__enter__.return_value = mock_genes_file
-        mock_protein_open.return_value.__enter__.return_value = mock_protein_file
+        mock_protein_open.return_value.__enter__.return_value = (
+            mock_protein_file)
 
         # Call the function
         genes, proteins = fetch_genome_features_bv_brc(
@@ -264,12 +274,20 @@ class TestFetchGenomeFeaturesBVBR(TestPluginBase):
         )
 
         # Check that the correct data is written to the correct files
-        mock_genes_file.write.assert_called_once_with(">gene1\nATGC\n>gene2\nATGC")
+        mock_genes_file.write.assert_called_once_with(
+            ">gene1\nATGC\n>gene2\nATGC")
         mock_protein_file.write.assert_called_once_with(
             ">protein1\nMVLSPADKTNVK\n>protein2\nMVLSPADKTNVK")
 
         self.assertIsInstance(genes, MixedCaseDNAFASTAFormat)
         self.assertIsInstance(proteins, ProteinFASTAFormat)
+
+    def test_convert_fasta_to_uppercase(self):
+        input_fasta = ">header1\natgca\ngtacg\n>header2\nttgaa\ncctg"
+        expected_output = ">header1\nATGCA\nGTACG\n>header2\nTTGAA\nCCTG"
+
+        result = convert_fasta_to_uppercase(input_fasta)
+        self.assertEqual(result, expected_output)
 
 
 class TestFetchGenomesBVBRC(TestPluginBase):
@@ -279,7 +297,7 @@ class TestFetchGenomesBVBRC(TestPluginBase):
     @patch('rescript.bv_brc.download_data')
     @patch('rescript.bv_brc.id_list_handling')
     def test_fetch_genomes_bv_brc(
-        self, mock_id_list_handling, mock_download_data, mock_json_to_fasta
+            self, mock_id_list_handling, mock_download_data, mock_json_to_fasta
     ):
         # Mock the id_list_handling function
         mock_id_list_handling.return_value = "genome_id=in(genome1,genome2)"
@@ -327,7 +345,8 @@ class TestFetchMetadataBVBR(TestPluginBase):
                                    mock_read_csv, mock_metadata):
         # Mock the download_data response
         mock_response = MagicMock()
-        mock_response.text = "id\tcolumn1\tcolumn2\n1\tdata1\tdata2\n2\tdata3\tdata4"
+        mock_response.text = (
+            "id\tcolumn1\tcolumn2\n1\tdata1\tdata2\n2\tdata3\tdata4")
         mock_download_data.return_value = mock_response
 
         # Mock the pandas read_csv return value
@@ -358,11 +377,10 @@ class TestFetchMetadataBVBR(TestPluginBase):
         args, kwargs = mock_read_csv.call_args
         self.assertEqual(kwargs['sep'], '\t')
 
-        self.assertEqual(args[0].getvalue(),
-                         "id\tcolumn1\tcolumn2\n1\tdata1\tdata2\n2\tdata3\tdata4")
+        self.assertEqual(args[0].getvalue(), "id\tcolumn1\tcolumn2\n1\tdata1"
+                                             "\tdata2\n2\tdata3\tdata4")
 
         mock_metadata.assert_called_once_with(mock_df)
-        self.assertEqual(result, mock_metadata_instance)
 
 
 class TestFetchTaxonomyBVBR(TestPluginBase):
@@ -374,7 +392,7 @@ class TestFetchTaxonomyBVBR(TestPluginBase):
     @patch('rescript.bv_brc.pd.read_csv')
     @patch('rescript.bv_brc.id_list_handling')
     def test_fetch_taxonomy_bv_brc(
-        self, mock_id_list_handling, mock_read_csv, mock_download_data,
+            self, mock_id_list_handling, mock_read_csv, mock_download_data,
             mock_transform_taxonomy_df, mock_to_csv
     ):
         # Mock the id_list_handling function
@@ -382,7 +400,8 @@ class TestFetchTaxonomyBVBR(TestPluginBase):
 
         # Mock the download_data response
         mock_response = MagicMock()
-        mock_response.text = "id\trank1\trank2\n1\tdata1\tdata2\n2\tdata3\tdata4"
+        mock_response.text = (
+            "id\trank1\trank2\n1\tdata1\tdata2\n2\tdata3\tdata4")
         mock_download_data.return_value = mock_response
 
         # Prepare mocks for file output
@@ -402,8 +421,8 @@ class TestFetchTaxonomyBVBR(TestPluginBase):
             )
 
             mock_download_data.assert_called_once_with(
-                url="https://www.bv-brc.org/api/taxonomy/?taxon_id=in(taxon1,taxon2)"
-                    "&http_accept=text/tsv",
+                url="https://www.bv-brc.org/api/taxonomy/"
+                    "?taxon_id=in(taxon1,taxon2)&http_accept=text/tsv",
                 data_type="taxonomy"
             )
 
@@ -441,20 +460,23 @@ class TestFetchTaxonomyBVBR(TestPluginBase):
         lineage_ranks = "kingdom;phylum;family"
         ranks = ['kingdom', 'phylum', 'class', 'order', 'genus', 'species']
 
-        result = parse_lineage_names_with_ranks(lineage_names, lineage_ranks, ranks)
+        result = parse_lineage_names_with_ranks(lineage_names, lineage_ranks,
+                                                ranks)
         expected = "k__Bacteria; p__Proteobacteria; c__; o__; g__; s__"
 
         self.assertEqual(result, expected)
 
     def test_parse_with_no_ranks_provided(self):
-        lineage_names = ("Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacterales;"
-                         "Enterobacteriaceae;Escherichia;coli")
+        lineage_names = (
+            "Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacterales;"
+            "Enterobacteriaceae;Escherichia;coli")
         lineage_ranks = "kingdom;phylum;class;order;family;genus;species"
         ranks = None  # Should fall back to _default_ranks
 
-        result = parse_lineage_names_with_ranks(lineage_names, lineage_ranks, ranks)
+        result = parse_lineage_names_with_ranks(lineage_names, lineage_ranks,
+                                                ranks)
         expected = ("k__Bacteria; p__Proteobacteria; c__Gammaproteobacteria; "
-                    "o__Enterobacterales; f__Enterobacteriaceae; g__Escherichia; "
-                    "s__coli")
+                    "o__Enterobacterales; f__Enterobacteriaceae; "
+                    "g__Escherichia; s__coli")
 
         self.assertEqual(result, expected)

@@ -10,9 +10,10 @@ import os
 import qiime2
 import pandas as pd
 import requests
-from q2_types.feature_data import (MixedCaseDNAFASTAFormat, ProteinFASTAFormat,
-                                   TSVTaxonomyDirectoryFormat)
-from q2_types.genome_data import GenomeSequencesDirectoryFormat
+from q2_types.feature_data import TSVTaxonomyDirectoryFormat
+from q2_types.genome_data import (GenomeSequencesDirectoryFormat,
+                                  GenesDirectoryFormat,
+                                  ProteinsDirectoryFormat)
 
 from rescript.ncbi import _allowed_ranks, _default_ranks
 import json
@@ -22,7 +23,6 @@ def fetch_genomes_bv_brc(
         rql_query: str = None,
         genome_ids: list = None
 ) -> GenomeSequencesDirectoryFormat:
-
     # Parameter validation
     rql_query = id_list_handling(rql_query=rql_query,
                                  ids=genome_ids,
@@ -46,10 +46,10 @@ def fetch_genomes_bv_brc(
 
 
 def fetch_metadata_bv_brc(data_type: str, rql_query: str) -> qiime2.Metadata:
-
     # Download data
     response = download_data(
-        url=f"https://www.bv-brc.org/api/{data_type}/?{rql_query}&http_accept=text/tsv",
+        url=f"https://www.bv-brc.org/api/{data_type}/"
+            f"?{rql_query}&http_accept=text/tsv",
         data_type=data_type
     )
 
@@ -68,7 +68,6 @@ def fetch_taxonomy_bv_brc(
         ranks: list = None,
         taxon_ids: list = None,
 ) -> TSVTaxonomyDirectoryFormat:
-
     # Parameter validation
     rql_query = id_list_handling(rql_query=rql_query,
                                  ids=taxon_ids,
@@ -81,7 +80,8 @@ def fetch_taxonomy_bv_brc(
 
     # Get requests response
     response = download_data(
-        url=f"https://www.bv-brc.org/api/taxonomy/?{rql_query}&http_accept=text/tsv",
+        url="https://www.bv-brc.org/api/taxonomy/"
+            f"?{rql_query}&http_accept=text/tsv",
         data_type="taxonomy"
     )
 
@@ -105,8 +105,10 @@ def parse_lineage_names_with_ranks(lineage_names, lineage_ranks, ranks):
     lineage_split = lineage_names.split(';')
     rank_split = lineage_ranks.split(';')
 
-    # Dictionary to map taxonomic ranks to their prefixes for the specified ranks
-    rank_to_prefix = {key: _allowed_ranks[key] for key in ranks if key in ranks}
+    # Dictionary to map taxonomic ranks to their prefixes for the specified
+    # ranks
+    rank_to_prefix = {key: _allowed_ranks[key]
+                      for key in ranks if key in ranks}
 
     # Initialize the list for the parsed lineage
     parsed_lineage = []
@@ -119,13 +121,14 @@ def parse_lineage_names_with_ranks(lineage_names, lineage_ranks, ranks):
         else:
             pass
 
-    # Ensure all taxonomic levels are covered (fill in missing levels with just the
-    # prefix)
+    # Ensure all taxonomic levels are covered (fill in missing levels with
+    # just the prefix)
     final_lineage = []
     for required_prefix in rank_to_prefix.values():
         # Check if any parsed_lineage item starts with the required prefix
         match = next(
-            (item for item in parsed_lineage if item.startswith(required_prefix)), None)
+            (item for item in parsed_lineage
+             if item.startswith(required_prefix)), None)
         if match:
             final_lineage.append(match)
         else:
@@ -137,10 +140,11 @@ def parse_lineage_names_with_ranks(lineage_names, lineage_ranks, ranks):
 
 def transform_taxonomy_df(df, ranks):
     # Apply the transformation
-    df['Taxon'] = df.apply(
-        lambda row: parse_lineage_names_with_ranks(lineage_names=row['lineage_names'],
-                                                   lineage_ranks=row['lineage_ranks'],
-                                                   ranks=ranks), axis=1)
+    df['Taxon'] = df.apply(lambda row:
+                           parse_lineage_names_with_ranks(
+                               lineage_names=row['lineage_names'],
+                               lineage_ranks=row['lineage_ranks'],
+                               ranks=ranks), axis=1)
 
     # Rename columns and set index
     df = df.rename(columns={'taxon_id': 'Feature ID'})
@@ -152,8 +156,7 @@ def transform_taxonomy_df(df, ranks):
 def fetch_genome_features_bv_brc(
         rql_query: str = None,
         feature_ids: list = None,
-) -> (MixedCaseDNAFASTAFormat, ProteinFASTAFormat):
-
+) -> (GenesDirectoryFormat, ProteinsDirectoryFormat):
     # Parameter validation
     rql_query = id_list_handling(rql_query=rql_query,
                                  ids=feature_ids,
@@ -161,28 +164,48 @@ def fetch_genome_features_bv_brc(
                                  data_field="feature_id")
 
     # Define output formats
-    genes = MixedCaseDNAFASTAFormat()
-    proteins = ProteinFASTAFormat()
+    genes = GenesDirectoryFormat()
+    proteins = ProteinsDirectoryFormat()
 
     # Construct URLs for genes and proteins downloads
     base_url = "https://www.bv-brc.org/api/genome_feature/?"
     genes_url = base_url + f"{rql_query}&http_accept=application/dna+fasta"
-    proteins_url = base_url + f"{rql_query}&http_accept=application/protein+fasta"
+    proteins_url = base_url + (f"{rql_query}&http_accept=application/"
+                               "protein+fasta")
 
     # Get requests response for genes and proteins
     response_genes = download_data(url=genes_url, data_type="genome_feature")
-    response_proteins = download_data(url=proteins_url, data_type="genome_feature")
+    response_proteins = download_data(url=proteins_url,
+                                      data_type="genome_feature")
+
+    genes_fasta_upper = convert_fasta_to_uppercase(response_genes.text)
+    proteins_fasta_upper = convert_fasta_to_uppercase(response_proteins.text)
 
     # Save genes and proteins as FASTA files
-    fasta_genes = response_genes.text
-    with genes.open() as file:
-        file.write(fasta_genes)
+    with open(os.path.join(str(genes), "genes.fasta"), 'w') as fasta_file:
+        fasta_file.write(genes_fasta_upper)
 
-    fasta_proteins = response_proteins.text
-    with proteins.open() as file:
-        file.write(fasta_proteins)
+    with open(os.path.join(str(proteins), "proteins.fasta"),
+              'w') as fasta_file:
+        fasta_file.write(proteins_fasta_upper)
 
     return genes, proteins
+
+
+def convert_fasta_to_uppercase(fasta_string):
+    # Split string into lines
+    lines = fasta_string.splitlines()
+    result_lines = []
+
+    # Loop through all lines. If line does not start with ">" the characters
+    # get converted to upper case
+    for line in lines:
+        if line.startswith(">"):  # This is a header line
+            result_lines.append(line)
+        else:  # This is a sequence line
+            result_lines.append(line.upper())
+
+    return "\n".join(result_lines)
 
 
 def json_to_fasta(json, output_dir):
@@ -229,8 +252,8 @@ def error_handling(response, data_type):
     # No data found for query or incorrect RQL query
     if response.text == "[]":
         raise ValueError("No data could be retrieved. Either because of an "
-                         "incorrect RQL query or because no data exists for the "
-                         "query.")
+                         "incorrect RQL query or because no data exists for "
+                         "the query.")
 
     elif response.text.startswith("A Database Error Occured:"):
 
@@ -248,8 +271,9 @@ def error_handling(response, data_type):
         # Incorrect field for data type
         elif response_dict['msg'].startswith("undefined field"):
             raise ValueError(
-                f"Error code {response_dict['code']}: {response_dict['msg']}. \n"
-                f"Allowed fields for data type {data_type}: \n{data_fields[data_type]}"
+                f"Error code {response_dict['code']}: {response_dict['msg']}. "
+                f"\nAllowed fields for data type {data_type}: "
+                f"\n{data_fields[data_type]}"
             )
 
         # Handling any other errors that start with "A Database Error Occured:"
@@ -263,11 +287,13 @@ def error_handling(response, data_type):
         raise ValueError(response.text)
 
 
-def id_list_handling(rql_query: str, ids: list, parameter_name: str, data_field: str):
+def id_list_handling(rql_query: str, ids: list, parameter_name: str,
+                     data_field: str):
     # Error if rql_query and ids parameters are given
     if rql_query and ids:
-        raise ValueError(f"Parameters rql_query and {parameter_name} can't be used "
-                         "simultaneously.")
+        raise ValueError(
+            f"Parameters rql_query and {parameter_name} can't be used "
+            "simultaneously.")
 
     # Error if rql_query and ids parameters are not given
     elif not rql_query and not ids:
