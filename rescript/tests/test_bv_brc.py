@@ -5,6 +5,7 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
+import os
 import unittest
 from unittest.mock import Mock, patch, mock_open, MagicMock
 
@@ -12,13 +13,14 @@ import pandas as pd
 from q2_types.feature_data import (MixedCaseDNAFASTAFormat,
                                    ProteinFASTAFormat,
                                    TSVTaxonomyDirectoryFormat)
-from q2_types.genome_data import GenomeSequencesDirectoryFormat
+from q2_types.genome_data import GenomeSequencesDirectoryFormat, \
+    GenesDirectoryFormat, ProteinsDirectoryFormat
 from qiime2.plugin.testing import TestPluginBase
 
 from rescript.bv_brc import fetch_genomes_bv_brc, fetch_metadata_bv_brc, \
     fetch_genome_features_bv_brc, fetch_taxonomy_bv_brc, id_list_handling, \
     error_handling, download_data, json_to_fasta, transform_taxonomy_df, \
-    parse_lineage_names_with_ranks, convert_fasta_to_uppercase
+    parse_lineage_names_with_ranks, parse_fasta_to_dict
 
 
 class TestIDListHandling(TestPluginBase):
@@ -219,74 +221,91 @@ class TestJsonToFasta(TestPluginBase):
 class TestFetchGenomeFeaturesBVBR(TestPluginBase):
     package = 'rescript.tests'
 
+    @patch('rescript.bv_brc.parse_fasta_to_dict')
     @patch('rescript.bv_brc.download_data')
     @patch('rescript.bv_brc.id_list_handling')
-    @patch.object(MixedCaseDNAFASTAFormat, 'open')
-    @patch.object(ProteinFASTAFormat, 'open')
-    def test_fetch_genome_features_bv_brc(
-            self, mock_protein_open, mock_genes_open, mock_id_list_handling,
-            mock_download_data
-    ):
+    @patch('builtins.open', new_callable=mock_open)
+    def test_fetch_genome_features_bv_brc(self, mock_open,
+                                          mock_id_list_handling,
+                                          mock_download_data,
+                                          mock_parse_fasta_to_dict):
         # Mock the id_list_handling function
-        mock_id_list_handling.return_value = ("in(feature_id, "
+        mock_id_list_handling.return_value = ("in(feature_id,"
                                               "(feature1,feature2))")
 
-        # Mock the responses from download_data
-        mock_genes_response = MagicMock()
-        mock_genes_response.text = ">gene1\nATGC\n>gene2\nATGC"
-        mock_proteins_response = MagicMock()
-        mock_proteins_response.text = (
-            ">protein1\nMVLSPADKTNVK\n>protein2\nMVLSPADKTNVK")
-        mock_download_data.side_effect = [mock_genes_response,
-                                          mock_proteins_response]
+        # Mock the download_data function responses
+        mock_response_genes = MagicMock()
+        mock_response_genes.text = "mocked_genes_fasta_data"
+        mock_response_proteins = MagicMock()
+        mock_response_proteins.text = "mocked_proteins_fasta_data"
+        mock_download_data.side_effect = [mock_response_genes,
+                                          mock_response_proteins]
 
-        # Mock file write actions
-        mock_genes_file = MagicMock()
-        mock_protein_file = MagicMock()
-        mock_genes_open.return_value.__enter__.return_value = mock_genes_file
-        mock_protein_open.return_value.__enter__.return_value = (
-            mock_protein_file)
+        # Mock the parse_fasta_to_dict function
+        mock_parse_fasta_to_dict.side_effect = [
+            {'2030927.4755': '>fig|2030927| GTPase [ABC | '
+                             '2030927.4755]\nATGA\n'},
+            {'1234567.89': '>fig|1234567| protein [XYZ | 1234567.89]\nGCGT\n'}
+        ]
 
-        # Call the function
+        # Call the function with the test RQL query
         genes, proteins = fetch_genome_features_bv_brc(
-            rql_query="in(feature_id, (feature1,feature2))",
-            feature_ids=["feature1", "feature2"]
+            rql_query="in(feature_id,(feature1,feature2))"
         )
 
-        # Assertions
+        # Assertions to ensure the correct calls were made
         mock_id_list_handling.assert_called_once_with(
-            rql_query="in(feature_id, (feature1,feature2))",
-            ids=["feature1", "feature2"],
+            rql_query="in(feature_id,(feature1,feature2))",
+            ids=None,
             parameter_name="feature_ids",
             data_field="feature_id"
         )
 
         mock_download_data.assert_any_call(
-            url="https://www.bv-brc.org/api/genome_feature/?in(feature_id, "
+            url="https://www.bv-brc.org/api/genome_feature/?in(feature_id,"
                 "(feature1,feature2))&http_accept=application/dna+fasta",
             data_type="genome_feature"
         )
 
         mock_download_data.assert_any_call(
-            url="https://www.bv-brc.org/api/genome_feature/?in(feature_id, "
+            url="https://www.bv-brc.org/api/genome_feature/?in(feature_id,"
                 "(feature1,feature2))&http_accept=application/protein+fasta",
             data_type="genome_feature"
         )
 
-        # Check that the correct data is written to the correct files
-        mock_genes_file.write.assert_called_once_with(
-            ">gene1\nATGC\n>gene2\nATGC")
-        mock_protein_file.write.assert_called_once_with(
-            ">protein1\nMVLSPADKTNVK\n>protein2\nMVLSPADKTNVK")
+        mock_parse_fasta_to_dict.assert_any_call("mocked_genes_fasta_data")
+        mock_parse_fasta_to_dict.assert_any_call("mocked_proteins_fasta_data")
 
-        self.assertIsInstance(genes, MixedCaseDNAFASTAFormat)
-        self.assertIsInstance(proteins, ProteinFASTAFormat)
+        # Check that the files were written correctly for genes
+        mock_open.assert_any_call(
+            os.path.join(str(genes), "2030927.4755.fasta"), 'w')
+        mock_open().write.assert_any_call(
+            '>fig|2030927| GTPase [ABC | 2030927.4755]\nATGA\n')
 
-    def test_convert_fasta_to_uppercase(self):
-        input_fasta = ">header1\natgca\ngtacg\n>header2\nttgaa\ncctg"
-        expected_output = ">header1\nATGCA\nGTACG\n>header2\nTTGAA\nCCTG"
+        # Check that the files were written correctly for proteins
+        mock_open.assert_any_call(
+            os.path.join(str(proteins), "1234567.89.fasta"), 'w')
+        mock_open().write.assert_any_call(
+            '>fig|1234567| protein [XYZ | 1234567.89]\nGCGT\n')
 
-        result = convert_fasta_to_uppercase(input_fasta)
+        # Check that the return types are correct
+        self.assertIsInstance(genes, GenesDirectoryFormat)
+        self.assertIsInstance(proteins, ProteinsDirectoryFormat)
+
+    def test_parse_fasta_to_dict(self):
+        fasta_string = (
+            ">fig|2030927| GTPase [ABC | 2030927.4755]\natga\n"
+            ">fig|1234567| protein [XYZ | 1234567.89]\ngcgt\n"
+        )
+        expected_output = {
+            '2030927.4755': (
+                ">fig|2030927| GTPase [ABC | 2030927.4755]\nATGA\n"
+            ),
+            '1234567.89': (
+                ">fig|1234567| protein [XYZ | 1234567.89]\nGCGT\n"
+            )
+        }
+        result = parse_fasta_to_dict(fasta_string)
         self.assertEqual(result, expected_output)
 
 

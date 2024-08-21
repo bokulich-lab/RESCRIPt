@@ -178,34 +178,46 @@ def fetch_genome_features_bv_brc(
     response_proteins = download_data(url=proteins_url,
                                       data_type="genome_feature")
 
-    genes_fasta_upper = convert_fasta_to_uppercase(response_genes.text)
-    proteins_fasta_upper = convert_fasta_to_uppercase(response_proteins.text)
+    # Convert all sequences to upper case characters to conform with
+    # DNAFASTAFormat
+    genes_fasta = parse_fasta_to_dict(response_genes.text)
+    proteins_fasta = parse_fasta_to_dict(response_proteins.text)
 
-    # Save genes and proteins as FASTA files
-    with open(os.path.join(str(genes), "genes.fasta"), 'w') as fasta_file:
-        fasta_file.write(genes_fasta_upper)
+    # Save genes and proteins as FASTA files one file per genome_id
+    for genome_id, fasta_sequences in genes_fasta.items():
+        with open(os.path.join(str(genes), f"{genome_id}.fasta"),
+                  'w') as fasta_file:
+            fasta_file.write(fasta_sequences)
 
-    with open(os.path.join(str(proteins), "proteins.fasta"),
-              'w') as fasta_file:
-        fasta_file.write(proteins_fasta_upper)
+    for genome_id, fasta_sequences in proteins_fasta.items():
+        with open(os.path.join(str(proteins), f"{genome_id}.fasta"),
+                  'w') as fasta_file:
+            fasta_file.write(fasta_sequences)
 
     return genes, proteins
 
 
-def convert_fasta_to_uppercase(fasta_string):
-    # Split string into lines
-    lines = fasta_string.splitlines()
-    result_lines = []
+def parse_fasta_to_dict(fasta_string):
+    # Creates a dict with genome_id as keys and the corresponding FASTA
+    # entries in upper case
+    fasta_dict = {}
 
-    # Loop through all lines. If line does not start with ">" the characters
-    # get converted to upper case
-    for line in lines:
-        if line.startswith(">"):  # This is a header line
-            result_lines.append(line)
-        else:  # This is a sequence line
-            result_lines.append(line.upper())
+    genome_id = None
+    for line in fasta_string.splitlines():
+        if line.startswith(">"):
+            # Extract the genome ID from the header
+            genome_id = line.split("|")[-1][:-1].strip()
+            if genome_id not in fasta_dict:
+                # Start a new entry with the header
+                fasta_dict[genome_id] = line + "\n"
+            else:
+                # Append the header to the existing entry
+                fasta_dict[genome_id] += line + "\n"
+        else:
+            # Append the sequence line in uppercase
+            fasta_dict[genome_id] += line.upper() + "\n"
 
-    return "\n".join(result_lines)
+    return fasta_dict
 
 
 def json_to_fasta(json, output_dir):
