@@ -1291,7 +1291,7 @@ plugin.methods.register_function(
                      'for documentation.',
         'genome_ids': 'List of genome IDs from BV-BRC.',
 
-},
+    },
     output_descriptions={
         'genomes': 'genomes',
     },
@@ -1345,7 +1345,7 @@ plugin.methods.register_function(
     output_descriptions={
         'taxonomy': 'Taxonomy data.'
 
-},
+    },
     name='Fetch taxonomy data from BV-BRC.',
     description='Fetch taxonomy data from BV-BRC.',
 )
@@ -1374,7 +1374,7 @@ plugin.methods.register_function(
         'genes': 'genes',
         'proteins': 'proteins'
 
-},
+    },
     name='Fetch genome features from BV-BRC.',
     description='Fetch DNA and protein sequences of genome features from '
                 'BV-BRC.',
