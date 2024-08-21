@@ -732,7 +732,7 @@ RANK_DESCRIPTION = ('List of taxonomic ranks for building a taxonomy from the '
                     "[default: '" +
                     "', '".join(DEFAULT_RANKS) + "']")
 
-_SILVA_VERSIONS = ['128', '132', '138', '138.1']
+_SILVA_VERSIONS = ['128', '132', '138', '138.1', '138.2']
 _SILVA_TARGETS = ['SSURef_NR99', 'SSURef', 'LSURef_NR99', 'LSURef']
 
 version_map, target_map, _ = TypeMap({
@@ -740,7 +740,7 @@ version_map, target_map, _ = TypeMap({
      Str % Choices('SSURef_NR99', 'SSURef', 'LSURef')): Visualization,
     (Str % Choices('138'),
      Str % Choices('SSURef_NR99', 'SSURef')): Visualization,
-    (Str % Choices('138.1'),
+    (Str % Choices('138.1', '138.2'),
      Str % Choices('SSURef_NR99', 'SSURef', 'LSURef_NR99',
                    'LSURef')): Visualization,
 })
@@ -1126,7 +1126,10 @@ plugin.methods.register_function(
             'reference_segment_sequences': FeatureData[Sequence]},
     parameters={'threads': VSEARCH_PARAMS['threads'],
                 'perc_identity': VSEARCH_PARAMS['perc_identity'],
-                'min_seq_len': Int % Range(1, None)
+                'target_coverage': Float % Range(0, 1,
+                                                 inclusive_start=False,
+                                                 inclusive_end=True),
+                'min_seq_len': Int % Range(1, None),
                 },
     outputs=[('extracted_sequence_segments', FeatureData[Sequence]),
              ('unmatched_sequences', FeatureData[Sequence])],
@@ -1139,11 +1142,15 @@ plugin.methods.register_function(
         'reference_segment_sequences': 'Reference sequence segments that '
                                        'will be used to search for and '
                                        'extract matching segments from '
-                                       '\'sequences\'.',
+                                       '\'input-sequences\'.',
                         },
     parameter_descriptions={
                 'threads': VSEARCH_PARAM_DESCRIPTIONS['threads'],
                 'perc_identity': VSEARCH_PARAM_DESCRIPTIONS['perc_identity'],
+                'target_coverage': 'The minimum fraction of coverage that '
+                                   '\'reference-segment-sequences\' must have '
+                                   'in order to extract matching segments '
+                                   'from \'input-sequences\'.',
                 'min_seq_len': 'Minimum length of sequence allowed '
                                'for searching. Any sequence less than '
                                'this will be discarded. If not set, default '
