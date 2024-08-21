@@ -10,9 +10,7 @@ import unittest
 from unittest.mock import Mock, patch, mock_open, MagicMock
 
 import pandas as pd
-from q2_types.feature_data import (MixedCaseDNAFASTAFormat,
-                                   ProteinFASTAFormat,
-                                   TSVTaxonomyDirectoryFormat)
+from q2_types.feature_data import TSVTaxonomyDirectoryFormat
 from q2_types.genome_data import GenomeSequencesDirectoryFormat, \
     GenesDirectoryFormat, ProteinsDirectoryFormat
 from qiime2.plugin.testing import TestPluginBase
