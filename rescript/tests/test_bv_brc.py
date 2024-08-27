@@ -16,8 +16,8 @@ from q2_types.genome_data import GenomeSequencesDirectoryFormat, \
 from qiime2.plugin.testing import TestPluginBase
 
 from rescript.bv_brc import fetch_genomes_bv_brc, fetch_metadata_bv_brc, \
-    fetch_genome_features_bv_brc, fetch_taxonomy_bv_brc, id_list_handling, \
-    error_handling, download_data, json_to_fasta, transform_taxonomy_df, \
+    fetch_genome_features_bv_brc, id_list_handling, \
+    error_handling, download_data, json_to_fasta, \
     parse_lineage_names_with_ranks, parse_fasta_to_dict
 
 
@@ -472,28 +472,85 @@ class TestFetchTaxonomyBVBR(TestPluginBase):
         # Assert that the result matches the expected DataFrame
         pd.testing.assert_frame_equal(result_df, expected_df)
 
-    def test_parse_with_missing_ranks(self):
-        lineage_names = "Bacteria;Proteobacteria;Enterobacteriaceae"
-        lineage_ranks = "kingdom;phylum;family"
-        ranks = ['kingdom', 'phylum', 'class', 'order', 'genus', 'species']
+    class TestParseLineageNamesWithRanks(TestPluginBase):
+        package = 'rescript.tests'
 
-        result = parse_lineage_names_with_ranks(lineage_names, lineage_ranks,
-                                                ranks)
-        expected = "k__Bacteria; p__Proteobacteria; c__; o__; g__; s__"
-
-        self.assertEqual(result, expected)
-
-    def test_parse_with_no_ranks_provided(self):
-        lineage_names = (
-            "Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacterales;"
-            "Enterobacteriaceae;Escherichia;coli")
+    def test_basic_functionality(self):
+        lineage_names = ("Animalia;Chordata;Mammalia;Primates;Hominidae;Homo;"
+                         "sapiens")
         lineage_ranks = "kingdom;phylum;class;order;family;genus;species"
-        ranks = None  # Should fall back to _default_ranks
+        expected_result = ("k__Animalia; p__Chordata; c__Mammalia; "
+                           "o__Primates; f__Hominidae; g__Homo; s__sapiens")
+
+        result = parse_lineage_names_with_ranks(lineage_names, lineage_ranks)
+        self.assertEqual(result, expected_result)
+
+    def test_with_missing_ranks(self):
+        lineage_names = "Animalia;Chordata;Hominidae;sapiens"
+        lineage_ranks = "kingdom;phylum;family;species"
+        expected_result = ("k__Animalia; p__Chordata; c__; o__; f__Hominidae; "
+                           "g__; s__sapiens")
+
+        result = parse_lineage_names_with_ranks(lineage_names, lineage_ranks)
+        self.assertEqual(result, expected_result)
+
+    def test_rank_propagation(self):
+        lineage_names = "Animalia;Chordata;Mammalia;Homo"
+        lineage_ranks = "kingdom;phylum;class;genus"
+        expected_result = ("k__Animalia; p__Chordata; c__Mammalia; "
+                           "o__Mammalia; f__Mammalia; g__Homo; s__Homo")
 
         result = parse_lineage_names_with_ranks(lineage_names, lineage_ranks,
-                                                ranks)
-        expected = ("k__Bacteria; p__Proteobacteria; c__Gammaproteobacteria; "
-                    "o__Enterobacterales; f__Enterobacteriaceae; "
-                    "g__Escherichia; s__coli")
+                                                rank_propagation=True)
+        self.assertEqual(result, expected_result)
 
-        self.assertEqual(result, expected)
+    def test_genus_species_split(self):
+        lineage_names = ("Animalia;Chordata;Mammalia;Primates;"
+                         "Hominidae;Homo sapiens")
+        lineage_ranks = "kingdom;phylum;class;order;family;species"
+        expected_result = ("k__Animalia; p__Chordata; c__Mammalia;"
+                           " o__Primates; f__Hominidae; g__Homo; s__sapiens")
+
+        result = parse_lineage_names_with_ranks(lineage_names, lineage_ranks)
+        self.assertEqual(result, expected_result)
+
+    def test_genus_only_split(self):
+        lineage_names = ("Animalia;Chordata;Mammalia;Primates;Hominidae;"
+                         "Homo;Homo sapiens")
+        lineage_ranks = "kingdom;phylum;class;order;family;genus;species"
+        expected_result = ("k__Animalia; p__Chordata; c__Mammalia; "
+                           "o__Primates; f__Hominidae; g__Homo; s__sapiens")
+
+        result = parse_lineage_names_with_ranks(lineage_names, lineage_ranks)
+        self.assertEqual(result, expected_result)
+
+    def test_no_species_in_ranks(self):
+        lineage_names = ("Animalia;Chordata;Mammalia;Primates;"
+                         "Hominidae;Homo sapiens")
+        lineage_ranks = "kingdom;phylum;class;order;family;genus"
+        expected_result = ("k__Animalia; p__Chordata; c__Mammalia; "
+                           "o__Primates; f__Hominidae; g__Homo sapiens")
+
+        result = parse_lineage_names_with_ranks(lineage_names, lineage_ranks,
+                                                ranks=['kingdom', 'phylum',
+                                                       'class', 'order',
+                                                       'family', 'genus'])
+        self.assertEqual(result, expected_result)
+
+    def test_custom_ranks(self):
+        lineage_names = "Metazoa"
+        lineage_ranks = "superkingdom"
+        expected_result = "sk__Metazoa"
+
+        result = parse_lineage_names_with_ranks(lineage_names, lineage_ranks,
+                                                ranks=['superkingdom'])
+        self.assertEqual(result, expected_result)
+
+    def test_genomes(self):
+        fetch_genomes_bv_brc(rql_query="eq(taxon_id,1313)")
+
+    def test_genome_features(self):
+        fetch_genome_features_bv_brc(rql_query="eq(taxon_id,1313)")
+
+    def test_genome_features2(self):
+        fetch_genome_features_bv_brc(rql_query="eq(genome_id,1313.5550)")

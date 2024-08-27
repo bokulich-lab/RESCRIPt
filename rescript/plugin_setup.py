@@ -16,7 +16,7 @@ from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int,
                            MetadataColumn, Categorical)
 
 from .bv_brc import fetch_genomes_bv_brc, fetch_metadata_bv_brc, \
-    fetch_genome_features_bv_brc, fetch_taxonomy_bv_brc
+    fetch_genome_features_bv_brc
 from .subsample import subsample_fasta
 from .trim_alignment import trim_alignment
 from .merge import merge_taxa
@@ -1282,21 +1282,27 @@ plugin.methods.register_function(
     parameters={
         'rql_query': Str,
         'genome_ids': List[Str],
+        'ranks': List[Str % Choices(_allowed_ranks)],
     },
-    outputs=[('genomes', GenomeData[DNASequence])],
+    outputs=[('genomes', GenomeData[DNASequence]),
+             ('taxonomy', FeatureData[Taxonomy])],
     input_descriptions={},
     parameter_descriptions={
         'rql_query': 'Query in RQL format. Check '
                      'https://www.bv-brc.org/api/doc/genome_sequence '
                      'for documentation.',
         'genome_ids': 'List of genome IDs from BV-BRC.',
-
+        'ranks': 'List of taxonomic ranks for building a taxonomy from the '
+                 "NCBI Taxonomy database. [default: '" +
+                 "', '".join(_default_ranks) + "']",
     },
     output_descriptions={
         'genomes': 'genomes',
+        'taxonomy': 'Taxonomy data.'
     },
     name='fetch genomes',
     description="fetch genomes",
+    citations=[citations['olson2023introducing']]
 )
 
 
@@ -1320,34 +1326,7 @@ plugin.methods.register_function(
     name='Fetch BV-BCR metadata.',
     description="Fetch BV-BCR metadata for a specific data type with an RQL "
                 "query.",
-)
-
-
-plugin.methods.register_function(
-    function=fetch_taxonomy_bv_brc,
-    inputs={},
-    parameters={
-        'rql_query': Str,
-        'ranks': List[Str % Choices(_allowed_ranks)],
-        'taxon_ids': List[Str],
-    },
-    outputs=[('taxonomy', FeatureData[Taxonomy])],
-    input_descriptions={},
-    parameter_descriptions={
-        'rql_query': 'Query in RQL format. Check '
-                     'https://www.bv-brc.org/api/doc/taxonomy '
-                     'for documentation.',
-        'ranks': 'List of taxonomic ranks for building a taxonomy from the '
-                 "NCBI Taxonomy database. [default: '" +
-                 "', '".join(_default_ranks) + "']",
-        'taxon_ids': 'List of taxon IDs from BV-BRC.',
-    },
-    output_descriptions={
-        'taxonomy': 'Taxonomy data.'
-
-    },
-    name='Fetch taxonomy data from BV-BRC.',
-    description='Fetch taxonomy data from BV-BRC.',
+    citations=[citations['olson2023introducing']]
 )
 
 
@@ -1356,28 +1335,34 @@ plugin.methods.register_function(
     inputs={},
     parameters={
         'rql_query': Str,
-        'feature_ids': List[Str],
+        'ranks': List[Str % Choices(_allowed_ranks)],
+        'taxon_ids': List[Str],
 
     },
     outputs=[
         ('genes', GenomeData[Genes]),
-        ('proteins', GenomeData[Proteins])
+        ('proteins', GenomeData[Proteins]),
+        ('taxonomy', FeatureData[Taxonomy])
     ],
     input_descriptions={},
     parameter_descriptions={
         'rql_query': 'Query in RQL format. Check '
                      'https://www.bv-brc.org/api/doc/genome_feature '
                      'for documentation.',
-        'feature_ids': 'List of feature IDs from BV-BRC.',
+        'taxon_ids': 'List of taxon IDs from BV-BRC.',
+        'ranks': 'List of taxonomic ranks for building a taxonomy from the '
+                 "NCBI Taxonomy database. [default: '" +
+                 "', '".join(_default_ranks) + "']",
     },
     output_descriptions={
         'genes': 'genes',
-        'proteins': 'proteins'
-
+        'proteins': 'proteins',
+        'taxonomy': 'taxonomy',
     },
     name='Fetch genome features from BV-BRC.',
     description='Fetch DNA and protein sequences of genome features from '
                 'BV-BRC.',
+    citations=[citations['olson2023introducing']]
 )
 
 

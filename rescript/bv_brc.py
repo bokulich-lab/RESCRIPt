@@ -5,12 +5,13 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
+from collections import OrderedDict
 from io import StringIO
 import os
 import qiime2
 import pandas as pd
 import requests
-from q2_types.feature_data import TSVTaxonomyDirectoryFormat
+from q2_types.feature_data import TSVTaxonomyDirectoryFormat, TSVTaxonomyFormat
 from q2_types.genome_data import (GenomeSequencesDirectoryFormat,
                                   GenesDirectoryFormat,
                                   ProteinsDirectoryFormat)
@@ -19,38 +20,11 @@ from rescript.ncbi import _allowed_ranks, _default_ranks
 import json
 
 
-def fetch_genomes_bv_brc(
-        rql_query: str = None,
-        genome_ids: list = None
-) -> GenomeSequencesDirectoryFormat:
-    # Parameter validation
-    rql_query = id_list_handling(rql_query=rql_query,
-                                 ids=genome_ids,
-                                 parameter_name="genome_ids",
-                                 data_field="genome_id"
-                                 )
-
-    # Define output format
-    genomes = GenomeSequencesDirectoryFormat()
-
-    # Get requests response
-    response = download_data(
-        url=f"https://www.bv-brc.org/api/genome_sequence/?{rql_query}",
-        data_type="genome_sequence",
-    )
-
-    # Transform
-    json_to_fasta(response.json(), str(genomes))
-
-    return genomes
-
-
 def fetch_metadata_bv_brc(data_type: str, rql_query: str) -> qiime2.Metadata:
     # Download data
     response = download_data(
         url=f"https://www.bv-brc.org/api/{data_type}/"
             f"?{rql_query}&http_accept=text/tsv",
-        data_type=data_type
     )
 
     # Convert data to data frame
@@ -63,40 +37,109 @@ def fetch_metadata_bv_brc(data_type: str, rql_query: str) -> qiime2.Metadata:
     return qiime2.Metadata(metadata)
 
 
-def fetch_taxonomy_bv_brc(
-        rql_query: str,
+def fetch_genomes_bv_brc(
+        rql_query: str = None,
+        genome_ids: list = None,
         ranks: list = None,
+) -> (GenomeSequencesDirectoryFormat, TSVTaxonomyFormat):
+    # Parameter validation
+    rql_query = id_list_handling(rql_query=rql_query,
+                                 ids=genome_ids,
+                                 parameter_name="genome_ids",
+                                 data_field="genome_id"
+                                 )
+
+    # Define output formats
+    genomes = GenomeSequencesDirectoryFormat()
+
+    # Get requests response for genome sequences
+    response_sequences = download_data(
+        url=f"https://www.bv-brc.org/api/genome_sequence/?{rql_query}",
+    )
+    # Convert sequences in response_sequences JSON to FASTA
+    json_to_fasta(json=response_sequences.json(), output_dir=str(genomes))
+
+    taxonomy = get_taxonomy(bv_brc_response=response_sequences, ranks=ranks)
+
+    return genomes, taxonomy
+
+
+def fetch_genome_features_bv_brc(
+        rql_query: str = None,
         taxon_ids: list = None,
-) -> TSVTaxonomyDirectoryFormat:
+        ranks: list = None,
+) -> (
+        GenesDirectoryFormat, ProteinsDirectoryFormat,
+        TSVTaxonomyFormat):
     # Parameter validation
     rql_query = id_list_handling(rql_query=rql_query,
                                  ids=taxon_ids,
-                                 parameter_name="taxon_ids",
-                                 data_field="taxon_id"
-                                 )
+                                 parameter_name="feature_ids",
+                                 data_field="feature_id")
 
-    # Define output format
-    directory = TSVTaxonomyDirectoryFormat()
+    genes = get_sequences(rql_query=rql_query, sequence_type="genes")
+    proteins = get_sequences(rql_query=rql_query, sequence_type="proteins")
+
+    response_features = download_data(
+        url=f"https://www.bv-brc.org/api/genome_feature/?{rql_query}"
+    )
+    taxonomy = get_taxonomy(bv_brc_response=response_features, ranks=ranks)
+
+    return genes, proteins, taxonomy
+
+def get_sequences(rql_query, sequence_type):
+    base_url = ("https://www.bv-brc.org/api/genome_feature/?"
+               f"&limit(1000000000){rql_query}&http_accept=application/")
+
+    if sequence_type == "genes":
+        dir_format = GenesDirectoryFormat()
+        url = base_url + "dna+fasta"
+    else:
+        dir_format = ProteinsDirectoryFormat()
+        url = base_url + "protein+fasta"
 
     # Get requests response
-    response = download_data(
+    response = download_data(url=url)
+
+    # Convert all sequences to upper case characters to conform with
+    # QIIME formats
+    sequences_fasta = parse_fasta_to_dict(fasta_string=response.text)
+
+    # Save genes and proteins as FASTA files one file per genome_id
+    for genome_id, fasta_sequences in sequences_fasta.items():
+        with open(os.path.join(str(dir_format), f"{genome_id}.fasta"),
+                  'w') as fasta_file:
+            fasta_file.write(fasta_sequences)
+
+    return dir_format
+
+# def get_loci(rql_query):
+
+
+def get_taxonomy(bv_brc_response, ranks):
+    # Extract all taxon_ids from bv_brc_response JSON
+    taxon_ids = [str(entry['taxon_id']) for entry in bv_brc_response.json()]
+
+    # Get requests response for taxonomies
+    response_taxonomy = download_data(
         url="https://www.bv-brc.org/api/taxonomy/"
-            f"?{rql_query}&http_accept=text/tsv",
-        data_type="taxonomy"
+            f"?in(taxon_id,({','.join(taxon_ids)}))&http_accept=text/tsv",
     )
 
-    # Convert to data frame
-    tsv_data = StringIO(response.text)
-    metadata = pd.read_csv(tsv_data, sep='\t')
-
-    # Transform metadata to TSVTaxonomyFormat
-    taxonomy = transform_taxonomy_df(df=metadata, ranks=ranks)
-    taxonomy.to_csv(os.path.join(str(directory), "taxonomy.tsv"), sep="\t")
-
-    return directory
+    # Transform the df to conform with TSVTaxonomyFormat
+    return create_taxonomy(
+        response_taxonomy=response_taxonomy,
+        response_sequences=bv_brc_response.json(),
+        ranks=ranks
+    )
 
 
-def parse_lineage_names_with_ranks(lineage_names, lineage_ranks, ranks):
+def parse_lineage_names_with_ranks(
+        lineage_names,
+        lineage_ranks,
+        ranks=None,
+        rank_propagation=False
+):
     # Set ranks to default if no list is specified
     if not ranks:
         ranks = _default_ranks
@@ -105,96 +148,86 @@ def parse_lineage_names_with_ranks(lineage_names, lineage_ranks, ranks):
     lineage_split = lineage_names.split(';')
     rank_split = lineage_ranks.split(';')
 
-    # Dictionary to map taxonomic ranks to their prefixes for the specified
-    # ranks
-    rank_to_prefix = {key: _allowed_ranks[key]
-                      for key in ranks if key in ranks}
+    # Initialize the taxonomy dictionary with the allowed ranks
+    taxonomy = OrderedDict((r, None) for r in ranks)
 
-    # Initialize the list for the parsed lineage
-    parsed_lineage = []
-
-    # Loop over each rank and assign the corresponding prefix and name
+    # Loop over each rank and assign the corresponding name
     for rank, name in zip(rank_split, lineage_split):
-        prefix = rank_to_prefix.get(rank, None)
-        if prefix:
-            parsed_lineage.append(f"{prefix}{name}")
-        else:
-            pass
+        if rank in ranks:
+            taxonomy[rank] = name
 
-    # Ensure all taxonomic levels are covered (fill in missing levels with
-    # just the prefix)
-    final_lineage = []
-    for required_prefix in rank_to_prefix.values():
-        # Check if any parsed_lineage item starts with the required prefix
-        match = next(
-            (item for item in parsed_lineage
-             if item.startswith(required_prefix)), None)
-        if match:
-            final_lineage.append(match)
-        else:
-            final_lineage.append(required_prefix)
+    # Handle genus and species splitting logic
+    if 'genus' in ranks and taxonomy.get('species'):
+        species = taxonomy.get('species')
+        if taxonomy.get('genus'):
+            if species.startswith(taxonomy['genus'] + ' '):
+                species = species[len(taxonomy['genus']) + 1:]
+                taxonomy['species'] = species
+        elif ' ' in species:
+            genus, species = species.split(' ', 1)
+            taxonomy['genus'] = genus
+            taxonomy['species'] = species
 
-    # Join the parsed lineage names with '; '
-    return '; '.join(final_lineage)
+    # Apply rank propagation if enabled
+    if rank_propagation:
+        last_label = None
+        for rank in taxonomy:
+            if taxonomy[rank] is None:
+                taxonomy[rank] = last_label
+            last_label = taxonomy[rank]
+
+    result = '; '.join(
+        f"{_allowed_ranks.get(rank, '')}{name if name else ''}" for rank, name
+        in taxonomy.items()
+    )
+    return result
 
 
-def transform_taxonomy_df(df, ranks):
+def create_taxonomy(response_taxonomy, response_sequences, ranks, data_type):
+    # Read the taxonomy TSV data into a DataFrame
+    taxonomy_bvbrc = pd.read_csv(StringIO(response_taxonomy.text), sep='\t')
+
     # Apply the transformation
-    df['Taxon'] = df.apply(lambda row:
-                           parse_lineage_names_with_ranks(
-                               lineage_names=row['lineage_names'],
-                               lineage_ranks=row['lineage_ranks'],
-                               ranks=ranks), axis=1)
+    taxonomy_bvbrc['Taxon'] = (
+        taxonomy_bvbrc.apply(lambda row:
+                             parse_lineage_names_with_ranks(
+                                 lineage_names=row['lineage_names'],
+                                 lineage_ranks=row['lineage_ranks'],
+                                 ranks=ranks), axis=1))
 
-    # Rename columns and set index
-    df = df.rename(columns={'taxon_id': 'Feature ID'})
-    df = df[['Feature ID', 'Taxon']]
-    df = df.set_index('Feature ID')
-    return df
+    taxonomy_df = pd.DataFrame(columns=['Feature ID', 'Taxon'])
 
+    # Loop through each JSON dictionary in the list
+    for entry in response_sequences:
+        # Get the accession and taxon_id from the JSON dictionary
+        if data_type == "genomes":
+            accession = entry.get('accession')
+        else:
+            accession = entry.get('refseq_locus_tag')
+        taxon_id = entry.get('taxon_id')
 
-def fetch_genome_features_bv_brc(
-        rql_query: str = None,
-        feature_ids: list = None,
-) -> (GenesDirectoryFormat, ProteinsDirectoryFormat):
-    # Parameter validation
-    rql_query = id_list_handling(rql_query=rql_query,
-                                 ids=feature_ids,
-                                 parameter_name="feature_ids",
-                                 data_field="feature_id")
+        # Look up the corresponding taxon in taxonomy_bvbrc using taxon_id
+        taxon_name = taxonomy_bvbrc.loc[
+            taxonomy_bvbrc['taxon_id'] == taxon_id, 'Taxon'].values
 
-    # Define output formats
-    genes = GenesDirectoryFormat()
-    proteins = ProteinsDirectoryFormat()
+        # Create a new row as a DataFrame with accession and corresponding
+        # taxon
+        new_row = pd.DataFrame(
+            {'Feature ID': accession, 'Taxon': taxon_name})
 
-    # Construct URLs for genes and proteins downloads
-    base_url = "https://www.bv-brc.org/api/genome_feature/?"
-    genes_url = base_url + f"{rql_query}&http_accept=application/dna+fasta"
-    proteins_url = base_url + (f"{rql_query}&http_accept=application/"
-                               "protein+fasta")
+        # Append the new row to the taxonomy_df
+        taxonomy_df = pd.concat([taxonomy_df, new_row], ignore_index=True)
 
-    # Get requests response for genes and proteins
-    response_genes = download_data(url=genes_url, data_type="genome_feature")
-    response_proteins = download_data(url=proteins_url,
-                                      data_type="genome_feature")
+    # Set index
+    taxonomy_df = taxonomy_df.set_index('Feature ID')
 
-    # Convert all sequences to upper case characters to conform with
-    # DNAFASTAFormat
-    genes_fasta = parse_fasta_to_dict(response_genes.text)
-    proteins_fasta = parse_fasta_to_dict(response_proteins.text)
+    # Write taxonomy_df to taxonomy format
+    taxonomy = TSVTaxonomyFormat()
 
-    # Save genes and proteins as FASTA files one file per genome_id
-    for genome_id, fasta_sequences in genes_fasta.items():
-        with open(os.path.join(str(genes), f"{genome_id}.fasta"),
-                  'w') as fasta_file:
-            fasta_file.write(fasta_sequences)
+    with taxonomy.open() as file_handle:
+        file_handle.write(taxonomy_df.to_csv(sep="\t"))
 
-    for genome_id, fasta_sequences in proteins_fasta.items():
-        with open(os.path.join(str(proteins), f"{genome_id}.fasta"),
-                  'w') as fasta_file:
-            fasta_file.write(fasta_sequences)
-
-    return genes, proteins
+    return taxonomy
 
 
 def parse_fasta_to_dict(fasta_string):
@@ -205,14 +238,24 @@ def parse_fasta_to_dict(fasta_string):
     genome_id = None
     for line in fasta_string.splitlines():
         if line.startswith(">"):
+            # Split the header and rearrange so the NCBI accession is first
+            parts = line.split('|')
+            rearranged_header = f">{parts[2]}|{parts[0][1:]}|{parts[1]}"
+
+            # Append any remaining parts at the end
+            if len(parts) > 3:
+                remaining_parts = '|'.join(parts[3:])
+                rearranged_header = f"{rearranged_header}|{remaining_parts}"
+
             # Extract the genome ID from the header
-            genome_id = line.split("|")[-1][:-1].strip()
+            genome_id = parts[-1][:-1].strip()
+
             if genome_id not in fasta_dict:
                 # Start a new entry with the header
-                fasta_dict[genome_id] = line + "\n"
+                fasta_dict[genome_id] = rearranged_header + "\n"
             else:
                 # Append the header to the existing entry
-                fasta_dict[genome_id] += line + "\n"
+                fasta_dict[genome_id] += rearranged_header + "\n"
         else:
             # Append the sequence line in uppercase
             fasta_dict[genome_id] += line.upper() + "\n"
@@ -231,8 +274,8 @@ def json_to_fasta(json, output_dir):
             fasta_files[genome_id] = []
 
         # Construct FASTA format to be identical to BV-BRC FASTA headers
-        header = (f">accn|{entry['accession']}   {entry['description']}   "
-                  f"[{entry['genome_name']} | {genome_id}]")
+        header = (f">{entry['accession']}   {entry['description']}   "
+                  f"[{entry['genome_name']} | {entry['genome_id']}]")
 
         fasta_files[genome_id].append(f"{header}\n{entry['sequence'].upper()}")
 
@@ -245,7 +288,7 @@ def json_to_fasta(json, output_dir):
             fasta_file.write(fasta_content)
 
 
-def download_data(url, data_type):
+def download_data(url):
     # Get requests response
     response = requests.get(url)
 
@@ -255,7 +298,7 @@ def download_data(url, data_type):
 
     # Error handling if response incorrect
     elif response.status_code == 400:
-        error_handling(response, data_type)
+        error_handling(response=response, data_type=url.split('/')[4])
     else:
         raise ValueError(response.text)
 
