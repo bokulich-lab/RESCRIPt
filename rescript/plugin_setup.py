@@ -869,7 +869,8 @@ GET_NCBI_DATA_PARAMS = {
     'rank_propagation': Bool,
     'logging_level': Str % Choices([
         'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']),
-    'n_jobs': Int % Range(1, None)
+    'n_jobs': Int % Range(1, None),
+    'api_key': Str
 }
 GET_NCBI_DATA_PARAM_DESCRIPTIONS_COMMON = {
     'ranks': 'List of taxonomic ranks for building a taxonomy from the '
@@ -879,7 +880,10 @@ GET_NCBI_DATA_PARAM_DESCRIPTIONS_COMMON = {
     'logging_level': 'Logging level, set to INFO for download progress or '
                         'DEBUG for copious verbosity',
     'n_jobs': 'Number of concurrent download connections. More is faster '
-              'until you run out of bandwidth.'
+              'until you run out of bandwidth.',
+    'api_key': 'NCBI API Key that increases requests/second from 3 to 10. '
+               'See: '
+               'https://support.nlm.nih.gov/knowledgebase/article/KA-05317/.'
 }
 GET_NCBI_DATA_PARAM_DESCRIPTIONS_DNA = {
         'query': 'Query on the NCBI Nucleotide database',

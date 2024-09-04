@@ -73,12 +73,15 @@ _allowed_ranks = OrderedDict([
 def get_ncbi_data(
         query: str = None, accession_ids: Metadata = None,
         ranks: list = None, rank_propagation: bool = True,
-        logging_level: str = None, n_jobs: int = 1
+        logging_level: str = None, n_jobs: int = 1,
+        api_key: str = None
 ) -> (DNAIterator, DataFrame):
     if ranks is None:
         ranks = _default_ranks
     if query is None and accession_ids is None:
         raise ValueError('Query or accession_ids must be supplied')
+    if api_key:
+        _entrez_params['api_key'] = api_key
 
     seqs, taxa = _get_ncbi_data(query, accession_ids, ranks, rank_propagation,
                                 logging_level, n_jobs, 'nuccore')
@@ -93,12 +96,15 @@ def get_ncbi_data(
 def get_ncbi_data_protein(
         query: str = None, accession_ids: Metadata = None,
         ranks: list = None, rank_propagation: bool = True,
-        logging_level: str = None, n_jobs: int = 1
+        logging_level: str = None, n_jobs: int = 1,
+        api_key: str = None
         ) -> (ProteinIterator, DataFrame):
     if ranks is None:
         ranks = _default_ranks
     if query is None and accession_ids is None:
         raise ValueError('Query or accession_ids must be supplied')
+    if api_key:
+        _entrez_params['api_key'] = api_key
 
     seqs, taxa = _get_ncbi_data(query, accession_ids, ranks, rank_propagation,
                                 logging_level, n_jobs, 'protein')
@@ -120,7 +126,8 @@ def _get_ncbi_data(query: str = None, accession_ids: Metadata = None,
 
     if query:
         seqs, taxids = get_data_for_query(
-            query, logging_level, n_jobs, request_lock, _entrez_delay, db)
+            query, logging_level, n_jobs, request_lock,
+            _entrez_delay, db)
 
     if accession_ids:
         accs = accession_ids.get_ids()
@@ -134,11 +141,12 @@ def _get_ncbi_data(query: str = None, accession_ids: Metadata = None,
                 taxids.update(acc_taxids)
         else:
             seqs, taxids = get_data_for_accs(
-                accs, logging_level, n_jobs, request_lock, _entrez_delay, db)
+                accs, logging_level, n_jobs, request_lock,
+                _entrez_delay, db)
 
     taxa, bad_accs = get_taxonomies(taxids, ranks, rank_propagation,
-                                    logging_level, n_jobs, request_lock,
-                                    _entrez_delay)
+                                    logging_level, n_jobs,
+                                    request_lock, _entrez_delay)
     for acc in bad_accs:
         del seqs[acc]
 
@@ -212,6 +220,7 @@ def _epost(params, ids, request_lock, logging_level, entrez_delay=0.334):
             r = requests.post(
                 epost, data=data, params=_entrez_params, timeout=10,
                 stream=True)
+            print('\nRequesting the following epost url: ', r.url)
         finally:
             request_lock.release()
             logger.debug('request lock released')
@@ -238,6 +247,7 @@ def _esearch(params, logging_level, entrez_delay=0.334):
     def request(params):
         time.sleep(entrez_delay)
         r = requests.get(esearch, params=params, timeout=10)
+        print('\nRequesting the following esearch url: ', r.url)
         r.raise_for_status()
         webenv = parse(r.content)['eSearchResult']
         if 'WebEnv' not in webenv:
@@ -263,6 +273,7 @@ def _efetch_5000(params, request_lock, logging_level, entrez_delay=0.334):
         time.sleep(entrez_delay)
         try:
             r = requests.get(efetch, params=params, timeout=10, stream=True)
+            print('\nRequesting the following efetch url: ', r.url)
         finally:
             request_lock.release()
             logger.debug('request lock released')
@@ -353,6 +364,7 @@ def get_data_for_accs(accs, logging_level, n_jobs, request_lock,
     params = dict(
         db=db, rettype='fasta', retmode='xml', **_entrez_params
     )
+
     records = _get_for_ids(params, accs, logging_level, n_jobs, request_lock,
                            True, entrez_delay)
     seqs = {}
@@ -385,6 +397,7 @@ def get_data_for_query(query, logging_level, n_jobs, request_lock,
     params = dict(
         db=db, term=query, usehistory='y', retmax=0, **_entrez_params
     )
+
     params, expected_num_records = _esearch(params, logging_level,
                                             entrez_delay)
     if expected_num_records > 166666:
@@ -419,8 +432,8 @@ def get_data_for_query(query, logging_level, n_jobs, request_lock,
 
 
 def get_taxonomies(
-        taxids, ranks, rank_propagation, logging_level, n_jobs, request_lock,
-        entrez_delay=0.334):
+        taxids, ranks, rank_propagation, logging_level, n_jobs,
+        request_lock, entrez_delay=0.334):
     # download the taxonomies
     params = dict(db='taxonomy', **_entrez_params)
     ids = set(map(str, taxids.values()))
