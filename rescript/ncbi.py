@@ -82,7 +82,7 @@ def get_ncbi_data(
         raise ValueError('Query or accession_ids must be supplied')
     if api_key:
         try:
-            (api_key,) = api_key.get_ids()
+            api_key, = api_key.get_ids()
             _entrez_params['api_key'] = api_key
             global _entrez_delay
             _entrez_delay = 0.1
@@ -111,7 +111,7 @@ def get_ncbi_data_protein(
         raise ValueError('Query or accession_ids must be supplied')
     if api_key:
         try:
-            (api_key,) = api_key.get_ids()
+            api_key, = api_key.get_ids()
             _entrez_params['api_key'] = api_key
             global _entrez_delay
             _entrez_delay = 0.1
