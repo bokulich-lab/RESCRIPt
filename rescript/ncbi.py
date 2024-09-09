@@ -82,6 +82,8 @@ def get_ncbi_data(
         raise ValueError('Query or accession_ids must be supplied')
     if api_key:
         _entrez_params['api_key'] = api_key
+        global _entrez_delay
+        _entrez_delay = 0.1
 
     seqs, taxa = _get_ncbi_data(query, accession_ids, ranks, rank_propagation,
                                 logging_level, n_jobs, 'nuccore')
@@ -105,6 +107,8 @@ def get_ncbi_data_protein(
         raise ValueError('Query or accession_ids must be supplied')
     if api_key:
         _entrez_params['api_key'] = api_key
+        global _entrez_delay
+        _entrez_delay = 0.1
 
     seqs, taxa = _get_ncbi_data(query, accession_ids, ranks, rank_propagation,
                                 logging_level, n_jobs, 'protein')
@@ -221,6 +225,7 @@ def _epost(params, ids, request_lock, logging_level, entrez_delay=0.334):
                 epost, data=data, params=_entrez_params, timeout=10,
                 stream=True)
             print('\nRequesting the following epost url: ', r.url)
+            print('With a delay of ', entrez_delay, ' seconds.')
         finally:
             request_lock.release()
             logger.debug('request lock released')
@@ -248,6 +253,7 @@ def _esearch(params, logging_level, entrez_delay=0.334):
         time.sleep(entrez_delay)
         r = requests.get(esearch, params=params, timeout=10)
         print('\nRequesting the following esearch url: ', r.url)
+        print('With a delay of ', entrez_delay, ' seconds.')
         r.raise_for_status()
         webenv = parse(r.content)['eSearchResult']
         if 'WebEnv' not in webenv:
@@ -274,6 +280,7 @@ def _efetch_5000(params, request_lock, logging_level, entrez_delay=0.334):
         try:
             r = requests.get(efetch, params=params, timeout=10, stream=True)
             print('\nRequesting the following efetch url: ', r.url)
+            print('With a delay of ', entrez_delay, ' seconds.')
         finally:
             request_lock.release()
             logger.debug('request lock released')
