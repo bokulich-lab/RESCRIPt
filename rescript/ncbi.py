@@ -74,16 +74,20 @@ def get_ncbi_data(
         query: str = None, accession_ids: Metadata = None,
         ranks: list = None, rank_propagation: bool = True,
         logging_level: str = None, n_jobs: int = 1,
-        api_key: str = None
+        api_key: Metadata = None
 ) -> (DNAIterator, DataFrame):
     if ranks is None:
         ranks = _default_ranks
     if query is None and accession_ids is None:
         raise ValueError('Query or accession_ids must be supplied')
     if api_key:
-        _entrez_params['api_key'] = api_key
-        global _entrez_delay
-        _entrez_delay = 0.1
+        try:
+            (api_key,) = api_key.get_ids()
+            _entrez_params['api_key'] = api_key
+            global _entrez_delay
+            _entrez_delay = 0.1
+        except ValueError:
+            raise ValueError("API KEY file should contain only one value!")
 
     seqs, taxa = _get_ncbi_data(query, accession_ids, ranks, rank_propagation,
                                 logging_level, n_jobs, 'nuccore')
@@ -99,16 +103,20 @@ def get_ncbi_data_protein(
         query: str = None, accession_ids: Metadata = None,
         ranks: list = None, rank_propagation: bool = True,
         logging_level: str = None, n_jobs: int = 1,
-        api_key: str = None
+        api_key: Metadata = None
         ) -> (ProteinIterator, DataFrame):
     if ranks is None:
         ranks = _default_ranks
     if query is None and accession_ids is None:
         raise ValueError('Query or accession_ids must be supplied')
     if api_key:
-        _entrez_params['api_key'] = api_key
-        global _entrez_delay
-        _entrez_delay = 0.1
+        try:
+            (api_key,) = api_key.get_ids()
+            _entrez_params['api_key'] = api_key
+            global _entrez_delay
+            _entrez_delay = 0.1
+        except ValueError:
+            raise ValueError("API KEY file should contain only one value!")
 
     seqs, taxa = _get_ncbi_data(query, accession_ids, ranks, rank_propagation,
                                 logging_level, n_jobs, 'protein')
