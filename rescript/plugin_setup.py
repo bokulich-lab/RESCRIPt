@@ -13,10 +13,10 @@ from q2_types.metadata import ImmutableMetadata
 from qiime2.core.type import TypeMatch
 from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int,
                            Float, Visualization, Bool, TypeMap, Metadata,
-                           MetadataColumn, Categorical)
+                           MetadataColumn, Categorical, Numeric)
 
-from .bv_brc import fetch_genomes_bv_brc, fetch_metadata_bv_brc, \
-    fetch_genome_features_bv_brc
+from .bv_brc import get_bv_brc_genomes, get_bv_brc_metadata, \
+    get_bv_brc_genome_features, data_fields_bvbrc
 from .subsample import subsample_fasta
 from .trim_alignment import trim_alignment
 from .merge import merge_taxa
@@ -1239,129 +1239,182 @@ plugin.methods.register_function(
 )
 
 
-datatypes_metadata = [
-    "antibiotics",
-    "enzyme_class_ref",
-    "epitope",
-    "epitope_assay",
-    "experiment",
-    "bioset",
-    "bioset_result",
-    "gene_ontology_ref",
-    "genome",
-    "strain",
-    "genome_amr",
-    "feature_sequence",
-    "genome_feature",
-    "genome_sequence",
-    "id_ref",
-    "misc_niaid_sgc",
-    "pathway",
-    "pathway_ref",
-    "ppi",
-    "protein_family_ref",
-    "sequence_feature",
-    "sequence_feature_vt",
-    "sp_gene",
-    "sp_gene_ref",
-    "spike_lineage",
-    "spike_variant",
-    "structured_assertion",
-    "subsystem",
-    "subsystem_ref",
-    "taxonomy",
-    "protein_structure",
-    "protein_feature",
-    "surveillance",
-    "serology"
-]
+bv_brc_rql_query = ('Query in RQL format. To download all data '
+                    'for genome_ids "224308.43" and "2030927.4755", the RQL '
+                    'query looks like this: "in(genome_id,(224308.43,'
+                    '2030927.4755))". While "in" is an RQL operator, '
+                    '"genome_id" is a data field and "224308.43,'
+                    '2030927.4755" are the values. It is important to percent '
+                    'encode values if they contain illegal characters like '
+                    'spaces. The values "Bacillus subtilis" and '
+                    '"Bacteroidales bacterium" have to be provided with '
+                    'percent encoded quotes (%22) and spaces (%20) like '
+                    'this: "in(species,(%22Bacillus%20subtilis%22,'
+                    '%22Bacteroidales%20bacterium%22))". Check '
+                    'https://www.bv-brc.org/api/doc/ for documentation on '
+                    'data types and corresponding data fields.')
+
+bv_brc_ids_metadata = ('A metadata column obtained with the action '
+                       'get-bv-brc-metadata that can be used as a query.')
+bv_brc_ids = ('IDs/values of the corresponding data field. This parameter can '
+              'only be used in conjunction with the "data-field" parameter. '
+              'Retrieves all data associated with these IDs/values in the '
+              'specified data field.')
+bv_brc_data_field = ('Data field of the corrsponding data type. This '
+                     'parameter can only be used in conjunction with the '
+                     '"ids" parameter. Retrieves all data associated with '
+                     'the IDs/values specified in parameter "ids" in this '
+                     'data field.')
+
 
 plugin.methods.register_function(
-    function=fetch_genomes_bv_brc,
+    function=get_bv_brc_genomes,
     inputs={},
     parameters={
+        'ids_metadata': MetadataColumn[Numeric | Categorical],
         'rql_query': Str,
-        'genome_ids': List[Str],
+        'data_field': Str,
+        'ids': Str,
         'ranks': List[Str % Choices(_allowed_ranks)],
+        'rank_propagation': Bool,
     },
     outputs=[('genomes', GenomeData[DNASequence]),
              ('taxonomy', FeatureData[Taxonomy])],
     input_descriptions={},
     parameter_descriptions={
-        'rql_query': 'Query in RQL format. Check '
-                     'https://www.bv-brc.org/api/doc/genome_sequence '
-                     'for documentation.',
-        'genome_ids': 'List of genome IDs from BV-BRC.',
-        'ranks': 'List of taxonomic ranks for building a taxonomy from the '
-                 "NCBI Taxonomy database. [default: '" +
+        'ids_metadata': bv_brc_ids_metadata,
+        'rql_query': bv_brc_rql_query,
+        'data_field': 'Data field of the data type "genome_sequence". This '
+                      'parameter can only be used in conjunction with the '
+                      '"ids" parameter. Retrieves all genomes associated '
+                      'with the IDs/values specified in parameter "ids" in '
+                      'this data field. Check '
+                      'https://www.bv-brc.org/api/doc/genome_sequence for '
+                      'allowed data fields.',
+        'ids': bv_brc_ids,
+        'ranks': 'List of taxonomic ranks for building a taxonomy. '
+                 "[default: '" +
                  "', '".join(_default_ranks) + "']",
+        'rank_propagation': RANK_PROPAGATE_DESCRIPTION,
     },
     output_descriptions={
-        'genomes': 'genomes',
-        'taxonomy': 'Taxonomy data.'
+        'genomes': 'Genome sequences for specified query.',
+        'taxonomy': 'Taxonomy data for all sequences.'
     },
-    name='fetch genomes',
-    description="fetch genomes",
+    name='Get genome sequences from the BV-BRC database.',
+    description="Fetch genome sequences from BV-BRC. BV-BRC (Bacterial and "
+                "Viral Bioinformatics Resource Center) is a database for "
+                "bacterial and viral genomes, annotations, and metadata. "
+                "There are three ways to query data: You can use an RQL "
+                "query to refine your search and get targeted genomes. By "
+                "providing IDs/values and a corresponding data field, "
+                "you can retrieve all genomes associated with those specific "
+                "values in that data field. And as a third option a metadata "
+                "column can be provided, to use metadata obtained with the "
+                "action get-bv-brc-metadata as a new query. Check "
+                "https://www.bv-brc.org/api/doc/ for documentation.",
     citations=[citations['olson2023introducing']]
 )
 
 
 plugin.methods.register_function(
-    function=fetch_metadata_bv_brc,
+    function=get_bv_brc_metadata,
     inputs={},
     parameters={
-        'data_type': Str % Choices(datatypes_metadata),
-        'rql_query': Str
+        'ids_metadata': MetadataColumn[Numeric | Categorical],
+        'data_type': Str % Choices(list(data_fields_bvbrc.keys())),
+        'rql_query': Str,
+        'data_field': Str,
+        'ids': Str,
     },
     outputs=[('metadata', ImmutableMetadata)],
     input_descriptions={},
     parameter_descriptions={
-        'data_type': 'BV-BCR data type. Check https://www.bv-brc.org/api/doc/ '
+        'ids_metadata': bv_brc_ids_metadata,
+        'data_type': 'BV-BCR data type for which metadata should be '
+                     'downloaded. Check https://www.bv-brc.org/api/doc/ '
                      'for documentation.',
-        'rql_query': 'Query in RQL format. Check '
-                     'https://www.bv-brc.org/api/doc/ for documentation.'
+        'rql_query': bv_brc_rql_query,
+        'data_field': 'Data field of the specified "data-type". This '
+                      'parameter can only be used in conjunction with the '
+                      '"ids" parameter. Retrieves metadata associated '
+                      'with the IDs/values specified in parameter "ids" in '
+                      'this data field. Check '
+                      'https://www.bv-brc.org/api/doc/ for allowed data '
+                      'fields in the specified "data-type".',
+        'ids': bv_brc_ids,
     },
     output_descriptions={
-        'metadata': 'metadata'},
+        'metadata': 'BV-BCR metadata of specified data type.'
+    },
     name='Fetch BV-BCR metadata.',
-    description="Fetch BV-BCR metadata for a specific data type with an RQL "
-                "query.",
+    description="Fetch BV-BCR metadata for a specific data type. BV-BRC ("
+                "Bacterial and Viral Bioinformatics Resource Center) is a "
+                "database for bacterial and viral genomes, annotations, "
+                "and metadata. There are three ways to query data: You can "
+                "use an RQL query to refine your search and get targeted "
+                "results. By providing IDs/values and a corresponding data "
+                "field, you can retrieve all metadata associated with those "
+                "specific values in that data field. And as a third option a "
+                "metadata column can be provided, to use the results from "
+                "other data types as a new query. Check "
+                "https://www.bv-brc.org/api/doc/ for documentation.",
     citations=[citations['olson2023introducing']]
 )
 
 
 plugin.methods.register_function(
-    function=fetch_genome_features_bv_brc,
+    function=get_bv_brc_genome_features,
     inputs={},
     parameters={
+        'ids_metadata': MetadataColumn[Numeric | Categorical],
         'rql_query': Str,
+        'data_field': Str,
+        'ids': Str,
         'ranks': List[Str % Choices(_allowed_ranks)],
-        'taxon_ids': List[Str],
-
+        'rank_propagation': Bool,
     },
     outputs=[
         ('genes', GenomeData[Genes]),
         ('proteins', GenomeData[Proteins]),
-        ('taxonomy', FeatureData[Taxonomy])
+        ('taxonomy', FeatureData[Taxonomy]),
+        ('loci', GenomeData[Loci])
     ],
     input_descriptions={},
     parameter_descriptions={
-        'rql_query': 'Query in RQL format. Check '
-                     'https://www.bv-brc.org/api/doc/genome_feature '
-                     'for documentation.',
-        'taxon_ids': 'List of taxon IDs from BV-BRC.',
-        'ranks': 'List of taxonomic ranks for building a taxonomy from the '
-                 "NCBI Taxonomy database. [default: '" +
-                 "', '".join(_default_ranks) + "']",
+        'ids_metadata': bv_brc_ids_metadata,
+        'rql_query': bv_brc_rql_query,
+        'data_field': 'Data field of the data type "genome_feature". This '
+                      'parameter can only be used in conjunction with the '
+                      '"ids" parameter. Retrieves all data associated with '
+                      'the IDs/values specified in parameter "ids" in this '
+                      'data field. Check '
+                      'https://www.bv-brc.org/api/doc/genome_feature for '
+                      'allowed data fields.',
+        'ids': bv_brc_ids,
+        'ranks': 'List of taxonomic ranks for building a taxonomy '
+                 "[default: '" + ', '.join(_default_ranks) + "']",
+        'rank_propagation': RANK_PROPAGATE_DESCRIPTION,
     },
     output_descriptions={
-        'genes': 'genes',
+        'genes': 'Gene',
         'proteins': 'proteins',
-        'taxonomy': 'taxonomy',
+        'taxonomy': 'Taxonomy data for all sequences.',
+        'loci': 'loci',
     },
     name='Fetch genome features from BV-BRC.',
     description='Fetch DNA and protein sequences of genome features from '
-                'BV-BRC.',
+                'BV-BRC. BV-BRC (Bacterial and Viral Bioinformatics Resource '
+                'Center) is a database for bacterial and viral genomes, '
+                'annotations, and metadata. There are three ways to query '
+                'data: You can use an RQL query to refine your search and '
+                'get targeted features. By providing IDs/values and a '
+                'corresponding data field, you can retrieve all features '
+                'associated with those specific values in that data field. '
+                'And as a third option a metadata column can be provided, '
+                'to use metadata obtained with the action '
+                'get-bv-brc-metadata as a new query. Check '
+                'https://www.bv-brc.org/api/doc/ for documentation.',
     citations=[citations['olson2023introducing']]
 )
 
