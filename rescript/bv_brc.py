@@ -11,7 +11,6 @@ import os
 from typing import Union
 from urllib.parse import quote
 
-import numpy as np
 import qiime2
 import pandas as pd
 import requests
@@ -50,10 +49,9 @@ def get_bv_brc_metadata(
     metadata.index = metadata.index.astype(str)
 
     # Replace empty values and values consisting of spaces only with np.nan
-    metadata.replace(to_replace=r'^\s*$', value=np.nan, regex=True,
+    metadata.replace(to_replace=r'^\s*$', value=pd.NA, regex=True,
                      inplace=True)
-    metadata.replace([None], np.nan, inplace=True)
-
+    metadata.replace([None], pd.NA, inplace=True)
     return qiime2.Metadata(metadata)
 
 
