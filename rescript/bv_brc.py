@@ -535,10 +535,12 @@ def parameter_validation(rql_query=None,
         raise ValueError("At least one of the parameters 'rql-query', 'ids' "
                          "or 'ids_metadata' has to be specified.")
 
+    # Extract data_field and ids from metadata
     if metadata is not None:
         data_field = metadata.to_series().name
         ids = metadata.to_series()
 
+    # Check if data_field is allowed for specified data_type
     if (data_field is not None and
             data_field not in data_fields_bvbrc[data_type].keys()):
         raise ValueError(
@@ -546,13 +548,14 @@ def parameter_validation(rql_query=None,
             f"data-type '{data_type}'.\nAllowed data fields are: "
             f"{list(data_fields_bvbrc[data_type].keys())}")
 
-    # Construct the RQL queries
+    # Construct the RQL query
     if ids is not None or metadata is not None:
-        # Join the quoted ids with commas
+        # Join the quoted ids with commas and percent encode the values
         joined_ids = ','.join(quote(f'"{str(id_)}"') for id_ in ids)
 
-        # Final result
-        rql_query = f'in({quote(data_field)},({joined_ids}))'
+        # Final query
+        rql_query = f'in({data_field},({joined_ids}))'
+
     return rql_query
 
 
