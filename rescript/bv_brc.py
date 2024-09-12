@@ -290,7 +290,7 @@ def create_taxonomy_entry(
             taxonomy['genus'] = genus
             taxonomy['species'] = species
 
-    # Apply rank propagation if enabled. Assignes last higher rank to lower
+    # Apply rank propagation if enabled. Assigns last higher rank to lower
     # undefined ranks
     if rank_propagation:
         last_label = None
