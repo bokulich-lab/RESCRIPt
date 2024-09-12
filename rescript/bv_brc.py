@@ -516,12 +516,13 @@ def parameter_validation(rql_query=None,
     # or metadata
     for parameter_1 in ["rql_query", "metadata"]:
         for parameter_2, value in local.items():
-            if parameter_2 != parameter_1:
-                if parameter_2 != "data_type":
-                    if local[parameter_1] is not None and value is not None:
-                        raise ValueError(
-                            f"Parameters '{parameter_1}' and '{parameter_2}' "
-                            "can't be used simultaneously.")
+            if (parameter_2 != parameter_1 and
+                    parameter_2 != "data_type" and
+                    local[parameter_1] is not None and
+                    value is not None):
+                raise ValueError(
+                    f"Parameters '{parameter_1}' and '{parameter_2}' "
+                    "can't be used simultaneously.")
 
     # Error if ids or data_fields is specified without the other
     if (ids and not data_field) or (data_field and not ids):

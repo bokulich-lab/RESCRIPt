@@ -19,7 +19,7 @@ from rescript.bv_brc import get_bv_brc_genomes, get_bv_brc_metadata, \
     get_sequences, get_taxonomy, create_taxonomy
 
 
-class TestIDListHandling(TestPluginBase):
+class TestParameterValidation(TestPluginBase):
     package = 'rescript.tests'
 
     def test_missing_data_type(self):
