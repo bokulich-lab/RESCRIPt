@@ -25,7 +25,7 @@ import json
 
 def get_bv_brc_metadata(
         ids_metadata: Union[qiime2.NumericMetadataColumn,
-        qiime2.CategoricalMetadataColumn] = None,
+                            qiime2.CategoricalMetadataColumn] = None,
         data_type: str = None,
         rql_query: str = None,
         data_field: str = None,
