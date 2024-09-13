@@ -125,7 +125,8 @@ def get_bv_brc_genome_features(
                                      ids=ids,
                                      data_type="genome_feature",
                                      data_field=data_field,
-                                     metadata=ids_metadata)
+                                     metadata=ids_metadata
+                                     )
 
     # Download genome_features data object as JSON
     genome_features = download_data(data_type="genome_feature",
