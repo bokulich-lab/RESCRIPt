@@ -25,7 +25,7 @@ import json
 
 def get_bv_brc_metadata(
         ids_metadata: Union[qiime2.NumericMetadataColumn,
-                            qiime2.CategoricalMetadataColumn] = None,
+        qiime2.CategoricalMetadataColumn] = None,
         data_type: str = None,
         rql_query: str = None,
         data_field: str = None,
@@ -67,27 +67,46 @@ def get_bv_brc_genomes(
     # Parameter validation
     rql_query = parameter_validation(rql_query=rql_query,
                                      ids=ids,
-                                     data_type="genome_sequence",
+                                     data_type="genome",
                                      data_field=data_field,
                                      metadata=ids_metadata
                                      )
 
-    # Get requests response for genome sequences
-    sequences = download_data(data_type="genome_sequence",
-                              query=rql_query,
-                              accept="application/json",
-                              )
+    response_genomes = download_data(data_type="genome",
+                                     query=rql_query,
+                                     accept="application/json",
+                                     select=["genome_id", "taxon_id"]
+                                     )
 
-    # Convert sequences in JSON to FASTA file
-    genomes = create_genome_fasta(genome_sequences=sequences)
+    # Get genome sequences and create FASTA files
+    genomes = get_genome_sequences(response_genomes=response_genomes)
 
     # Get taxonomy for sequences
-    taxonomy = get_taxonomy(response_sequences=sequences,
+    taxonomy = get_taxonomy(response_sequences=response_genomes,
                             ranks=ranks,
                             rank_propagation=rank_propagation,
                             accession_name="accession")
 
     return genomes, taxonomy
+
+
+def get_genome_sequences(response_genomes):
+    # Extract genome ids from response (list of dicts)
+    genome_ids = set([str(entry['genome_id']) for entry in response_genomes])
+
+    # Fetch the genome sequences for all genome ids
+    genome_sequences = download_data(
+        data_type="genome_sequence",
+        query=f"in(genome_id,({','.join(genome_ids)}))",
+        accept="application/json",
+        select=["accession", "description", "genome_name",
+                "genome_id", "sequence"]
+    )
+
+    # Create FASTA files from sequences
+    genomes = create_genome_fasta(genome_sequences=genome_sequences)
+
+    return genomes
 
 
 def get_bv_brc_genome_features(

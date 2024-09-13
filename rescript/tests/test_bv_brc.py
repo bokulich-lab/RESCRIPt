@@ -16,7 +16,7 @@ from rescript.bv_brc import get_bv_brc_genomes, get_bv_brc_metadata, \
     get_bv_brc_genome_features, parameter_validation, \
     error_handling, download_data, create_genome_fasta, \
     create_taxonomy_entry, get_loci, read_tsv_data_with_dtypes, process_loci, \
-    get_sequences, get_taxonomy, create_taxonomy
+    get_sequences, get_taxonomy, create_taxonomy, get_genome_sequences
 
 
 class TestParameterValidation(TestPluginBase):
@@ -343,20 +343,12 @@ class TestGetBvBrcGenomes(TestPluginBase):
     package = 'rescript.tests'
 
     @patch('rescript.bv_brc.get_taxonomy')
-    @patch('rescript.bv_brc.create_genome_fasta')
+    @patch('rescript.bv_brc.get_genome_sequences')
     @patch('rescript.bv_brc.download_data')
     @patch('rescript.bv_brc.parameter_validation')
     def test_get_bv_brc_genomes(self, mock_parameter_validation,
-                                mock_download_data, mock_create_genome_fasta,
+                                mock_download_data, mock_get_genome_sequences,
                                 mock_get_taxonomy):
-        # Mocked return values for the external functions
-        mock_parameter_validation.return_value = "mocked_rql_query"
-        mock_download_data.return_value = [
-            {'id': 'genome1', 'sequence': 'ATGC'},
-            {'id': 'genome2', 'sequence': 'GCTA'}]
-        mock_create_genome_fasta.return_value = MagicMock(
-            name='GenomeSequencesDirectoryFormat')
-        mock_get_taxonomy.return_value = MagicMock(name='TSVTaxonomyFormat')
 
         # Call the function
         get_bv_brc_genomes(
@@ -764,3 +756,29 @@ class TestGetSequences(TestPluginBase):
 
         # Check if the correct sequences were written to the proteins file
         mock_open().write.assert_any_call('>feature1\nMKV\n')
+
+
+class TestGetGenomeSequences(TestPluginBase):
+    package = 'rescript.tests'
+
+    @patch('rescript.bv_brc.download_data')
+    @patch('rescript.bv_brc.create_genome_fasta')
+    def test_get_genome_sequences(self, mock_create_genome_fasta,
+                                  mock_download_data):
+        # Sample response_genomes to be used as input
+        response_genomes = [
+            {'genome_id': '12345'},
+            {'genome_id': '67890'}
+        ]
+
+        # Call the function
+        get_genome_sequences(response_genomes)
+
+        # Assert that download_data was called with the correct arguments
+        mock_download_data.assert_called_once_with(
+            data_type="genome_sequence",
+            query=unittest.mock.ANY,
+            accept="application/json",
+            select=["accession", "description", "genome_name", "genome_id",
+                    "sequence"]
+        )
