@@ -33,6 +33,7 @@ test:
   requires:
     - pytest
     - q2-types >={{ q2_types }}
+    - q2-vizard >={{ q2_vizard }}
     - q2-longitudinal >={{ q2_longitudinal }}
     - q2-feature-classifier >={{ q2_feature_classifier }}
     - qiime2 >={{ qiime2 }}
