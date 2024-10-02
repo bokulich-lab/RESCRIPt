@@ -48,13 +48,13 @@ def evaluate_taxonomy(ctx,
     results.index = pd.Index(
         [str(i) for i in range(1, len(results.index) + 1)], name='id')
     results = q2.Metadata(results)
-    raise ValueError(results)
+
     lineplot = ctx.get_action('vizard', 'lineplot')
     plots, = lineplot(metadata=results,
                       x_measure='Level',
-                      y_measure='Metric Column',
+                      y_measure='Taxonomic Entropy',
                       group_by='Dataset',
-                      title='Taxonomic Entropy')
+                      title='RESCRIPt Evaluate Taxonomy')
     return plots
 
 
