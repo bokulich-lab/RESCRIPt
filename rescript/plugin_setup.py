@@ -82,7 +82,7 @@ UNITE_LICENSE_NOTE = (
     'CC BY-SA 4.0. To learn more, please visit https://unite.ut.ee/cite.php '
     'and https://creativecommons.org/licenses/by-sa/4.0/.')
 
-VOLATILITY_PLOT_XAXIS_INTERPRETATION = (
+LINEPLOT_XAXIS_INTERPRETATION = (
     'The x-axis in these plots represents the taxonomic '
     'levels present in the input taxonomies so are labeled numerically '
     'instead of by rank, but typically for 7-level taxonomies these will '
@@ -225,7 +225,7 @@ plugin.pipelines.register_function(
         'sets of true taxonomic labels to the predicted taxonomies for the '
         'same set(s) of features. Output an interactive line plot of '
         'classification accuracy for each pair of expected/observed '
-        'taxonomies. ' + VOLATILITY_PLOT_XAXIS_INTERPRETATION),
+        'taxonomies. ' + LINEPLOT_XAXIS_INTERPRETATION),
     citations=[citations['bokulich2018optimizing'],
                citations['bokulich2017q2']]
 )
@@ -395,7 +395,7 @@ plugin.pipelines.register_function(
         'unique labels, taxonomic entropy, and the number of features that '
         'are (un)classified at each taxonomic level. This action is useful '
         'for both reference taxonomies and classification results. ' +
-        VOLATILITY_PLOT_XAXIS_INTERPRETATION),
+        LINEPLOT_XAXIS_INTERPRETATION),
     citations=[citations['bokulich2017q2']]
 )
 

@@ -166,7 +166,7 @@ def evaluate_classifications(ctx,
                              expected_taxonomies,
                              observed_taxonomies,
                              labels=None):
-    volatility = ctx.get_action('longitudinal', 'volatility')
+    lineplot = ctx.get_action('vizard', 'lineplot')
     # Validate inputs.
     if len(expected_taxonomies) != len(observed_taxonomies):
         raise ValueError('Expected and Observed Taxonomies do not match. '
@@ -201,10 +201,11 @@ def evaluate_classifications(ctx,
     # convert index to strings
     precision_recall.index = pd.Index(
         [str(i) for i in range(1, len(precision_recall.index) + 1)], name='id')
-    plots, = volatility(metadata=q2.Metadata(precision_recall),
-                        state_column='Level',
-                        default_group_column='Dataset',
-                        default_metric='F-Measure')
+    plots, = lineplot(metadata=q2.Metadata(precision_recall),
+                      x_measure='Level',
+                      y_measure='F-Measure',
+                      group_by='Dataset',
+                      title='RESCRIPt Evaluate Classifications')
     return plots
 
 
