@@ -6,8 +6,6 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-import os
-
 from qiime2.plugin.testing import TestPluginBase
 from qiime2.plugins import rescript
 import qiime2
@@ -15,6 +13,7 @@ import pandas as pd
 import pandas.testing as pdt
 
 from rescript import cross_validate
+from ..cross_validate import _evaluate_classifications_stats
 
 
 import_data = qiime2.Artifact.import_data
@@ -92,22 +91,19 @@ class TestPipelines(TestPluginBase):
         pdt.assert_series_equal(
             obs.view(pd.Series).sort_index(), exp_obs, check_names=False)
 
-    def test_evaluate_classifications(self):
+    def test_evaluate_classifications_stats(self):
         # simulate predicted classifications at genus level
         taxa = self.taxa_series.copy().apply(
             lambda x: ';'.join(x.split(';')[:6]))
         taxa = qiime2.Artifact.import_data('FeatureData[Taxonomy]', taxa)
         # first round we just make sure this runs
-        rescript.actions.evaluate_classifications([self.taxa], [taxa])
+        _evaluate_classifications_stats([self.taxa], [taxa])
         # now the same but input multiple times to test lists of inputs
-        vol, = rescript.actions.evaluate_classifications(
-            [self.taxa, taxa], [taxa, taxa])
+        obs = _evaluate_classifications_stats([self.taxa, taxa], [taxa, taxa])
         # now inspect and validate the contents
         # we inspect the second eval results to compare perfect match vs.
         # simulated genus-level classification (when species are expected)
-        vol.export_data(self.temp_dir.name)
-        html_path = os.path.join(self.temp_dir.name, 'data.tsv')
-        vol = qiime2.Metadata.load(html_path).to_dataframe()
+        obs_df = obs.to_dataframe()
         exp = pd.DataFrame({
             'Level': {
                 '1': 1.0, '2': 2.0, '3': 3.0, '4': 4.0, '5': 5.0, '6': 6.0,
@@ -128,7 +124,7 @@ class TestPipelines(TestPluginBase):
             'Dataset': {'1': '1', '2': '1', '3': '1', '4': '1', '5': '1',
                         '6': '1', '7': '1', '8': '2', '9': '2', '10': '2',
                         '11': '2', '12': '2', '13': '2'}}).sort_index()
-        pdt.assert_frame_equal(vol.sort_index(), exp, check_names=False)
+        pdt.assert_frame_equal(obs_df.sort_index(), exp, check_names=False)
 
     def test_evaluate_classifications_mismatch_input_count(self):
         with self.assertRaisesRegex(
