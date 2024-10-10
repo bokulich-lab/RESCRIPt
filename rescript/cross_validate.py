@@ -162,11 +162,9 @@ def _split_fasta(sequences, train_ids, test_ids):
     return train_seqs, test_seqs
 
 
-def evaluate_classifications(ctx,
-                             expected_taxonomies,
-                             observed_taxonomies,
-                             labels=None):
-    volatility = ctx.get_action('longitudinal', 'volatility')
+def _evaluate_classifications_stats(expected_taxonomies,
+                                    observed_taxonomies,
+                                    labels=None):
     # Validate inputs.
     if len(expected_taxonomies) != len(observed_taxonomies):
         raise ValueError('Expected and Observed Taxonomies do not match. '
@@ -201,10 +199,26 @@ def evaluate_classifications(ctx,
     # convert index to strings
     precision_recall.index = pd.Index(
         [str(i) for i in range(1, len(precision_recall.index) + 1)], name='id')
-    plots, = volatility(metadata=q2.Metadata(precision_recall),
-                        state_column='Level',
-                        default_group_column='Dataset',
-                        default_metric='F-Measure')
+
+    return q2.Metadata(precision_recall)
+
+
+def evaluate_classifications(ctx,
+                             expected_taxonomies,
+                             observed_taxonomies,
+                             labels=None):
+    lineplot = ctx.get_action('vizard', 'lineplot')
+
+    md = _evaluate_classifications_stats(
+        expected_taxonomies=expected_taxonomies,
+        observed_taxonomies=observed_taxonomies,
+        labels=labels)
+
+    plots, = lineplot(metadata=md,
+                      x_measure='Level',
+                      y_measure='F-Measure',
+                      group_by='Dataset',
+                      title='RESCRIPt Evaluate Classifications')
     return plots
 
 
