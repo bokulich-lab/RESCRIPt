@@ -237,6 +237,7 @@ class TestNCBI(TestPluginBase):
                     'k__Fungi; p__Basidiomycota; c__Agaricomycetes; '
                     'o__Boletales; f__Boletaceae; g__Boletus; s__edulis'
                 )
+            raise ValueError(log.output)
             self.assertTrue('Retrying' in '\n'.join(log.output[:3]))
 
     def test_get_ncbi_dirty_tricks(self):
