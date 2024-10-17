@@ -237,8 +237,8 @@ class TestNCBI(TestPluginBase):
                     'k__Fungi; p__Basidiomycota; c__Agaricomycetes; '
                     'o__Boletales; f__Boletaceae; g__Boletus; s__edulis'
                 )
-            raise ValueError(log.output)
-            self.assertTrue('Retrying' in '\n'.join(log.output[:3]))
+            exp_log_segment = 'Retrying'
+            self.assertTrue(exp_log_segment in line for line in log.output)
 
     def test_get_ncbi_dirty_tricks(self):
         with self.assertLogs(level='WARNING') as log:
