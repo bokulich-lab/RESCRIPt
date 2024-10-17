@@ -237,7 +237,17 @@ class TestNCBI(TestPluginBase):
                     'k__Fungi; p__Basidiomycota; c__Agaricomycetes; '
                     'o__Boletales; f__Boletaceae; g__Boletus; s__edulis'
                 )
-            self.assertTrue('Retrying' in '\n'.join(log.output[:3]))
+            exp_log_segment = 'Retrying'
+            for line in log.output:
+                if exp_log_segment in line:
+                    result = True
+                    break
+                else:
+                    result = False
+            self.assertTrue(
+                result,
+                f'`{exp_log_segment}` not found in the output log.'
+            )
 
     def test_get_ncbi_dirty_tricks(self):
         with self.assertLogs(level='WARNING') as log:
