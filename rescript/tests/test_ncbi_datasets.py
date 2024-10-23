@@ -198,7 +198,9 @@ class TestNCBIDatasets(TestPluginBase):
             pd.Series(
                 {'GCF_123': ['AC_12.1'], 'GCF_234': ['AC_23.2']},
                 name="assembly_id"
-            ).explode()
+            ).explode(),
+            _default_ranks,
+            True
         )
 
         exp_taxa = pd.DataFrame(
@@ -221,7 +223,11 @@ class TestNCBIDatasets(TestPluginBase):
             Exception, r'Invalid taxonomy.*\: ACC1, ACC2. Please check.*'
         ):
             _fetch_taxonomy(
-                self.fake_assembly_ids, self.fake_tax_ids, pd.Series()
+                self.fake_assembly_ids,
+                self.fake_tax_ids,
+                pd.Series(),
+                _default_ranks,
+                True
             )
 
     # just test that everything works together

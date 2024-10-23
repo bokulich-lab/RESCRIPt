@@ -1190,7 +1190,9 @@ plugin.methods.register_function(
         'assembly_levels': List[Str % Choices(
             ['complete_genome', 'chromosome', 'scaffold', 'contig'])],
         'tax_exact_match': Bool,
-        'page_size': Int % Range(20, 1000, inclusive_end=True)
+        'page_size': Int % Range(20, 1000, inclusive_end=True),
+        'ranks': List[Str % Choices(_allowed_ranks)],
+        'rank_propagation': Bool,
     },
     outputs=[
         ('genome_assemblies', FeatureData[Sequence]),
@@ -1217,6 +1219,10 @@ plugin.methods.register_function(
                      'request. If number of genomes to fetch is higher than '
                      'this number, requests will be repeated until all '
                      'assemblies are fetched.',
+        'ranks': 'List of taxonomic ranks for building a taxonomy from the '
+                 'NCBI Taxonomy database.',
+        'rank_propagation': RANK_PROPAGATE_DESCRIPTION,
+
     },
     output_descriptions={
         'genome_assemblies': 'Nucleotide sequences of requested genomes.',
