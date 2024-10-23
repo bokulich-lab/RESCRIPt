@@ -156,12 +156,14 @@ def _fetch_and_extract_dataset(
 def _fetch_taxonomy(
         all_acc_ids: list,
         all_tax_ids: list,
-        accession_to_assembly: pd.Series
+        accession_to_assembly: pd.Series,
+        ranks: list,
+        rank_propagation: bool
 ):
     manager = Manager()
     taxa, bad_accs = get_taxonomies(
         taxids={k: v for k, v in zip(all_acc_ids, all_tax_ids)},
-        ranks=_default_ranks, rank_propagation=True,
+        ranks=ranks, rank_propagation=rank_propagation,
         logging_level='INFO', n_jobs=2, request_lock=manager.Lock()
     )
     # technically, this should never happen as the taxa accession
@@ -213,6 +215,8 @@ def get_ncbi_genomes(
         only_genomic: bool = False,
         tax_exact_match: bool = False,
         page_size: int = 20,
+        ranks: list = _default_ranks,
+        rank_propagation: bool = True,
 ) -> (DNAFASTAFormat, LociDirectoryFormat,
       ProteinsDirectoryFormat, pd.DataFrame):
     # we use a deepcopy of assembly_levels because the new versions of
@@ -239,7 +243,9 @@ def get_ncbi_genomes(
         taxa = _fetch_taxonomy(
             assembly_to_taxon.keys(),
             assembly_to_taxon.values(),
-            accession_map.explode()
+            accession_map.explode(),
+            ranks,
+            rank_propagation
         )
 
     return genomes, loci, proteins, taxa
