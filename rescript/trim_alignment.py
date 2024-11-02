@@ -221,10 +221,17 @@ def _trim_alignment(expand_alignment_action,
             'FeatureData[Sequence]', primers_fasta)
 
         # expand the existing alignment by addition of primers
+        # Use 'keeplength' to make sure original alignment length
+        # does not change. Otherwise there is potential for the incorrect
+        # region to be extracted from the alignment. This is important
+        # to make sure alignment positions can easily be referenced
+        # to the original alignment. See the 'q2-alignment' plugin,
+        # specifically the 'mafft-add' test cases for examples.
         alignment_with_primers, = expand_alignment_action(
             alignment=aligned_sequences,
             sequences=primers,
             addfragments=True,
+            keeplength=True,
             n_threads=n_threads)
 
         # find trim positions based on primer positions within alignment
