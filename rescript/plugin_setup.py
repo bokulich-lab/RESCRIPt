@@ -1130,6 +1130,7 @@ plugin.methods.register_function(
                                                  inclusive_start=False,
                                                  inclusive_end=True),
                 'min_seq_len': Int % Range(1, None),
+                'max_seq_len': Int % Range(1, None),
                 },
     outputs=[('extracted_sequence_segments', FeatureData[Sequence]),
              ('unmatched_sequences', FeatureData[Sequence])],
@@ -1151,10 +1152,14 @@ plugin.methods.register_function(
                                    '\'reference-segment-sequences\' must have '
                                    'in order to extract matching segments '
                                    'from \'input-sequences\'.',
-                'min_seq_len': 'Minimum length of sequence allowed '
-                               'for searching. Any sequence less than '
+                'min_seq_len': 'Minimum length of reference sequence segment '
+                               'allowed for searching. Any sequence less than '
                                'this will be discarded. If not set, default '
-                               'program settings will be used.'},
+                               'program settings will be used.',
+                'max_seq_len': 'Maximum length of reference sequence segment '
+                               'allowed for searching. Any sequence greater '
+                               'than this will be discarded. If not set, '
+                               'default program settings will be used.'},
     output_descriptions={
         'extracted_sequence_segments': 'Extracted sequence segments '
                                        'from \'input-sequences\' '
