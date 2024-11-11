@@ -14,14 +14,13 @@ from q2_types.feature_data import (
     AlignedDNAFASTAFormat,
     DNAIterator,)
 
-from qiime2.plugins import alignment
+from qiime2.plugins.alignment.methods import mafft_add
 
 from rescript.trim_alignment import (
     _prepare_positions, _process_primers, _locate_primer_positions,
     _trim_all_sequences, _trim_alignment)
 
 import_data = qiime2.Artifact.import_data
-expand_aln = alignment.actions.mafft_add
 
 
 class FakeCtx:
@@ -275,7 +274,7 @@ class TestExtractAlignmentRegion(TestPluginBase):
     # tests against expected alignment length
     def test_trim_alignment_keeplen_false(self):
         obs_v4_nokeep_aln = _trim_alignment(
-            expand_aln,
+            mafft_add,
             self.aligned_silva_seqs_art,
             self.v4_primers_dict["forward"],
             self.v4_primers_dict["reverse"],
@@ -292,7 +291,7 @@ class TestExtractAlignmentRegion(TestPluginBase):
     # tests against expected alignment length
     def test_trim_alignment_keeplen_true(self):
         obs_v4_keep_aln = _trim_alignment(
-            expand_aln,
+            mafft_add,
             self.aligned_silva_seqs_art,
             self.v4_primers_dict["forward"],
             self.v4_primers_dict["reverse"],
