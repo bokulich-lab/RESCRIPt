@@ -14,11 +14,14 @@ from q2_types.feature_data import (
     AlignedDNAFASTAFormat,
     DNAIterator,)
 
+from qiime2.plugins import alignment
+
 from rescript.trim_alignment import (
     _prepare_positions, _process_primers, _locate_primer_positions,
     _trim_all_sequences, _trim_alignment)
 
 import_data = qiime2.Artifact.import_data
+expand_aln = alignment.actions.mafft_add
 
 
 class FakeCtx:
@@ -33,12 +36,6 @@ class FakeCtx:
 
     def aln3(self, *args, **kwargs):
         return [self.alignments[3]]
-
-    def aln4(self, *args, **kwargs):
-        return [self.alignments[4]]
-
-    def aln5(self, *args, **kwargs):
-        return [self.alignments[5]]
 
     def get_action(self, which_alignment):
         return getattr(self, f"aln{which_alignment}")
@@ -64,16 +61,9 @@ class TestExtractAlignmentRegion(TestPluginBase):
             'small-silva-full-len-alignment.fasta')
         self.silva_alignment = AlignedDNAFASTAFormat(
             silva_alignment_fp, mode='r')
-
-        silva_alignment_v4_trim_keeplen_w_primers_fp = self.get_data_path(
-            'small-silva-v4-trim-keeplength-with-primers.fasta')
-        self.silva_v4_trim_keeplen_w_primers = AlignedDNAFASTAFormat(
-            silva_alignment_v4_trim_keeplen_w_primers_fp, mode='r')
-
-        silva_alignment_v4_trim_no_keeplen_w_primers_fp = self.get_data_path(
-            'small-silva-v4-trim-no-keeplength-with-primers.fasta')
-        self.silva_v4_trim_no_keeplen_w_primers = AlignedDNAFASTAFormat(
-            silva_alignment_v4_trim_no_keeplen_w_primers_fp, mode='r')
+        self.aligned_silva_seqs_art = qiime2.Artifact.import_data(
+                                       'FeatureData[AlignedSequence]',
+                                       self.silva_alignment)
 
         silva_alignment_v4_trim_keeplen_wo_primers_fp = self.get_data_path(
             'small-silva-v4-trim-keeplength.fasta')
@@ -115,9 +105,7 @@ class TestExtractAlignmentRegion(TestPluginBase):
 
         self.fake_ctx = FakeCtx({1: self.aligned_with_primers_fasta,
                                  2: self.aligned_with_fwd_fasta,
-                                 3: self.aligned_with_rev_fasta,
-                                 4: self.silva_v4_trim_no_keeplen_w_primers,
-                                 5: self.silva_v4_trim_keeplen_w_primers})
+                                 3: self.aligned_with_rev_fasta})
 
         self.exp_seqs_both_primers = {
             's1': ('GGGAATCTTCCACAATGGGTGCAAACCTGATGGAGCAATGCCGCGTGAG'
@@ -287,8 +275,8 @@ class TestExtractAlignmentRegion(TestPluginBase):
     # tests against expected alignment length
     def test_trim_alignment_keeplen_false(self):
         obs_v4_nokeep_aln = _trim_alignment(
-            self.fake_ctx.get_action(4),
-            self.aligned_silva_seqs,
+            expand_aln,
+            self.aligned_silva_seqs_art,
             self.v4_primers_dict["forward"],
             self.v4_primers_dict["reverse"],
             keeplength=False)
@@ -304,8 +292,8 @@ class TestExtractAlignmentRegion(TestPluginBase):
     # tests against expected alignment length
     def test_trim_alignment_keeplen_true(self):
         obs_v4_keep_aln = _trim_alignment(
-            self.fake_ctx.get_action(5),
-            self.aligned_silva_seqs,
+            expand_aln,
+            self.aligned_silva_seqs_art,
             self.v4_primers_dict["forward"],
             self.v4_primers_dict["reverse"],
             keeplength=True)
