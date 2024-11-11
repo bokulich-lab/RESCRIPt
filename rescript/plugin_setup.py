@@ -1071,7 +1071,7 @@ plugin.pipelines.register_function(
         'primer_rev': 'Reverse primer used to find the end position '
                       'for alignment trimming. Provide as 5\'-3\'.',
         'position_start': 'Position within the alignment where the trimming '
-                          'will begin. If not provided, alignment will not'
+                          'will begin. If not provided, alignment will not '
                           'be trimmed at the beginning. If forward primer is'
                           'specified this parameter will be ignored.',
         'position_end': 'Position within the alignment where the trimming '

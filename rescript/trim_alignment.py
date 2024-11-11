@@ -191,7 +191,8 @@ def _trim_alignment(expand_alignment_action,
                     primer_rev=None,
                     position_start=None,
                     position_end=None,
-                    n_threads=1) -> AlignedDNAFASTAFormat:
+                    n_threads=1,
+                    keeplength=True) -> AlignedDNAFASTAFormat:
     """
     Trim alignment based on primer alignment or explicitly specified
     positions. When at least one primer sequence is given, primer-based
@@ -231,8 +232,8 @@ def _trim_alignment(expand_alignment_action,
             alignment=aligned_sequences,
             sequences=primers,
             addfragments=True,
-            keeplength=True,
-            n_threads=n_threads)
+            n_threads=n_threads,
+            keeplength=keeplength)
 
         # find trim positions based on primer positions within alignment
         trim_positions = _locate_primer_positions(alignment_with_primers)
