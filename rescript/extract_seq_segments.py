@@ -15,7 +15,8 @@ def extract_seq_segments(input_sequences: DNAFASTAFormat,
                          reference_segment_sequences: DNAFASTAFormat,
                          perc_identity: float = 0.7,
                          target_coverage: float = 0.9,
-                         min_seq_len: int = None,
+                         min_seq_len: int = 32,
+                         max_seq_len: int = 50000,
                          threads: int = 1
                          ) -> (DNAFASTAFormat, DNAFASTAFormat):
     # Note: the `--db` is actually comprised of the short amplicon
@@ -43,11 +44,11 @@ def extract_seq_segments(input_sequences: DNAFASTAFormat,
                '--id', str(perc_identity),
                '--target_cov', str(target_coverage),
                '--strand', 'plus',
+               '--minseqlength', str(min_seq_len),
+               '--maxseqlength', str(max_seq_len),
                '--threads', str(threads),
                '--qmask', 'none',
                '--qsegout', extr_f.name,
                '--notmatched', no_match_f.name]
-        if min_seq_len:
-            cmd += ['--minseqlength', '%i' % min_seq_len]
         run_command(cmd)
     return (extr_seq_segs, no_matches)
