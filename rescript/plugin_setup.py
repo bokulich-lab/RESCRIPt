@@ -1154,12 +1154,10 @@ plugin.methods.register_function(
                                    'from \'input-sequences\'.',
                 'min_seq_len': 'Minimum length of reference sequence segment '
                                'allowed for searching. Any sequence less than '
-                               'this will be discarded. If not set, default '
-                               'program settings will be used.',
+                               'this will be discarded.',
                 'max_seq_len': 'Maximum length of reference sequence segment '
                                'allowed for searching. Any sequence greater '
-                               'than this will be discarded. If not set, '
-                               'default program settings will be used.'},
+                               'than this will be discarded.'},
     output_descriptions={
         'extracted_sequence_segments': 'Extracted sequence segments '
                                        'from \'input-sequences\' '
