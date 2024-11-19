@@ -50,9 +50,5 @@ def extract_seq_segments(input_sequences: DNAFASTAFormat,
                '--qmask', 'none',
                '--qsegout', extr_f.name,
                '--notmatched', no_match_f.name]
-        # if min_seq_len:
-        #     cmd += ['--minseqlength', '%i' % min_seq_len]
-        # if max_seq_len:
-        #     cmd += ['--maxseqlength', '%i' % max_seq_len]
         run_command(cmd)
     return (extr_seq_segs, no_matches)
