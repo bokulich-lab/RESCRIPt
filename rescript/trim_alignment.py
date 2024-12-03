@@ -191,7 +191,8 @@ def _trim_alignment(expand_alignment_action,
                     primer_rev=None,
                     position_start=None,
                     position_end=None,
-                    n_threads=1) -> AlignedDNAFASTAFormat:
+                    n_threads=1,
+                    keeplength=True) -> AlignedDNAFASTAFormat:
     """
     Trim alignment based on primer alignment or explicitly specified
     positions. When at least one primer sequence is given, primer-based
@@ -221,11 +222,18 @@ def _trim_alignment(expand_alignment_action,
             'FeatureData[Sequence]', primers_fasta)
 
         # expand the existing alignment by addition of primers
+        # Use 'keeplength' to make sure original alignment length
+        # does not change. Otherwise there is potential for the incorrect
+        # region to be extracted from the alignment. This is important
+        # to make sure alignment positions can easily be referenced
+        # to the original alignment. See the 'q2-alignment' plugin,
+        # specifically the 'mafft-add' test cases for examples.
         alignment_with_primers, = expand_alignment_action(
             alignment=aligned_sequences,
             sequences=primers,
             addfragments=True,
-            n_threads=n_threads)
+            n_threads=n_threads,
+            keeplength=keeplength)
 
         # find trim positions based on primer positions within alignment
         trim_positions = _locate_primer_positions(alignment_with_primers)

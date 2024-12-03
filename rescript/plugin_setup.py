@@ -1071,7 +1071,7 @@ plugin.pipelines.register_function(
         'primer_rev': 'Reverse primer used to find the end position '
                       'for alignment trimming. Provide as 5\'-3\'.',
         'position_start': 'Position within the alignment where the trimming '
-                          'will begin. If not provided, alignment will not'
+                          'will begin. If not provided, alignment will not '
                           'be trimmed at the beginning. If forward primer is'
                           'specified this parameter will be ignored.',
         'position_end': 'Position within the alignment where the trimming '
@@ -1093,7 +1093,12 @@ plugin.pipelines.register_function(
         "alignment will be generated to locate primer positions. "
         "Subsequently, start (5'-most) and end (3'-most) position from fwd "
         "and rev primer located within the new alignment is identified and "
-        "used for slicing the original alignment."),
+        "used for slicing the original alignment. That is, the primer region "
+        "will be included in the new alignment output. WARNING: finding "
+        "alignment positions via primer search can be inefficient for very "
+        "large alignments and is only recomended for small alignments. "
+        "For large alignments providing specific alignment positions is "
+        "ideal."),
 )
 
 T = TypeMatch([AlignedSequence, Sequence])

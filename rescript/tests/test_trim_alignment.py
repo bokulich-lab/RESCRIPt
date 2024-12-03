@@ -8,10 +8,13 @@
 
 
 import qiime2
+import skbio
 from qiime2.plugin.testing import TestPluginBase
 from q2_types.feature_data import (
     AlignedDNAFASTAFormat,
     DNAIterator,)
+
+from qiime2.plugins.alignment.methods import mafft_add
 
 from rescript.trim_alignment import (
     _prepare_positions, _process_primers, _locate_primer_positions,
@@ -43,22 +46,52 @@ class TestExtractAlignmentRegion(TestPluginBase):
     def setUp(self):
         super().setUp()
 
-        aligned_seqs_fp = self.get_data_path('trim-test-alignment.fasta')
-        aligned_with_primers_fp = self.get_data_path(
-            'trim-test-alignment-with-primers.fasta')
+        aligned_silva_seqs_fp = self.get_data_path(
+            'small-silva-full-len-alignment.fasta')
+        self.aligned_silva_seqs = AlignedDNAFASTAFormat(
+             aligned_silva_seqs_fp, mode='r')
 
+        self.v4_primers_dict = {
+            "forward": "GTGYCAGCMGCCGCGGTAA",
+            "reverse": "GGACTACNVGGGTWTCTAAT"
+        }
+
+        silva_alignment_fp = self.get_data_path(
+            'small-silva-full-len-alignment.fasta')
+        self.silva_alignment = AlignedDNAFASTAFormat(
+            silva_alignment_fp, mode='r')
+        self.aligned_silva_seqs_art = qiime2.Artifact.import_data(
+                                       'FeatureData[AlignedSequence]',
+                                       self.silva_alignment)
+
+        silva_alignment_v4_trim_keeplen_wo_primers_fp = self.get_data_path(
+            'small-silva-v4-trim-keeplength.fasta')
+        self.silva_v4_trim_keeplen = AlignedDNAFASTAFormat(
+            silva_alignment_v4_trim_keeplen_wo_primers_fp, mode='r')
+
+        silva_alignment_v4_trim_no_keeplen_wo_primers_fp = self.get_data_path(
+            'small-silva-v4-trim-no-keeplength.fasta')
+        self.silva_v4_trim_no_keeplen = AlignedDNAFASTAFormat(
+            silva_alignment_v4_trim_no_keeplen_wo_primers_fp, mode='r')
+
+        aligned_seqs_fp = self.get_data_path('trim-test-alignment.fasta')
         self.aligned_seqs = qiime2.Artifact.import_data(
             'FeatureData[AlignedSequence]', aligned_seqs_fp)
         self.aligned_seqs_fasta = AlignedDNAFASTAFormat(
             aligned_seqs_fp, mode='r')
+
         self.primers_dict = {
             "forward": "GGGAATCTTCCACAATGG",
             "reverse": "GTGTTCTTCTCTAACAACAG"
         }
+
+        aligned_with_primers_fp = self.get_data_path(
+            'trim-test-alignment-with-primers.fasta')
         self.aligned_with_primers = qiime2.Artifact.import_data(
             'FeatureData[AlignedSequence]', aligned_with_primers_fp)
         self.aligned_with_primers_fasta = AlignedDNAFASTAFormat(
             aligned_with_primers_fp, mode='r')
+
         self.aligned_mess_fasta = AlignedDNAFASTAFormat(
             self.get_data_path(
                 'trim-test-alignment-with-primers-mess.fasta'), mode='r')
@@ -237,16 +270,39 @@ class TestExtractAlignmentRegion(TestPluginBase):
                     for seq in obs.view(DNAIterator)}
         self.assertDictEqual(obs_seqs, self.exp_seqs_only_fwd)
 
-    # test trimming when both primers are given
-    def test_trim_alignment(self):
-        obs = _trim_alignment(
-            self.fake_ctx.get_action(1),
-            self.aligned_seqs_fasta,
-            self.primers_dict["forward"],
-            self.primers_dict["reverse"])
-        obs_seqs = {seq.metadata['id']: str(seq)
-                    for seq in obs.view(DNAIterator)}
-        self.assertDictEqual(obs_seqs, self.exp_seqs_both_primers)
+    # test trimming when both primers are given and keeplength = False
+    # tests against expected alignment length
+    def test_trim_alignment_keeplen_false(self):
+        obs_v4_nokeep_aln = _trim_alignment(
+            mafft_add,
+            self.aligned_silva_seqs_art,
+            self.v4_primers_dict["forward"],
+            self.v4_primers_dict["reverse"],
+            keeplength=False)
+
+        obs_aln = skbio.io.read(str(obs_v4_nokeep_aln), into=skbio.TabularMSA,
+                                constructor=skbio.DNA)
+        exp_aln = skbio.io.read(str(self.silva_v4_trim_no_keeplen),
+                                into=skbio.TabularMSA,
+                                constructor=skbio.DNA)
+        self.assertEqual(obs_aln, exp_aln)
+
+    # test trimming when both primers are given and keeplength = True
+    # tests against expected alignment length
+    def test_trim_alignment_keeplen_true(self):
+        obs_v4_keep_aln = _trim_alignment(
+            mafft_add,
+            self.aligned_silva_seqs_art,
+            self.v4_primers_dict["forward"],
+            self.v4_primers_dict["reverse"],
+            keeplength=True)
+
+        obs_aln = skbio.io.read(str(obs_v4_keep_aln), into=skbio.TabularMSA,
+                                constructor=skbio.DNA)
+        exp_aln = skbio.io.read(str(self.silva_v4_trim_keeplen),
+                                into=skbio.TabularMSA,
+                                constructor=skbio.DNA)
+        self.assertEqual(obs_aln, exp_aln)
 
     # test trimming when only fwd primer is given
     def test_trim_alignment_only_fwd(self):
