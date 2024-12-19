@@ -71,3 +71,7 @@ target/
 *~
 
 .DS_store
+
+# Version file from versioningit
+_version.py
+
