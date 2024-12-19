@@ -1,0 +1,12 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_commit: dfb0404
+_src_path: https://github.com/qiime2/q2-setup-template.git
+module_name: rescript
+plugin_name: rescript
+plugin_scripts: null
+project_author_email: nbokulich@gmail.com
+project_author_name: Nicholas Bokulich
+project_description: Reference sequence annotation and curation
+project_name: rescript
+project_urls_homepage: https://github.com/nbokulich/RESCRIPt
+project_urls_repository: https://github.com/bokulich-lab/rescript
