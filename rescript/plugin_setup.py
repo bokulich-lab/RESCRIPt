@@ -53,6 +53,7 @@ from rescript.ncbi import (
     get_ncbi_data, _default_ranks, _allowed_ranks, get_ncbi_data_protein)
 from .get_gtdb import get_gtdb_data
 from .get_unite import get_unite_data
+from .get_pr2 import get_pr2_data
 
 citations = Citations.load('citations.bib', package='rescript')
 
@@ -84,6 +85,11 @@ UNITE_LICENSE_NOTE = (
     'NOTE: THIS ACTION ACQUIRES DATA FROM UNITE, which is licensed under '
     'CC BY-SA 4.0. To learn more, please visit https://unite.ut.ee/cite.php '
     'and https://creativecommons.org/licenses/by-sa/4.0/.')
+
+PR2_LICENSE_NOTE = (
+    'NOTE: THIS ACTION ACQUIRES DATA FROM PR2, which is licensed under '
+    'MIT. To learn more, please visit https://pr2-database.org/ '
+    'and https://github.com/pr2database/.')
 
 LINEPLOT_XAXIS_INTERPRETATION = (
     'The x-axis in these plots represents the taxonomic '
@@ -1025,6 +1031,31 @@ plugin.methods.register_function(
         'Downloads data directly from UNITE\'s PlutoF REST API. ' +
         UNITE_LICENSE_NOTE),
     citations=[citations['nilsson2019unite']]
+)
+
+
+plugin.methods.register_function(
+    function=get_pr2_data,
+    inputs={},
+    parameters={
+        'version': Str % Choices(['5.0.0', '4.14.0',]),
+        },
+    outputs=[('pr2_sequences', FeatureData[Sequence]),
+             ('pr2_taxonomy', FeatureData[Taxonomy]),],
+    input_descriptions={},
+    parameter_descriptions={
+        'version': 'PR2 database version to download.'},
+    output_descriptions={
+        'pr2_taxonomy': 'SSU PR2 reference taxonomy.',
+        'pr2_sequences': 'SSU PR2 reference sequences.'},
+    name='Download, parse, and import SSU PR2 reference data.',
+    description=(
+        'Download, parse, and import SSU PR2 files, given a version '
+        'number. Downloads data directly from PR2, and outputs '
+        'ready-to-use sequence and taxonomy artifacts. '
+        'REQUIRES STABLE INTERNET CONNECTION. ' +
+        PR2_LICENSE_NOTE),
+    citations=[citations['Guillou2013pr2']]
 )
 
 
