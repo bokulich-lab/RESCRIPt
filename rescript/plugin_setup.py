@@ -1100,7 +1100,7 @@ plugin.pipelines.register_function(
         "Subsequently, start (5'-most) and end (3'-most) position from fwd "
         "and rev primer located within the new alignment is identified and "
         "used for slicing the original alignment. The retention of alignment "
-        "positions that span the primer locations can be toggled."
+        "positions that span the primer locations can be toggled. "
         "WARNING: finding alignment positions via primer search can be "
         "inefficient for very large alignments and is only recomended for "
         "small alignments. For large alignments providing specific alignment "
