@@ -64,6 +64,11 @@ class TestExtractAlignmentRegion(TestPluginBase):
                                        'FeatureData[AlignedSequence]',
                                        self.silva_alignment)
 
+        silva_alignment_v4_trim_keeplen_nokeep_primer_fp = self.get_data_path(
+            'small-silva-v4-trim-keeplength-nokeepprimers.fasta')
+        self.silva_v4_trim_keeplen_nokeep_primer = AlignedDNAFASTAFormat(
+            silva_alignment_v4_trim_keeplen_nokeep_primer_fp, mode='r')
+
         silva_alignment_v4_trim_keeplen_wo_primers_fp = self.get_data_path(
             'small-silva-v4-trim-keeplength.fasta')
         self.silva_v4_trim_keeplen = AlignedDNAFASTAFormat(
@@ -107,6 +112,17 @@ class TestExtractAlignmentRegion(TestPluginBase):
                                  3: self.aligned_with_rev_fasta})
 
         self.exp_seqs_both_primers = {
+            's1': ('GGGAATCTTCCACAATGGGTGCAAACCTGATGGAGCAATGCCGCGTGAG'
+                   'TGAAGANAGGTCTTCGGATCGTAAAGCTCTGTTGTTAGAGAAGAACAC'),
+            's2': ('GGGAATATTGCACAATGGGCGCAAGCCTGATGCAGCGACGCCGCGTGGG'
+                   'GGATGA-CGGCCTTCGGGTTGTAAACTCCTTTCGCCAGGGACGAAGCG'),
+            's3': ('GGGAATATTGGACAATGGGCGAAAGCCTGATCCAGCCATGCCGCGTGTG'
+                   'TGAAGA-AGGCCTTTTGGTTGTAAAGCACTTTAAGTGGGGAGGAAAAG'),
+            's4': ('GGGAATTTTGGACAATGGGGGCAACCCTGATCCAGCCATGCCGCGTGCG'
+                   'GGAAGANAGGCCTTCGGGTTGTAAACCGCTTTTGTTCGGGAAGAAATC'),
+            's5': ('GGGAATATTGGACAATGGGCGAAAGCCTGATCCAGCCATGCCGCGTGTG'
+                   'TGAAGA-AGGCCTTTTGGTTGTAAAGCACTTTAAGTGGGGAGGAAAAG'), }
+        self.exp_seqs_both_no_primers = {
             's1': ('GGGAATCTTCCACAATGGGTGCAAACCTGATGGAGCAATGCCGCGTGAG'
                    'TGAAGANAGGTCTTCGGATCGTAAAGCTCTGTTGTTAGAGAAGAACAC'),
             's2': ('GGGAATATTGCACAATGGGCGCAAGCCTGATGCAGCGACGCCGCGTGGG'
@@ -214,22 +230,26 @@ class TestExtractAlignmentRegion(TestPluginBase):
         self.assertDictEqual(obs_primers, exp_primers)
 
     def test_locate_positions(self):
-        obs_pos = _locate_primer_positions(self.aligned_with_primers_fasta)
+        obs_pos = _locate_primer_positions(self.aligned_with_primers_fasta,
+                                           keep_primers=True)
         exp_pos = {"start": 7, "end": 104}
         self.assertDictEqual(obs_pos, exp_pos)
 
     def test_locate_positions_only_fwd(self):
-        obs_pos = _locate_primer_positions(self.aligned_with_fwd_fasta)
+        obs_pos = _locate_primer_positions(self.aligned_with_fwd_fasta,
+                                           keep_primers=True)
         exp_pos = {"start": 7, "end": None}
         self.assertDictEqual(obs_pos, exp_pos)
 
     def test_locate_positions_only_rev(self):
-        obs_pos = _locate_primer_positions(self.aligned_with_rev_fasta)
+        obs_pos = _locate_primer_positions(self.aligned_with_rev_fasta,
+                                           keep_primers=True)
         exp_pos = {"start": None, "end": 104}
         self.assertDictEqual(obs_pos, exp_pos)
 
     def test_locate_positions_no_primers(self):
-        obs_pos = _locate_primer_positions(self.aligned_seqs_fasta)
+        obs_pos = _locate_primer_positions(self.aligned_seqs_fasta,
+                                           keep_primers=True)
         exp_pos = {"start": None, "end": None}
         self.assertDictEqual(obs_pos, exp_pos)
 
@@ -241,7 +261,8 @@ class TestExtractAlignmentRegion(TestPluginBase):
     def test_locate_positions_strange_alignment(self):
         with self.assertRaisesRegex(
                 ValueError, 'Reverse primer overlaps'):
-            _locate_primer_positions(self.aligned_mess_fasta)
+            _locate_primer_positions(self.aligned_mess_fasta,
+                                     keep_primers=True)
 
     # test trimming with both, start and end, positions given
     def test_trim_all_sequences(self):
@@ -278,7 +299,8 @@ class TestExtractAlignmentRegion(TestPluginBase):
             self.aligned_silva_seqs_art,
             self.v4_primers_dict["forward"],
             self.v4_primers_dict["reverse"],
-            keeplength=False)
+            keeplength=False,
+            keep_primers=True)
 
         obs_aln = skbio.io.read(str(obs_v4_nokeep_aln), into=skbio.TabularMSA,
                                 constructor=skbio.DNA)
@@ -295,7 +317,8 @@ class TestExtractAlignmentRegion(TestPluginBase):
             self.aligned_silva_seqs_art,
             self.v4_primers_dict["forward"],
             self.v4_primers_dict["reverse"],
-            keeplength=True)
+            keeplength=True,
+            keep_primers=True)
 
         obs_aln = skbio.io.read(str(obs_v4_keep_aln), into=skbio.TabularMSA,
                                 constructor=skbio.DNA)
@@ -304,13 +327,35 @@ class TestExtractAlignmentRegion(TestPluginBase):
                                 constructor=skbio.DNA)
         self.assertEqual(obs_aln, exp_aln)
 
+    # test trimming when both primers are given and keeplength = True
+    # tests against expected alignment length w/o returning primer
+    # sequence in the output.
+    def test_trim_alignment_keeplen_true_no_keep_primers_false(self):
+        obs_v4_keep_nokeep_primer_aln = _trim_alignment(
+            mafft_add,
+            self.aligned_silva_seqs_art,
+            self.v4_primers_dict["forward"],
+            self.v4_primers_dict["reverse"],
+            keeplength=True,
+            keep_primers=False)
+
+        obs_aln = skbio.io.read(str(obs_v4_keep_nokeep_primer_aln),
+                                into=skbio.TabularMSA,
+                                constructor=skbio.DNA)
+        exp_aln = skbio.io.read(str(self.silva_v4_trim_keeplen_nokeep_primer),
+                                into=skbio.TabularMSA,
+                                constructor=skbio.DNA)
+        print(obs_aln, '\n', exp_aln)
+        self.assertEqual(obs_aln, exp_aln)
+
     # test trimming when only fwd primer is given
     def test_trim_alignment_only_fwd(self):
         obs = _trim_alignment(
             self.fake_ctx.get_action(2),
             self.aligned_seqs_fasta,
             self.primers_dict["forward"],
-            None)
+            None,
+            keep_primers=True)
         obs_seqs = {seq.metadata['id']: str(seq)
                     for seq in obs.view(DNAIterator)}
         self.assertDictEqual(obs_seqs, self.exp_seqs_only_fwd)
@@ -321,7 +366,8 @@ class TestExtractAlignmentRegion(TestPluginBase):
             self.fake_ctx.get_action(3),
             self.aligned_seqs_fasta,
             None,
-            self.primers_dict["reverse"])
+            self.primers_dict["reverse"],
+            keep_primers=True)
         obs_seqs = {seq.metadata['id']: str(seq)
                     for seq in obs.view(DNAIterator)}
         self.assertDictEqual(obs_seqs, self.exp_seqs_only_rev)
@@ -331,7 +377,8 @@ class TestExtractAlignmentRegion(TestPluginBase):
         obs = _trim_alignment(
             self.fake_ctx.get_action(1),
             self.aligned_seqs_fasta,
-            None, None, 8, 104)
+            None, None, 8, 104,
+            keep_primers=True)
         obs_seqs = {seq.metadata['id']: str(seq)
                     for seq in obs.view(DNAIterator)}
         self.assertDictEqual(obs_seqs, self.exp_seqs_both_primers)
@@ -341,7 +388,8 @@ class TestExtractAlignmentRegion(TestPluginBase):
         obs = _trim_alignment(
             self.fake_ctx.get_action(2),
             self.aligned_seqs_fasta,
-            None, None, 8, None)
+            None, None, 8, None,
+            keep_primers=True)
         obs_seqs = {seq.metadata['id']: str(seq)
                     for seq in obs.view(DNAIterator)}
         self.assertDictEqual(obs_seqs, self.exp_seqs_only_fwd)
@@ -351,7 +399,8 @@ class TestExtractAlignmentRegion(TestPluginBase):
         obs = _trim_alignment(
             self.fake_ctx.get_action(3),
             self.aligned_seqs_fasta,
-            None, None, None, 104)
+            None, None, None, 104,
+            keep_primers=True)
         obs_seqs = {seq.metadata['id']: str(seq)
                     for seq in obs.view(DNAIterator)}
         self.assertDictEqual(obs_seqs, self.exp_seqs_only_rev)
