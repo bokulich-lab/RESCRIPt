@@ -1061,6 +1061,7 @@ plugin.pipelines.register_function(
         'primer_rev': Str,
         'position_start': Int % Range(1, None),
         'position_end': Int % Range(1, None),
+        'keep_primers': Bool,
         'n_threads': Int % Range(1, None),
     },
     outputs=[('trimmed_sequences', FeatureData[AlignedSequence]), ],
@@ -1078,6 +1079,9 @@ plugin.pipelines.register_function(
                         'will end. If not provided, alignment will not be '
                         'trimmed at the end. If reverse primer is specified '
                         'this parameter will be ignored.',
+        'keep_primers': 'The entire alignment, including the alignment '
+                        'positions of the primer sequences, will be '
+                        'retained.',
         'n_threads': 'Number of threads to use for primer-based trimming, '
                      'otherwise ignored. (Use `auto` to automatically use '
                      'all available cores)'
