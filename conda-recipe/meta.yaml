@@ -26,6 +26,7 @@ requirements:
   - q2-alignment {{ qiime2_epoch }}.*
   - qiime2 {{ qiime2_epoch }}.*
   build:
+  - python {{ python }}
   - setuptools
   - versioningit
 test:
