@@ -53,7 +53,7 @@ from rescript.ncbi import (
     get_ncbi_data, _default_ranks, _allowed_ranks, get_ncbi_data_protein)
 from .get_gtdb import get_gtdb_data
 from .get_unite import get_unite_data
-from .get_pr2 import get_pr2_data
+from .get_pr2 import get_pr2_data, _allowed_pr2_ranks, _default_pr2_ranks
 
 citations = Citations.load('citations.bib', package='rescript')
 
@@ -1039,15 +1039,23 @@ plugin.methods.register_function(
     inputs={},
     parameters={
         'version': Str % Choices(['5.0.0', '4.14.0',]),
+        'ranks': List[Str % Choices(_allowed_pr2_ranks)],
+        # 'rank_propagation': Bool,
         },
     outputs=[('pr2_sequences', FeatureData[Sequence]),
              ('pr2_taxonomy', FeatureData[Taxonomy]),],
     input_descriptions={},
     parameter_descriptions={
-        'version': 'PR2 database version to download.'},
+        'version': 'PR2 database version to download.',
+        'ranks': 'List of taxonomic ranks for building a taxonomy '
+                 'from the PR2 Taxonomy database. '
+                 "[default: '" +
+                 "', '".join(_default_pr2_ranks) + "']",
+                  },
     output_descriptions={
         'pr2_taxonomy': 'SSU PR2 reference taxonomy.',
-        'pr2_sequences': 'SSU PR2 reference sequences.'},
+        'pr2_sequences': 'SSU PR2 reference sequences.',
+        },
     name='Download, parse, and import SSU PR2 reference data.',
     description=(
         'Download, parse, and import SSU PR2 files, given a version '

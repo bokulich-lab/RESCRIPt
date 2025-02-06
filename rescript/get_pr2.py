@@ -14,7 +14,8 @@ import warnings
 from urllib.request import urlretrieve
 from urllib.error import HTTPError
 from pathlib import Path
-from pandas import DataFrame
+import pandas as pd
+from collections import OrderedDict
 from q2_types.feature_data import (TaxonomyFormat, DNAFASTAFormat,
                                    DNAIterator)
 
@@ -28,13 +29,22 @@ from q2_types.feature_data import (TaxonomyFormat, DNAFASTAFormat,
 #   pr2_version_4.13.0_16S_mothur.fasta.gz
 #   pr2_version_4.13.0_18S_mothur.fasta.gz
 
+_allowed_pr2_ranks = OrderedDict({'domain': 'd__', 'supergroup': 'sgr__',
+                                  'division': 'dv__', 'subdivision': 'dvs__',
+                                  'class': 'c__', 'order': 'o__',
+                                  'family': 'f__', 'genus': 'g__',
+                                  'species': 's__'})
+_default_pr2_ranks = ['domain', 'supergroup', 'division', 'subdivision',
+                      'class', 'order', 'family', 'genus', 'species']
+
 
 def get_pr2_data(
     version: str = '5.0.0',
-        ) -> (DNAIterator, DataFrame):
+    ranks: list = None,
+        ) -> (DNAIterator, pd.Series):
 
     urls = _assemble_pr2_urls(version=version)
-    seqs, tax = _retrieve_data_from_pr2(urls)
+    seqs, tax = _retrieve_data_from_pr2(urls, ranks)
 
     print('\n Saving files...\n')
     return seqs, tax
@@ -51,7 +61,24 @@ def _assemble_pr2_urls(version='5.0.0'):
     return urls_to_retrieve
 
 
-def _retrieve_data_from_pr2(urls_to_retrieve):
+def _compile_taxonomy_output(tax, ranks):
+    # prepare dataframe with all ranks:
+    prefix_list = list(_allowed_pr2_ranks.values())
+    tax[prefix_list] = \
+        tax['Taxon'].str.strip(';').str.split(';', expand=True)
+    tax.drop('Taxon', axis=1, inplace=True)
+    # prepend prefixes
+    tax.loc[:, prefix_list] = \
+        tax.loc[:, prefix_list].apply(lambda x: x.name + x)
+    # sort user defined ranks in case provided out of order
+    # then only return user specified ranks
+    sorted_ranks = [p for r, p in _allowed_pr2_ranks.items() if r in ranks]
+    taxonomy = tax.loc[:, sorted_ranks].agg('; '.join, axis=1)
+    taxonomy.rename('Taxon', inplace=True)
+    return taxonomy
+
+
+def _retrieve_data_from_pr2(urls_to_retrieve, ranks):
     # Perform check that the `urls_to_retriev` should only
     # contain 2 files, a 'fasta' and 'taxonomy' file.
 
@@ -84,5 +111,6 @@ def _retrieve_data_from_pr2(urls_to_retrieve):
                                               mode="r").view(DNAIterator)
                     elif out_path.endswith('tax'):
                         tax = TaxonomyFormat(out_path,
-                                             mode="r").view(DataFrame)
-    return seqs, tax
+                                             mode="r").view(pd.DataFrame)
+                        updated_tax = _compile_taxonomy_output(tax, ranks)
+    return seqs, updated_tax
