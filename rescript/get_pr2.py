@@ -82,8 +82,8 @@ def _retrieve_data_from_pr2(urls_to_retrieve, ranks):
     # Perform check that the `urls_to_retriev` should only
     # contain 2 files, a 'fasta' and 'taxonomy' file.
 
-    # seqs = DNAFASTAFormat()
-    # tax = HeaderlessTSVTaxonomyFormat()
+    if ranks is None:
+        ranks = _default_pr2_ranks
 
     print('\nDownloading and processing raw files ... \n')
 
