@@ -8,11 +8,12 @@
 
 import pkg_resources
 from qiime2.plugin.testing import TestPluginBase
+from qiime2.plugins import rescript
 from rescript.get_pr2 import _assemble_pr2_urls, _compile_taxonomy_output
 from q2_types.feature_data import (HeaderlessTSVTaxonomyFormat,
-                                   TSVTaxonomyFormat,
                                    TaxonomyFormat,
-                                   DNAFASTAFormat)
+                                   DNAFASTAFormat,
+                                   DNAIterator)
 import pandas as pd
 from pandas.testing import assert_series_equal
 from urllib.request import urlopen
@@ -35,7 +36,7 @@ class TestGetPR2(TestPluginBase):
                                  'rescript.tests',
                                  'data/pr2-tax.tsv'),
                             mode='r')
-        self.pr2_tax_format = TSVTaxonomyFormat(
+        self.pr2_tax_format = TaxonomyFormat(
                             pkg_resources.resource_filename(
                                  'rescript.tests',
                                  'data/pr2-tax-formatted.tsv'),
@@ -87,14 +88,13 @@ class TestGetPR2(TestPluginBase):
         exp_tax.index.name = 'Feature ID'
         assert_series_equal(obs_tax, exp_tax)
 
-    # def test_get_pr2(self):
-    #     def _makey_fakey(faking_ignore_this):
-    #         return self.pr2_tax, self.pr2_seqs
+    def test_get_pr2(self):
+        def _makey_fakey(fake_seq, fake_tax):
+            return (self.pr2_seqs.view(DNAIterator),
+                    self.pr2_tax_format.view(pd.Series))
 
-    #     # default (both domains, version)
-    #     with patch('rescript.get_pr2._retrieve_data_from_pr2',
-    #                new=_makey_fakey):
-    #         res = rescript.actions.get_pr2_data(
-    #             version='5.0.0', ranks=[])
-    #         self.assertEqual(str(res[0].type), 'FeatureData[Sequence]')
-    #         self.assertEqual(str(res[1].type), 'FeatureData[Taxonomy]')
+        with patch('rescript.get_pr2._retrieve_data_from_pr2',
+                   new=_makey_fakey):
+            res = rescript.actions.get_pr2_data()
+            self.assertEqual(str(res[0].type), 'FeatureData[Sequence]')
+            self.assertEqual(str(res[1].type), 'FeatureData[Taxonomy]')
