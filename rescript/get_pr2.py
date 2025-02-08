@@ -76,7 +76,7 @@ def _compile_taxonomy_output(tax, ranks):
     # sort user defined ranks in case provided out of order
     # then only return user specified ranks
     sorted_ranks = [p for r, p in _allowed_pr2_ranks.items() if r in ranks]
-    taxonomy = tax.loc[:, sorted_ranks].agg('; '.join, axis=1)
+    taxonomy = tax.loc[:, sorted_ranks].agg(';'.join, axis=1)
     taxonomy.rename('Taxon', inplace=True)
     return taxonomy
 

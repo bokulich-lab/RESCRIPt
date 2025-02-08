@@ -75,12 +75,12 @@ class TestGetPR2(TestPluginBase):
                                                   'genus',
                                                   'species'])
         exp_tax_dict = {
-            'AM235536.1.1627_U': 'sgr__Archaeplastida; dvs__Streptophyta_X; '
-                                 'g__Uromyrtus; s__Uromyrtus_metrosideros',
-            'EU163792.1.1363_U': 'sgr__TSAR; dvs__Ciliophora; '
-                                 'g__Trichostomatia_XX; '
+            'AM235536.1.1627_U': 'sgr__Archaeplastida;dvs__Streptophyta_X;'
+                                 'g__Uromyrtus;s__Uromyrtus_metrosideros',
+            'EU163792.1.1363_U': 'sgr__TSAR;dvs__Ciliophora;'
+                                 'g__Trichostomatia_XX;'
                                  's__Trichostomatia_XX_sp.',
-            'JQ388892.1.1909_U': 'sgr__Obazoa; dvs__Metazoa; g__Myxobolus; '
+            'JQ388892.1.1909_U': 'sgr__Obazoa;dvs__Metazoa;g__Myxobolus;'
                                  's__Myxobolus_musculi'
             }
         exp_tax = pd.Series(exp_tax_dict)
