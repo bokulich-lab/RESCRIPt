@@ -5,15 +5,13 @@
  [![DOI](https://img.shields.io/badge/DOI-10.1371/journal.pcbi.1009581-B31B1B)](http://dx.doi.org/10.1371/journal.pcbi.1009581)
  <p align="left"><img src="logo.png" height="150" /></p>
 
-REference Sequence annotation and CuRatIon Pipeline
-
 RESCRIPt is a python 3 package to support a variety of operations for managing and curating reference sequence databases, DNA/RNA sequence data, and taxonomic data. See citation information below for a full benchmark and description.
 
 ## Install via QIIME 2.
 
-RESCRIPt is now installed as part of QIIME 2, and you can install as outlined in the [QIIME 2 Documentation](https://docs.qiime2.org/), for:
- -  "Shotgun Distribution" version `2023.9` and later. 
+RESCRIPt is now installed as part of [QIIME 2](https://qiime2.org/) and [MOSHPIT](https://moshpit.readthedocs.io), and you can install as outlined in the [QIIME 2 Documentation](https://docs.qiime2.org/), for:
  -  "Amplicon Distrubtion" version `2024.2` and later.
+ -  "Metagenome Distribution" (MOSHPIT) version `2023.9` and later. 
 
 
 ### Prior versions of RESCRIPt / QIIME 2.
