@@ -1048,7 +1048,10 @@ plugin.methods.register_function(
     parameter_descriptions={
         'version': 'PR2 database version to download.',
         'ranks': 'List of taxonomic ranks for building a taxonomy '
-                 'from the PR2 Taxonomy database. '
+                 'from the PR2 Taxonomy database. Ranks can be provided as '
+                 'multiple separate flags, e.g.: '
+                 '`--p-ranks genus --p-ranks species`, or with a single flag '
+                 'delimited by a space: `--p-ranks genus species`. '
                  "[default: '" +
                  "', '".join(_default_pr2_ranks) + "']",
                   },

@@ -98,7 +98,7 @@ def _retrieve_data_from_pr2(urls_to_retrieve, ranks):
                 print('Retrieving data from {0}'.format(url))
                 urlretrieve(url, in_path)
             except HTTPError:
-                msg = ("Unable to retrieve the followng file from PR2:\n"
+                msg = ("Unable to retrieve the following file from PR2:\n"
                        + url)
                 warnings.warn(msg, UserWarning)
 
