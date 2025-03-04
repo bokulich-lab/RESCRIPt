@@ -1102,7 +1102,7 @@ plugin.pipelines.register_function(
         "used for slicing the original alignment. The retention of alignment "
         "positions that span the primer locations can be toggled. "
         "WARNING: finding alignment positions via primer search can be "
-        "inefficient for very large alignments and is only recomended for "
+        "inefficient for very large alignments and is only recommended for "
         "small alignments. For large alignments providing specific alignment "
         "positions is ideal."),
 )
