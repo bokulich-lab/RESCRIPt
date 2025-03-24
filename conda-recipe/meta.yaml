@@ -20,11 +20,11 @@ requirements:
   - vsearch >=2.21.1
   - scikit-learn {{ scikit_learn }}
   - scikit-bio {{ scikit_bio }}
-  - q2-types {{ qiime2_epoch }}.*
-  - q2-feature-classifier {{ qiime2_epoch }}.*
-  - q2-vizard {{ qiime2_epoch }}.*
-  - q2-alignment {{ qiime2_epoch }}.*
-  - qiime2 {{ qiime2_epoch }}.*
+  - q2-types >={{ q2_types }}
+  - q2-feature-classifier >={{ q2_feature_classifier }}
+  - q2-vizard >={{ q2_vizard }}
+  - q2-alignment >={{ q2_alignment }}
+  - qiime2 >={{ qiime2 }}
   build:
   - python {{ python }}
   - setuptools
