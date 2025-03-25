@@ -45,7 +45,8 @@ def _trim_all_sequences(aligned_sequences: AlignedDNAFASTAFormat,
     return result
 
 
-def _find_terminal_positions(primer_positions: dict) -> (int, int):
+def _find_terminal_positions(primer_positions: dict,
+                             keep_primer_location=False) -> (int, int):
     """
     Identify left- (5') and rightmost (3') trimming position. If both primers
     were used return: (start index of the forward primer, end index of
@@ -69,19 +70,30 @@ def _find_terminal_positions(primer_positions: dict) -> (int, int):
                 primer_positions["forward"]["end"]:
             raise ValueError("Reverse primer overlaps or aligned upstream the "
                              "forward primer. Are the primers correct?")
-        pos_start = min([x["start"] for x in primer_positions.values()])
-        pos_end = max([x["end"] for x in primer_positions.values()])
+        if keep_primer_location:
+            pos_start = min([x["start"] for x in primer_positions.values()])
+            pos_end = max([x["end"] for x in primer_positions.values()])
+        else:
+            pos_start = primer_positions["forward"]["end"]
+            pos_end = primer_positions["reverse"]["start"]
     # when only fwd primer was used
     elif "forward" in primer_positions.keys():
-        pos_start = primer_positions["forward"]["start"]
+        if keep_primer_location:
+            pos_start = primer_positions["forward"]["start"]
+        else:
+            pos_start = primer_positions["forward"]["end"]
     # when only rev primer was used
     elif "reverse" in primer_positions.keys():
-        pos_end = primer_positions["reverse"]["end"]
+        if keep_primer_location:
+            pos_end = primer_positions["reverse"]["end"]
+        else:
+            pos_end = primer_positions["reverse"]["start"]
     return pos_start, pos_end
 
 
 def _locate_primer_positions(
-        alignment_with_primers: AlignedDNAFASTAFormat) -> dict:
+        alignment_with_primers: AlignedDNAFASTAFormat,
+        keep_primer_location) -> dict:
     """
     Identify position of each primer within the alignment.
 
@@ -108,7 +120,8 @@ def _locate_primer_positions(
                 (i for i, nt in enumerate(primer_seq[::-1]) if nt != "-"))
         }
 
-    pos_start, pos_end = _find_terminal_positions(primer_positions)
+    pos_start, pos_end = _find_terminal_positions(primer_positions,
+                                                  keep_primer_location)
 
     # not doing any validation like in _prepare_positions since none of
     # the conditions checked there are possible to run into with the way
@@ -191,6 +204,7 @@ def _trim_alignment(expand_alignment_action,
                     primer_rev=None,
                     position_start=None,
                     position_end=None,
+                    keep_primer_location=False,
                     n_threads=1,
                     keeplength=True) -> AlignedDNAFASTAFormat:
     """
@@ -236,7 +250,8 @@ def _trim_alignment(expand_alignment_action,
             keeplength=keeplength)
 
         # find trim positions based on primer positions within alignment
-        trim_positions = _locate_primer_positions(alignment_with_primers)
+        trim_positions = _locate_primer_positions(alignment_with_primers,
+                                                  keep_primer_location)
     else:
         # find length of the alignment
         seq_iter = aligned_sequences.view(AlignedDNAIterator).generator
@@ -256,6 +271,7 @@ def trim_alignment(ctx,
                    primer_rev=None,
                    position_start=None,
                    position_end=None,
+                   keep_primer_location=False,
                    n_threads=1):
     """
     Trim an existing alignment based on provided primers or specific,
@@ -276,6 +292,7 @@ def trim_alignment(ctx,
         primer_rev,
         position_start,
         position_end,
+        keep_primer_location=keep_primer_location,
         n_threads=n_threads)
 
     return qiime2.Artifact.import_data('FeatureData[AlignedSequence]', result)

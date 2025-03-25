@@ -1103,6 +1103,7 @@ plugin.pipelines.register_function(
         'primer_rev': Str,
         'position_start': Int % Range(1, None),
         'position_end': Int % Range(1, None),
+        'keep_primer_location': Bool,
         'n_threads': Int % Range(1, None),
     },
     outputs=[('trimmed_sequences', FeatureData[AlignedSequence]), ],
@@ -1120,6 +1121,11 @@ plugin.pipelines.register_function(
                         'will end. If not provided, alignment will not be '
                         'trimmed at the end. If reverse primer is specified '
                         'this parameter will be ignored.',
+        'keep_primer_location': 'Retain the alignment positions of the '
+                                'primer binding location. Note: the '
+                                'primers themselves will be removed, but '
+                                'the alignment positions where the primers '
+                                'align will be retained in the alignment.',
         'n_threads': 'Number of threads to use for primer-based trimming, '
                      'otherwise ignored. (Use `auto` to automatically use '
                      'all available cores)'
@@ -1135,12 +1141,12 @@ plugin.pipelines.register_function(
         "alignment will be generated to locate primer positions. "
         "Subsequently, start (5'-most) and end (3'-most) position from fwd "
         "and rev primer located within the new alignment is identified and "
-        "used for slicing the original alignment. That is, the primer region "
-        "will be included in the new alignment output. WARNING: finding "
-        "alignment positions via primer search can be inefficient for very "
-        "large alignments and is only recomended for small alignments. "
-        "For large alignments providing specific alignment positions is "
-        "ideal."),
+        "used for slicing the original alignment. The retention of alignment "
+        "positions that span the primer locations can be toggled. "
+        "WARNING: finding alignment positions via primer search can be "
+        "inefficient for very large alignments and is only recommended for "
+        "small alignments. For large alignments providing specific alignment "
+        "positions is ideal."),
 )
 
 T = TypeMatch([AlignedSequence, Sequence])
