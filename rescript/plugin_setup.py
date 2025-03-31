@@ -1239,7 +1239,7 @@ plugin.methods.register_function(
     function=get_ncbi_genomes,
     inputs={},
     parameters={
-        'taxon': Str,
+        'taxa': List[Str],
         'assembly_source': Str % Choices(['refseq', 'genbank', 'all']),
         'only_reference': Bool,
         'only_genomic': Bool,
@@ -1258,8 +1258,8 @@ plugin.methods.register_function(
     ],
     input_descriptions={},
     parameter_descriptions={
-        'taxon': 'NCBI Taxonomy ID or name (common or scientific) '
-                 'at any taxonomic rank.',
+        'taxa': 'NCBI Taxonomy IDs or names (common or scientific) '
+                'at any taxonomic rank.',
         'assembly_source': 'Fetch only RefSeq or GenBank genome assemblies.',
         'only_reference': 'Fetch only reference and representative '
                           'genome assemblies.',
