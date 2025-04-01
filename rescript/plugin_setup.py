@@ -1004,8 +1004,8 @@ plugin.methods.register_function(
     function=get_unite_data,
     inputs={},
     parameters={
-        'version': Str % Choices(['2025-02-19', '2023-07-18', '2021-05-10',
-                                  '2020-02-20']),
+        'version': Str % Choices(['2025-02-19', '2024-04-04', '2023-07-18',
+                                  '2021-05-10', '2020-02-20']),
         'taxon_group': Str % Choices(['fungi', 'eukaryotes']),
         'cluster_id': Str % Choices(['99', '97', 'dynamic']),
         'singletons': Bool,

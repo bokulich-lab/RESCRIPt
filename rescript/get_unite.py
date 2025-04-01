@@ -20,7 +20,6 @@ from q2_types.feature_data import (
 
 # Source: https://unite.ut.ee/repository.php
 UNITE_DOIS = {
-    # Old version 10.0 is not listed here
     "2025-02-19": {
         "fungi": {
             False: "10.15156/BIO/3301241",
@@ -29,6 +28,16 @@ UNITE_DOIS = {
         "eukaryotes": {
             False: "10.15156/BIO/3301243",
             True: "10.15156/BIO/3301244",
+        },
+    },
+    "2024-04-04": {
+        "fungi": {
+            False: "10.15156/BIO/2959336",
+            True: "10.15156/BIO/2959337",
+        },
+        "eukaryotes": {
+            False: "10.15156/BIO/2959338",
+            True: "10.15156/BIO/2959339",
         },
     },
     "2023-07-18": {
