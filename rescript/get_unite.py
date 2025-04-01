@@ -50,7 +50,17 @@ UNITE_DOIS = {
             True: "10.15156/BIO/2938082",
         },
     },
-    # Old version 9.0 is not listed here
+    "2022-10-16": {
+        "fungi": {
+            False: "10.15156/BIO/2483915",
+            True: "10.15156/BIO/2483916",
+        },
+        "eukaryotes": {
+            False: "10.15156/BIO/2483917",
+            True: "10.15156/BIO/2483918",
+        },
+    },
+
     "2021-05-10": {
         "fungi": {
             False: "10.15156/BIO/1264708",
