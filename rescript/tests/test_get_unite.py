@@ -86,7 +86,7 @@ class TestGetUNITE(TestPluginBase):
             "rescript.get_unite._unite_get_tgz", return_value=self.unitefile
         ):
             res = get_unite_data(
-                version="8.3", taxon_group="fungi", cluster_id="97"
+                version="2021-05-10", taxon_group="fungi", cluster_id="97"
             )
             self.assertEqual(len(res), 2)
             self.assertTrue(isinstance(res[0], pandas.core.frame.DataFrame))

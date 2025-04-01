@@ -20,17 +20,18 @@ from q2_types.feature_data import (
 
 # Source: https://unite.ut.ee/repository.php
 UNITE_DOIS = {
-    "10.0": {
+    # Old version 10.0 is not listed here
+    "2025-02-19": {
         "fungi": {
-            False: "10.15156/BIO/2959336",
-            True: "10.15156/BIO/2959337",
+            False: "10.15156/BIO/3301241",
+            True: "10.15156/BIO/3301242",
         },
         "eukaryotes": {
-            False: "10.15156/BIO/2959338",
-            True: "10.15156/BIO/2959339",
+            False: "10.15156/BIO/3301243",
+            True: "10.15156/BIO/3301244",
         },
     },
-    "9.0": {
+    "2023-07-18": {
         "fungi": {
             False: "10.15156/BIO/2938079",
             True: "10.15156/BIO/2938080",
@@ -41,7 +42,7 @@ UNITE_DOIS = {
         },
     },
     # Old version 9.0 is not listed here
-    "8.3": {
+    "2021-05-10": {
         "fungi": {
             False: "10.15156/BIO/1264708",
             True: "10.15156/BIO/1264763",
@@ -51,7 +52,7 @@ UNITE_DOIS = {
             True: "10.15156/BIO/1264861",
         },
     },
-    "8.2": {
+    "2020-02-20": {
         "fungi": {
             False: "10.15156/BIO/786385",
             True: "10.15156/BIO/786387",
@@ -155,7 +156,7 @@ def _unite_get_artifacts(
 
 
 def get_unite_data(
-    version: str = "10.0",
+    version: str = "2025-02-19",
     taxon_group: str = "eukaryotes",
     cluster_id: str = "99",
     singletons: bool = False,
