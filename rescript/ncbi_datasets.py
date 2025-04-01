@@ -29,14 +29,14 @@ from rescript.ncbi import get_taxonomies, _default_ranks
 
 def _get_assembly_descriptors(
         api_instance, assembly_levels, assembly_source, only_reference,
-        page_size, taxons, tax_exact_match
+        page_size, taxa, tax_exact_match
 ) -> Dict[str, str]:
     assembly_to_taxon = {}
     next_page_token = ''
     while True:
         try:
             genome_summary = api_instance.genome_dataset_reports_by_taxon(
-                taxons=taxons,
+                taxons=taxa,
                 page_size=page_size,
                 filters_assembly_source=assembly_source,
                 filters_assembly_level=assembly_levels,
@@ -227,7 +227,7 @@ def get_ncbi_genomes(
         'assembly_levels': deepcopy(assembly_levels),
         'assembly_source': assembly_source,
         'only_reference': only_reference, 'page_size': page_size,
-        'taxons': taxa, 'tax_exact_match': tax_exact_match
+        'taxa': taxa, 'tax_exact_match': tax_exact_match
     }
     with DatasetsApiClient() as api_client:
         api_instance = GenomeApi(api_client)
