@@ -93,12 +93,11 @@ def orient_seqs(
     return oriented, notmatched
 
 
-def _vsearch_revcomp_fastq(seqs_fp, out_fp, threads):
+def _vsearch_revcomp_fastq(seqs_fp, out_fp):
     cmd = [
         'vsearch',
         '--fastx_revcomp', str(seqs_fp),
         '--fastqout', str(out_fp),
-        '--threads', str(threads),
     ]
     run_command(cmd)
     run_command(['gzip', str(out_fp)])
@@ -114,7 +113,6 @@ def read_fastq(filepath):
 def orient_reads(
     sequences: CasavaOneEightSingleLanePerSampleDirFmt,
     reference_sequences: DNAFASTAFormat = None,
-    threads: int = 1,
     dbmask: str = None,
 ) -> (CasavaOneEightSingleLanePerSampleDirFmt,
       CasavaOneEightSingleLanePerSampleDirFmt):
@@ -151,7 +149,6 @@ def orient_reads(
                     '--notmatched', str(fwd_notmatched),
                     '--db', str(reference_sequences),
                     '--qmask', 'none',
-                    '--threads', str(threads),
                     '--tabbedout', tabbedout.name,
                 ]
 
@@ -196,11 +193,9 @@ def orient_reads(
                     run_command(['gzip', str(rev_path_out)])
         # Revcomp mode: if no reference is passed, revcomp all
         else:
-            _vsearch_revcomp_fastq(
-                fwd_path_in, fwd_path_out, threads)
+            _vsearch_revcomp_fastq(fwd_path_in, fwd_path_out)
             if paired:
-                _vsearch_revcomp_fastq(
-                    rev_path_in, rev_path_out, threads)
+                _vsearch_revcomp_fastq(rev_path_in, rev_path_out)
 
         # Handle notmatched files
         # This notmatched file might only be created when non-empty

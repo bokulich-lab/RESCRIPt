@@ -657,7 +657,6 @@ plugin.methods.register_function(
     inputs={'sequences': SampleData[T],
             'reference_sequences': FeatureData[Sequence]},
     parameters={
-        'threads': VSEARCH_PARAMS['threads'],
         'dbmask': VSEARCH_PARAMS['dbmask'],
     },
     outputs=[('oriented_reads', SampleData[T]),
@@ -670,7 +669,6 @@ plugin.methods.register_function(
                                 'parameters will be ignored.'
                                 )},
     parameter_descriptions={
-        'threads': VSEARCH_PARAM_DESCRIPTIONS['threads'],
         'dbmask': VSEARCH_PARAM_DESCRIPTIONS['dbmask'],
     },
     output_descriptions={
