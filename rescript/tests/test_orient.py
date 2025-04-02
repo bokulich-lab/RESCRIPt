@@ -7,11 +7,16 @@
 # ----------------------------------------------------------------------------
 
 
+import os
+import gzip
 import qiime2
 from qiime2.plugin.testing import TestPluginBase
 from q2_types.feature_data import DNAIterator
 from qiime2.plugins import rescript
 from rescript.orient import _add_optional_parameters
+from q2_types.per_sample_sequences import (
+    CasavaOneEightSingleLanePerSampleDirFmt)
+from pandas.testing import assert_index_equal
 
 import_data = qiime2.Artifact.import_data
 
@@ -104,3 +109,79 @@ class TestOrientSeqs(TestPluginBase):
             sizeout=True,
         )
         self.assertEqual(result, expected)
+
+
+class TestOrientReads(TestPluginBase):
+    package = 'rescript.tests'
+
+    # Check that contents of fastq files match per sample
+    def _validate_fastqs_equal(self, obs, exp):
+        obs = obs.view(CasavaOneEightSingleLanePerSampleDirFmt)
+        exp = exp.view(CasavaOneEightSingleLanePerSampleDirFmt)
+
+        # obs and exp manifest indices should be identical
+        assert_index_equal(obs.manifest.index, exp.manifest.index)
+
+        # Iterate over each sample, side-by-side
+        def _compare_contents(exp, obs, _seq_fp):
+            exp_path = str(exp.path / _seq_fp)
+            obs_path = str(obs.path / _seq_fp)
+            with gzip.open(str(exp_path), 'r') as e:
+                with gzip.open(str(obs_path), 'r') as o:
+                    self.assertEqual(e.read(), o.read())
+
+        paired = exp.manifest.reverse.any()
+        for _id in exp.manifest.itertuples():
+            _seq_fp = os.path.basename(_id.forward)
+            _compare_contents(exp, obs, _seq_fp)
+            if paired:
+                _seq_fp = os.path.basename(_id.reverse)
+                _compare_contents(exp, obs, _seq_fp)
+
+    def setUp(self):
+        super().setUp()
+        self.seqs = \
+            import_data('SampleData[PairedEndSequencesWithQuality]',
+                        self.get_data_path('paired_end_data'))
+        self.seqs_singleend = \
+            import_data('SampleData[SequencesWithQuality]',
+                        self.get_data_path('single_end_data'))
+        self.ref = import_data(
+            'FeatureData[Sequence]', self.get_data_path('Human-Kneecap.fasta'))
+
+    # this test checks that expected IDs AND reoriented seqs are returned
+    def test_reorient_default(self):
+        expected = \
+            import_data('SampleData[PairedEndSequencesWithQuality]',
+                        self.get_data_path('paired_end_data_expected'))
+        reoriented, unmatched, = rescript.actions.orient_reads(
+            sequences=self.seqs, reference_sequences=self.ref)
+        self._validate_fastqs_equal(reoriented, expected)
+
+    # and again but for single-end reads
+    def test_reorient_default_singleend(self):
+        expected = \
+            import_data('SampleData[SequencesWithQuality]',
+                        self.get_data_path('single_end_data_expected'))
+        reoriented, unmatched, = rescript.actions.orient_reads(
+            sequences=self.seqs_singleend, reference_sequences=self.ref)
+        self._validate_fastqs_equal(reoriented, expected)
+
+    # this test checks that reverse-complemented reads are returned when
+    # no reference is passed as input
+    def test_reorient_no_ref(self):
+        expected = \
+            import_data('SampleData[PairedEndSequencesWithQuality]',
+                        self.get_data_path('paired_end_reverse_complemented'))
+        reoriented, unmatched = rescript.actions.orient_reads(
+            sequences=self.seqs, reference_sequences=None)
+        self._validate_fastqs_equal(reoriented, expected)
+
+    # and again but for single-end reads
+    def test_reorient_no_ref_singleend(self):
+        expected = \
+            import_data('SampleData[SequencesWithQuality]',
+                        self.get_data_path('single_end_reverse_complemented'))
+        reoriented, unmatched = rescript.actions.orient_reads(
+            sequences=self.seqs_singleend, reference_sequences=None)
+        self._validate_fastqs_equal(reoriented, expected)

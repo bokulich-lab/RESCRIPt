@@ -1,0 +1,7 @@
+# Some fake paired-end sequences
+
+sample-id,filename,direction
+Human-Kneecap,Human-Kneecap_S1_L001_R1_001.fastq.gz,forward
+
+# paired end data.
+Human-Kneecap,Human-Kneecap_S1_L001_R2_001.fastq.gz,reverse
