@@ -12,7 +12,6 @@ import tempfile
 import pandas as pd
 from itertools import zip_longest
 from typing import List, Dict, Any
-from skbio import DNA
 
 from q2_types.feature_data import DNAFASTAFormat, DNAIterator
 from q2_types.per_sample_sequences import (
@@ -117,10 +116,10 @@ def orient_reads(
     oriented = CasavaOneEightSingleLanePerSampleDirFmt()
     notmatched = CasavaOneEightSingleLanePerSampleDirFmt()
     manifest = sequences.manifest
-    # inspect manifest to determine whether reads are single or paired-end
+    # inspect manifest to determine whether reads are joined or paired-end
     # the CasavaOneEightSingleLanePerSampleDirFmt creates a manifest with
     # both forward and reverse columns, but the reverse column is empty if
-    # the data are SE.
+    # the data are joined.
     paired = manifest.reverse.any()
 
     for _sample in manifest.itertuples():
@@ -137,76 +136,73 @@ def orient_reads(
             rev_notmatched = os.path.splitext(
                 str(notmatched.path / rev_name))[0]
 
-        if reference_sequences is not None:
-            # use vsearch to orient reads against reference database
-            with tempfile.NamedTemporaryFile() as tabbedout:
-                cmd = [
-                    'vsearch',
-                    '--orient', str(fwd_path_in),
-                    '--fastqout', str(fwd_path_out),
-                    '--notmatched', str(fwd_notmatched),
-                    '--db', str(reference_sequences),
-                    '--qmask', 'none',
-                    '--tabbedout', tabbedout.name,
-                ]
+        # use vsearch to orient reads against reference database
+        # this is only done to detect read orientations, outputs are tossed
+        df = None
+        with tempfile.NamedTemporaryFile() as tabbedout:
+            cmd = [
+                'vsearch',
+                '--orient', str(fwd_path_in),
+                '--fastqout', str(fwd_path_out),
+                '--notmatched', str(fwd_notmatched),
+                '--db', str(reference_sequences),
+                '--qmask', 'none',
+                '--tabbedout', tabbedout.name,
+            ]
 
-                _add_optional_parameters(
-                    cmd,
-                    dbmask=dbmask,
-                )
+            _add_optional_parameters(
+                cmd,
+                dbmask=dbmask,
+            )
 
-                run_command(cmd)
-                run_command(['gzip', str(fwd_path_out)])
+            run_command(cmd)
+            run_command(['gzip', str(fwd_path_out)])
 
-                if paired:
-                    # use the tabbedout orientation report to re-orient reverse
-                    df = pd.read_csv(
-                        tabbedout.name, sep='\t', index_col=0, header=None)
-                    df.columns = ['orientation', 'f_hits', 'r_hits']
-                    with open(str(rev_path_out), 'wb') as rev_out:
-                        with open(str(rev_notmatched), 'wb') as out_notmatched:
-                            for _read in read_fastq(str(rev_path_in)):
-                                # vsearch strips off the lane info, so reverse
-                                # reads should match this pattern
-                                _read = list(_read)
-                                _read[0] = _read[0].split(' ')[0]
-                                head, _seq, qh, q = _read
-                                read_id = head.lstrip('@')
-                                orientation = df.loc[read_id, 'orientation']
-                                if orientation == '+':
-                                    rev_out.write(
-                                        ('\n'.join(_read) + '\n').encode(
-                                            'utf-8'))
-                                elif orientation == '-':
-                                    rc = str(DNA(_seq).reverse_complement())
-                                    # qual score should be simply reversed
-                                    rev_out.write(
-                                        ('\n'.join([head, rc, qh, q[::-1]]) +
-                                         '\n').encode('utf-8'))
-                                else:
-                                    # the alternative is no match...
-                                    out_notmatched.write(
-                                        ('\n'.join(_read) +
-                                         '\n').encode('utf-8'))
-                    run_command(['gzip', str(rev_path_out)])
-        # Revcomp mode: if no reference is passed, revcomp all
-        else:
-            _vsearch_revcomp_fastq(fwd_path_in, fwd_path_out)
-            if paired:
-                _vsearch_revcomp_fastq(rev_path_in, rev_path_out)
+            df = pd.read_csv(
+                tabbedout.name, sep='\t', index_col=0, header=None)
+            df.columns = ['orientation', 'f_hits', 'r_hits']
 
-        # Handle notmatched files
-        # This notmatched file might only be created when non-empty
-        # and does not exist when performing a simple revcomp
-        # but a file is required for the output format
-        # so we will manufacture any missing files
-        notmatched_fps = [str(fwd_notmatched)]
+        # For joined reads, the outputs above should be fine and we are done.
+        # But for PE reads the fun is only beginning...
+
         if paired:
-            notmatched_fps += [str(rev_notmatched)]
-        for notmatched_fp in notmatched_fps:
-            # create empty file if needed
-            if not os.path.exists(notmatched_fp):
-                open(notmatched_fp, 'w').close()
-            run_command(['gzip', str(notmatched_fp)])
+            # for PE reads we want to throw out the outputs that were created
+            # by vsearch, as we do not actually want reverse-complemented reads
+            # instead we want to use the tabbedout report created in that step
+            # to identify misoriented reads, and swap F/R reads.
+            # note that opening files in 'w' mode will intentionally overwrite.
+            with open(str(fwd_path_out), 'wb') as f_out:
+                with open(str(rev_path_out), 'wb') as r_out:
+                    with open(str(fwd_notmatched), 'wb') as f_notmatched:
+                        with open(str(rev_notmatched), 'wb') as r_notmatched:
+                            # read in paired reads (should be in same order)
+                            # one fastq sequence pair at a time
+                            for _f, _r in zip(read_fastq(str(fwd_path_in)),
+                                              read_fastq(str(rev_path_in))):
+                                # grab read ID from the header line
+                                read_id = _f[0].lstrip('@')
+                                orientation = df.loc[read_id, 'orientation']
+                                # if correctly oriented, keep
+                                if orientation == '+':
+                                    f_out.write(
+                                        ('\n'.join(_f) + '\n').encode('utf-8'))
+                                    r_out.write(
+                                        ('\n'.join(_r) + '\n').encode('utf-8'))
+                                # if reverse orientation, swap F/R reads
+                                elif orientation == '-':
+                                    f_out.write(
+                                        ('\n'.join(_r) + '\n').encode('utf-8'))
+                                    r_out.write(
+                                        ('\n'.join(_f) + '\n').encode('utf-8'))
+                                # the alternative is no match so we toss...
+                                else:
+                                    f_notmatched.write(
+                                        ('\n'.join(_f) + '\n').encode('utf-8'))
+                                    r_notmatched.write(
+                                        ('\n'.join(_r) + '\n').encode('utf-8'))
+                            run_command(['gzip', str(r_notmatched)])
+                        run_command(['gzip', str(f_notmatched)])
+                    run_command(['gzip', str(rev_path_out)])
+                run_command(['gzip', str(fwd_path_out)])
 
     return oriented, notmatched
