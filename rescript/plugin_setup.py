@@ -599,7 +599,6 @@ plugin.methods.register_function(
     inputs={'sequences': FeatureData[Sequence],
             'reference_sequences': FeatureData[Sequence]},
     parameters={
-        'threads': VSEARCH_PARAMS['threads'],
         'dbmask': VSEARCH_PARAMS['dbmask'],
         'relabel': VSEARCH_PARAMS['relabel'],
         'relabel_keep': VSEARCH_PARAMS['relabel_keep'],
@@ -619,7 +618,6 @@ plugin.methods.register_function(
                                 'parameters will be ignored.'
                                 )},
     parameter_descriptions={
-        'threads': VSEARCH_PARAM_DESCRIPTIONS['threads'],
         'dbmask': VSEARCH_PARAM_DESCRIPTIONS['dbmask'],
         'relabel': VSEARCH_PARAM_DESCRIPTIONS['relabel'],
         'relabel_keep': VSEARCH_PARAM_DESCRIPTIONS['relabel_keep'],
