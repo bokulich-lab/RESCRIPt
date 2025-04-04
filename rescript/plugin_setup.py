@@ -38,8 +38,7 @@ from .extract_seq_segments import extract_seq_segments
 from .ncbi_datasets import get_ncbi_genomes
 from q2_types.sample_data import SampleData
 from q2_types.per_sample_sequences import (
-    SequencesWithQuality, PairedEndSequencesWithQuality,
-    JoinedSequencesWithQuality)
+    PairedEndSequencesWithQuality, JoinedSequencesWithQuality)
 from q2_types.feature_data import (FeatureData, Taxonomy, Sequence,
                                    AlignedSequence, RNASequence,
                                    AlignedRNASequence, ProteinSequence)
@@ -648,8 +647,7 @@ plugin.methods.register_function(
     citations=[citations['rognes2016vsearch']]
 )
 
-T = TypeMatch([SequencesWithQuality, PairedEndSequencesWithQuality,
-               JoinedSequencesWithQuality])
+T = TypeMatch([PairedEndSequencesWithQuality, JoinedSequencesWithQuality])
 plugin.methods.register_function(
     function=orient_reads,
     inputs={'sequences': SampleData[T],
@@ -661,28 +659,20 @@ plugin.methods.register_function(
              ('unmatched_reads', SampleData[T])],
     input_descriptions={
         'sequences': 'Sequence reads to be oriented.',
-        'reference_sequences': ('Reference sequences to orient against. If '
-                                'no reference is provided, all the reads '
-                                'will be reverse complemented and all '
-                                'parameters will be ignored.'
-                                )},
+        'reference_sequences': 'Reference sequences to orient against.'
+        },
     parameter_descriptions={
         'dbmask': VSEARCH_PARAM_DESCRIPTIONS['dbmask'],
     },
     output_descriptions={
-        'oriented_reads': 'Re-oriented or reverse-complemented reads.',
-        'unmatched_reads': 'Reads that fail to match at least one '
-                          'reference sequence in either + or - orientation. '
-                          'This will be empty if no refrence is provided.'},
-    name='Reverse-complement or orient FASTQ reads against reference.',
+        'oriented_reads': 'Oriented reads.',
+        'unmatched_reads': 'Reads that fail to match at least one reference '
+                           'sequence in either + or - orientation.'},
+    name='Orient FASTQ reads against reference.',
     description=(
         'Orient input reads (FASTQ) by comparison against a set of reference '
-        'sequences using VSEARCH. This action can also be used to quickly '
-        'filter out sequences that (do not) match a set of reference '
-        'sequences in either orientation. Alternatively, if no reference '
-        'sequences are provided as input, all input sequences will be '
-        'reverse-complemented. In this case, no alignment is performed, '
-        'and the `dbmask` parameter is ignored.'
+        'sequences using VSEARCH. This action is useful for orienting reads '
+        'that are in mixed orientations prior to denoising or clustering.'
     ),
     citations=[citations['rognes2016vsearch']]
 )

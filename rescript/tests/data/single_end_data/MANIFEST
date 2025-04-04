@@ -1,4 +1,5 @@
-# Some fake single-end sequences
+# Some fake joined paired-end sequences
 
 sample-id,filename,direction
 Human-Kneecap,Human-Kneecap_S1_L001_R1_001.fastq.gz,forward
+Human-Copycat,Human-Copycat_S2_L001_R1_001.fastq.gz,forward

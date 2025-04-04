@@ -143,13 +143,17 @@ class TestOrientReads(TestPluginBase):
         self.seqs = \
             import_data('SampleData[PairedEndSequencesWithQuality]',
                         self.get_data_path('paired_end_data'))
-        self.seqs_singleend = \
-            import_data('SampleData[SequencesWithQuality]',
+        self.seqs_joined = \
+            import_data('SampleData[JoinedSequencesWithQuality]',
                         self.get_data_path('single_end_data'))
         self.ref = import_data(
             'FeatureData[Sequence]', self.get_data_path('Human-Kneecap.fasta'))
 
     # this test checks that expected IDs AND reoriented seqs are returned
+    # the test data consists of 3 read pairs in the correct orientation
+    # and one pair that has R1/R2 switched to simulate mixed-orientation
+    # and one pair should have unknown orientation/no similarity to any refseq
+    # and thus will be removed.
     def test_reorient_default(self):
         expected = \
             import_data('SampleData[PairedEndSequencesWithQuality]',
@@ -158,30 +162,17 @@ class TestOrientReads(TestPluginBase):
             sequences=self.seqs, reference_sequences=self.ref)
         self._validate_fastqs_equal(reoriented, expected)
 
-    # and again but for single-end reads
-    def test_reorient_default_singleend(self):
+    # and again but for pre-joined reads
+    # in this case one read is in the wrong orientation and will be
+    # reoriented. One is garbage with no similarity to refseqs and will be
+    # removed. Technically these data are single-end reads but for
+    # practical reasons they can masquerade as pre-joined reads just as
+    # well for our purposes (since we do not actually care about seq
+    # topology or quality info, we just care about orientation!)
+    def test_reorient_default_joined(self):
         expected = \
-            import_data('SampleData[SequencesWithQuality]',
+            import_data('SampleData[JoinedSequencesWithQuality]',
                         self.get_data_path('single_end_data_expected'))
         reoriented, unmatched, = rescript.actions.orient_reads(
-            sequences=self.seqs_singleend, reference_sequences=self.ref)
-        self._validate_fastqs_equal(reoriented, expected)
-
-    # this test checks that reverse-complemented reads are returned when
-    # no reference is passed as input
-    def test_reorient_no_ref(self):
-        expected = \
-            import_data('SampleData[PairedEndSequencesWithQuality]',
-                        self.get_data_path('paired_end_reverse_complemented'))
-        reoriented, unmatched = rescript.actions.orient_reads(
-            sequences=self.seqs, reference_sequences=None)
-        self._validate_fastqs_equal(reoriented, expected)
-
-    # and again but for single-end reads
-    def test_reorient_no_ref_singleend(self):
-        expected = \
-            import_data('SampleData[SequencesWithQuality]',
-                        self.get_data_path('single_end_reverse_complemented'))
-        reoriented, unmatched = rescript.actions.orient_reads(
-            sequences=self.seqs_singleend, reference_sequences=None)
+            sequences=self.seqs_joined, reference_sequences=self.ref)
         self._validate_fastqs_equal(reoriented, expected)
