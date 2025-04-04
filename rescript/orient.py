@@ -90,6 +90,8 @@ def orient_seqs(
     return oriented, notmatched
 
 
+# note: this function is no longer used, but I would like to keep it
+# here, as this could be implemented for RC of FASTA seqs, see #224
 def _vsearch_revcomp_fastq(seqs_fp, out_fp):
     cmd = [
         'vsearch',
@@ -100,11 +102,12 @@ def _vsearch_revcomp_fastq(seqs_fp, out_fp):
     run_command(['gzip', str(out_fp)])
 
 
+# adapted from q2-demux
 def read_fastq(filepath):
-    # adapted from q2-demux
     fh = gzip.open(filepath, 'rt')
-    for header, seq, qh, qual in zip_longest(*[fh] * 4):
-        yield (header.strip(), seq.strip(), qh.strip(), qual.strip())
+    # vsearch strips off the lane info, so we will do the same for consistency
+    for head, seq, qh, q in zip_longest(*[fh] * 4):
+        yield (head.strip().split(' ')[0], seq.strip(), qh.strip(), q.strip())
 
 
 def orient_reads(
@@ -138,6 +141,8 @@ def orient_reads(
 
         # use vsearch to orient reads against reference database
         # this is only done to detect read orientations, outputs are tossed
+        # except in the case of pre-joined reads, in which case vsearch
+        # does the job (reverse-complement mis-oriented joined reads)
         df = None
         with tempfile.NamedTemporaryFile() as tabbedout:
             cmd = [
@@ -156,8 +161,9 @@ def orient_reads(
             )
 
             run_command(cmd)
-            run_command(['gzip', str(fwd_path_out)])
+            # run_command(['gzip', str(fwd_path_out)])
 
+            # parse the read orientation report from vsearch
             df = pd.read_csv(
                 tabbedout.name, sep='\t', index_col=0, header=None)
             df.columns = ['orientation', 'f_hits', 'r_hits']
@@ -200,9 +206,10 @@ def orient_reads(
                                         ('\n'.join(_f) + '\n').encode('utf-8'))
                                     r_notmatched.write(
                                         ('\n'.join(_r) + '\n').encode('utf-8'))
-                            run_command(['gzip', str(r_notmatched)])
-                        run_command(['gzip', str(f_notmatched)])
-                    run_command(['gzip', str(rev_path_out)])
-                run_command(['gzip', str(fwd_path_out)])
+            # gzip all files for that sample (output format expects .gz)
+            run_command(['gzip', str(rev_notmatched)])
+            run_command(['gzip', str(rev_path_out)])
+        run_command(['gzip', str(fwd_notmatched)])
+        run_command(['gzip', str(fwd_path_out)])
 
     return oriented, notmatched
