@@ -41,7 +41,7 @@ def _add_optional_parameters(cmd: List[str], **kwargs: Dict[str, Any]) -> None:
 
 def orient_seqs(
     sequences: DNAFASTAFormat,
-    reference_sequences: DNAFASTAFormat = None,
+    reference_sequences: DNAFASTAFormat,
     dbmask: str = None,
     relabel: str = None,
     relabel_keep: bool = None,
