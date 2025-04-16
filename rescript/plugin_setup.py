@@ -1020,7 +1020,7 @@ plugin.methods.register_function(
         'url_type': 'Toggle download URL. \'Primary\' will download data '
                     'from the primary GTDB URL. \'Mirror\' will dowload data '
                     'from the GTDB data mirror. Use \'Mirror\' if downloads '
-                    'from \'Primary\'are slow.'},
+                    'from \'Primary\' are slow.'},
     output_descriptions={
         'gtdb_taxonomy': 'SSU GTDB reference taxonomy.',
         'gtdb_sequences': 'SSU GTDB reference sequences.'},
