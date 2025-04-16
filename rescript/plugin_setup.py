@@ -995,7 +995,8 @@ plugin.methods.register_function(
         'version': Str % Choices(['202.0', '207.0', '214.0', '214.1',
                                   '220.0', '226.0']),
         'domain': Str % Choices(['Both', 'Bacteria', 'Archaea']),
-        'db_type': Str % Choices(['All', 'SpeciesReps'])
+        'db_type': Str % Choices(['All', 'SpeciesReps']),
+        'url_type': Str % Choices(['Primary', 'Mirror'])
         },
     outputs=[('gtdb_taxonomy', FeatureData[Taxonomy]),
              ('gtdb_sequences', FeatureData[Sequence])],
@@ -1015,7 +1016,11 @@ plugin.methods.register_function(
                    'species. Note: if \'All\' is used, the \'domain\' '
                    'parameter will be ignored as GTDB does not maintain '
                    'separate domain-level files for these non-clustered '
-                   'data.'},
+                   'data.',
+        'url_type': 'Toggle download URL. \'Primary\' will download data '
+                    'from the primary GTDB URL. \'Mirror\' will dowload data '
+                    'from the GTDB data mirror. Use \'Mirror\' if downloads '
+                    'from \'Primary\'are slow.'},
     output_descriptions={
         'gtdb_taxonomy': 'SSU GTDB reference taxonomy.',
         'gtdb_sequences': 'SSU GTDB reference sequences.'},
