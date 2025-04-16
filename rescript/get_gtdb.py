@@ -24,7 +24,8 @@ from q2_types.feature_data import (TSVTaxonomyFormat, DNAFASTAFormat,
 # bacteria. for example 'ar53' and 'bac120' mean that the GTDB phylogeny
 # is based on 53 and 120 concatenated proteins (cp), respectively.
 # If this changes we can set up a conditional statemnt below.
-VERSION_MAP_DICT = {'220.0': {'Archaea': 'ar53', 'Bacteria': 'bac120'},
+VERSION_MAP_DICT = {'226.0': {'Archaea': 'ar53', 'Bacteria': 'bac120'},
+                    '220.0': {'Archaea': 'ar53', 'Bacteria': 'bac120'},
                     '214.1': {'Archaea': 'ar53', 'Bacteria': 'bac120'},
                     '214.0': {'Archaea': 'ar53', 'Bacteria': 'bac120'},
                     '207.0': {'Archaea': 'ar53', 'Bacteria': 'bac120'},
@@ -32,7 +33,7 @@ VERSION_MAP_DICT = {'220.0': {'Archaea': 'ar53', 'Bacteria': 'bac120'},
 
 
 def get_gtdb_data(
-    version: str = '220.0',
+    version: str = '226.0',
     domain: str = 'Both',
     db_type: str = 'SpeciesReps',
         ) -> (TSVTaxonomyFormat, DNAFASTAFormat):
@@ -46,7 +47,7 @@ def get_gtdb_data(
     return tax_q, seqs_q
 
 
-def _assemble_queries(version='220.0',
+def _assemble_queries(version='226.0',
                       db_type='SpeciesReps',
                       domain='Both'):
     queries = []
@@ -57,7 +58,7 @@ def _assemble_queries(version='220.0',
     # file names...
     # GTDB v220 started storing the ssu_reps FASTA files
     # as 'fna.gz' instead of their usual 'tar.gz'.
-    if version == '220.0':
+    if version in ['220.0', '226.0']:
         stype = 'fna'
     else:
         stype = 'tar'

@@ -993,7 +993,7 @@ plugin.methods.register_function(
     inputs={},
     parameters={
         'version': Str % Choices(['202.0', '207.0', '214.0', '214.1',
-                                  '220.0']),
+                                  '220.0', '226.0']),
         'domain': Str % Choices(['Both', 'Bacteria', 'Archaea']),
         'db_type': Str % Choices(['All', 'SpeciesReps'])
         },
