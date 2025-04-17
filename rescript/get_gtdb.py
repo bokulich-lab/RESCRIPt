@@ -36,11 +36,13 @@ def get_gtdb_data(
     version: str = '226.0',
     domain: str = 'Both',
     db_type: str = 'SpeciesReps',
+    url_type: str = 'Primary'
         ) -> (TSVTaxonomyFormat, DNAFASTAFormat):
 
     queries = _assemble_queries(version=version,
                                 db_type=db_type,
-                                domain=domain)
+                                domain=domain,
+                                url_type=url_type)
     tax_q, seqs_q = _retrieve_data_from_gtdb(queries)
 
     print('\n Saving files...\n')
@@ -49,9 +51,15 @@ def get_gtdb_data(
 
 def _assemble_queries(version='226.0',
                       db_type='SpeciesReps',
-                      domain='Both'):
+                      domain='Both',
+                      url_type='Primary'):
     queries = []
-    base_url = 'https://data.gtdb.ecogenomic.org/releases/'
+
+    if url_type == 'Primary':
+        base_url = 'https://data.gtdb.ecogenomic.org/releases/'
+    elif url_type == 'Mirror':
+        base_url = 'https://data.ace.uq.edu.au/public/gtdb/data/releases/'
+
     base_version = version.split('.')[0]
     # ^^ Set `base_version` variable becuase number after the decimal is
     # only used for the directory. GTDB trims this off for the actual

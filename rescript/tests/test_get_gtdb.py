@@ -96,13 +96,35 @@ class TestGetGTDB(TestPluginBase):
             except HTTPError:
                 raise ValueError('Failed to open URL: ' + u)
 
-    def test_assemble_queries_all(self):
-        obs_query_urls = _assemble_queries('207.0', 'All')
+    def test_assemble_queries_all_primary(self):
+        obs_query_urls = _assemble_queries(version='207.0',
+                                           db_type='All',
+                                           url_type='Primary')
         print('obs queries: ', obs_query_urls)
 
         exp_query_urls = [('All',
                            'https://data.gtdb.ecogenomic.org/releases/'
                            'release207/207.0/genomic_files_all/'
+                           'ssu_all_r207.tar.gz')]
+        print('exp queries: ', exp_query_urls)
+        self.assertEqual(obs_query_urls, exp_query_urls)
+
+        # test that these URLs work
+        for _, u in obs_query_urls:
+            try:
+                urlopen(u)
+            except HTTPError:
+                raise ValueError('Failed to open URL: ' + u)
+
+    def test_assemble_queries_all_mirror(self):
+        obs_query_urls = _assemble_queries(version='207.0',
+                                           db_type='All',
+                                           url_type='Mirror')
+        print('obs queries: ', obs_query_urls)
+
+        exp_query_urls = [('All',
+                           'https://data.ace.uq.edu.au/public/gtdb/data/'
+                           'releases/release207/207.0/genomic_files_all/'
                            'ssu_all_r207.tar.gz')]
         print('exp queries: ', exp_query_urls)
         self.assertEqual(obs_query_urls, exp_query_urls)
