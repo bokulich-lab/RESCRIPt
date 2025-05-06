@@ -15,12 +15,11 @@ import zipfile
 from copy import deepcopy
 from typing import List, Dict
 
-import ncbi.datasets as nd
-from ncbi.datasets.openapi import ApiClient as DatasetsApiClient
+from ncbi.datasets.openapi import ApiClient as DatasetsApiClient, GenomeApi
 import pandas as pd
 import skbio
 from multiprocessing import Manager
-from ncbi.datasets import ApiException
+from ncbi.datasets.openapi.rest import ApiException
 from q2_types.feature_data import DNAFASTAFormat
 from q2_types.genome_data import (LociDirectoryFormat,
                                   ProteinsDirectoryFormat)
@@ -30,14 +29,14 @@ from rescript.ncbi import get_taxonomies, _default_ranks
 
 def _get_assembly_descriptors(
         api_instance, assembly_levels, assembly_source, only_reference,
-        page_size, taxon, tax_exact_match
+        page_size, taxa, tax_exact_match
 ) -> Dict[str, str]:
     assembly_to_taxon = {}
     next_page_token = ''
     while True:
         try:
-            genome_summary = api_instance.assembly_descriptors_by_taxon(
-                taxon=taxon,
+            genome_summary = api_instance.genome_dataset_reports_by_taxon(
+                taxons=taxa,
                 page_size=page_size,
                 filters_assembly_source=assembly_source,
                 filters_assembly_level=assembly_levels,
@@ -53,7 +52,7 @@ def _get_assembly_descriptors(
             raise Exception('Unexpected error while calling NCBI Datasets '
                             f'API: {e}.')
 
-        if not genome_summary.assemblies:
+        if not genome_summary.reports:
             msg = 'The query to the NCBI Dataset API did not return ' \
                   'any genomes. '
             if not genome_summary.messages:
@@ -71,9 +70,10 @@ def _get_assembly_descriptors(
 
         next_page_token = genome_summary.next_page_token
 
-        genome_assembly = [x.assembly for x in genome_summary.assemblies]
+        # genome_assembly = [x.assembly for x in genome_summary.assemblies]
         assembly_to_taxon.update(
-            {x.assembly_accession: x.org.tax_id for x in genome_assembly}
+            {report.accession: report.organism.tax_id
+             for report in genome_summary.reports}
         )
 
         if not next_page_token:
@@ -97,7 +97,7 @@ def _fetch_and_extract_dataset(
     with tempfile.TemporaryDirectory() as tmp:
         result_path = os.path.join(tmp, 'datasets.zip')
         with open(result_path, 'wb') as f:
-            f.write(api_response.data)
+            f.write(api_response)
 
         with zipfile.ZipFile(result_path, 'r') as zipped:
             zipped.extractall(tmp)
@@ -162,7 +162,7 @@ def _fetch_taxonomy(
 ):
     manager = Manager()
     taxa, bad_accs = get_taxonomies(
-        taxids={k: v for k, v in zip(all_acc_ids, all_tax_ids)},
+        taxids={k: str(v) for k, v in zip(all_acc_ids, all_tax_ids)},
         ranks=ranks, rank_propagation=rank_propagation,
         logging_level='INFO', n_jobs=2, request_lock=manager.Lock()
     )
@@ -193,9 +193,9 @@ def _fetch_and_extract_all(api_instance, assemblies, only_genomic):
     for assembly_subset in chunks:
         api_response = api_instance.download_assembly_package(
             assembly_subset,
-            exclude_sequence=False,
-            include_annotation_type=['PROT_FASTA', 'GENOME_GFF'],
-            _preload_content=False
+            include_annotation_type=[
+                'PROT_FASTA', 'GENOME_GFF', 'GENOME_FASTA', 'SEQUENCE_REPORT'
+            ],
         )
         accessions = _fetch_and_extract_dataset(
             api_response, genomes, loci, proteins,
@@ -208,7 +208,7 @@ def _fetch_and_extract_all(api_instance, assemblies, only_genomic):
 
 
 def get_ncbi_genomes(
-        taxon: str,
+        taxa: List[str],
         assembly_source: str = 'refseq',
         assembly_levels: List[str] = ['complete_genome'],
         only_reference: bool = True,
@@ -227,10 +227,10 @@ def get_ncbi_genomes(
         'assembly_levels': deepcopy(assembly_levels),
         'assembly_source': assembly_source,
         'only_reference': only_reference, 'page_size': page_size,
-        'taxon': taxon, 'tax_exact_match': tax_exact_match
+        'taxa': taxa, 'tax_exact_match': tax_exact_match
     }
     with DatasetsApiClient() as api_client:
-        api_instance = nd.GenomeApi(api_client)
+        api_instance = GenomeApi(api_client)
 
         assembly_to_taxon = _get_assembly_descriptors(
             api_instance=api_instance, **assembly_descriptors_params
@@ -240,12 +240,12 @@ def get_ncbi_genomes(
             api_instance, list(assembly_to_taxon.keys()), only_genomic
         )
 
-        taxa = _fetch_taxonomy(
-            assembly_to_taxon.keys(),
-            assembly_to_taxon.values(),
+        _taxa = _fetch_taxonomy(
+            list(assembly_to_taxon.keys()),
+            list(assembly_to_taxon.values()),
             accession_map.explode(),
             ranks,
             rank_propagation
         )
 
-    return genomes, loci, proteins, taxa
+    return genomes, loci, proteins, _taxa

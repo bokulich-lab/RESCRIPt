@@ -12,7 +12,7 @@ import tempfile
 from unittest.mock import Mock, patch, call, ANY
 
 import pandas as pd
-from ncbi.datasets import GenomeApi, ApiClient, ApiException
+from ncbi.datasets.openapi import GenomeApi, ApiClient, ApiException
 from q2_types.feature_data import DNAFASTAFormat
 from q2_types.genome_data import (LociDirectoryFormat,
                                   ProteinsDirectoryFormat)
@@ -45,27 +45,27 @@ class TestNCBIDatasets(TestPluginBase):
     def generate_fake_response(self, token, genome_count=2, is_error=False):
         if is_error:
             msg = [Mock(error=Mock(message='Something went wrong.'))]
-            assemblies = None
+            reports = None
         else:
             msg = None
-            assemblies = [
-                Mock(assembly=Mock(
-                    assembly_accession=self.fake_assembly_ids[i],
-                    org=Mock(tax_id=self.fake_tax_ids[i])
-                )) for i in range(genome_count)
+            reports = [
+                Mock(
+                    accession=self.fake_assembly_ids[i],
+                    organism=Mock(tax_id=self.fake_tax_ids[i])
+                ) for i in range(genome_count)
             ]
         return Mock(
-            next_page_token=token, assemblies=assemblies, messages=msg
+            next_page_token=token, reports=reports, messages=msg
         )
 
     def test_get_assembly_descriptors_one_page(self):
-        with patch.object(GenomeApi, 'assembly_descriptors_by_taxon') as p:
+        with patch.object(GenomeApi, 'genome_dataset_reports_by_taxon') as p:
             p.return_value = self.generate_fake_response(None, 2)
             api_instance = GenomeApi(ApiClient())
 
             obs = _get_assembly_descriptors(
                 api_instance, ['complete_chromosome'], 'refseq',
-                True, 10, 'some taxon', True
+                True, 10, ['some taxon'], True
             )
 
             exp = {
@@ -74,7 +74,7 @@ class TestNCBIDatasets(TestPluginBase):
             }
             self.assertDictEqual(obs, exp)
             p.assert_called_once_with(
-                taxon='some taxon', page_size=10,
+                taxons=['some taxon'], page_size=10,
                 filters_assembly_source='refseq',
                 filters_assembly_level=['complete_chromosome'],
                 filters_reference_only=True,
@@ -83,7 +83,7 @@ class TestNCBIDatasets(TestPluginBase):
             )
 
     def test_get_assembly_descriptors_many_pages(self):
-        with patch.object(GenomeApi, 'assembly_descriptors_by_taxon') as p:
+        with patch.object(GenomeApi, 'genome_dataset_reports_by_taxon') as p:
             p.side_effect = [
                 self.generate_fake_response('token1', 1),
                 self.generate_fake_response('token2', 1),
@@ -93,13 +93,13 @@ class TestNCBIDatasets(TestPluginBase):
 
             obs = _get_assembly_descriptors(
                 api_instance, ['complete_chromosome'], 'refseq',
-                True, 10, 'some taxon', True
+                True, 10, ['some taxon'], True
             )
 
             exp = {'GCF_123': '1234', }
             self.assertDictEqual(obs, exp)
             p.assert_has_calls(
-                [call(taxon='some taxon', page_size=10,
+                [call(taxons=['some taxon'], page_size=10,
                       filters_assembly_source='refseq',
                       filters_assembly_level=['complete_chromosome'],
                       filters_reference_only=True,
@@ -109,7 +109,7 @@ class TestNCBIDatasets(TestPluginBase):
             )
 
     def test_get_assembly_descriptors_with_api_error(self):
-        with patch.object(GenomeApi, 'assembly_descriptors_by_taxon') as p:
+        with patch.object(GenomeApi, 'genome_dataset_reports_by_taxon') as p:
             p.side_effect = ApiException('Santa is not real.')
             api_instance = GenomeApi(ApiClient())
 
@@ -122,7 +122,7 @@ class TestNCBIDatasets(TestPluginBase):
                 )
 
     def test_get_assembly_descriptors_no_result(self):
-        with patch.object(GenomeApi, 'assembly_descriptors_by_taxon') as p:
+        with patch.object(GenomeApi, 'genome_dataset_reports_by_taxon') as p:
             p.return_value = self.generate_fake_response(None, is_error=True)
             api_instance = GenomeApi(ApiClient())
 
@@ -143,7 +143,7 @@ class TestNCBIDatasets(TestPluginBase):
         loci = LociDirectoryFormat()
         proteins = ProteinsDirectoryFormat()
         with open(self.zipped_data, 'rb') as fin:
-            fake_response = Mock(data=fin.read())
+            fake_response = fin.read()
 
             obs_accessions = \
                 _fetch_and_extract_dataset(
@@ -169,7 +169,7 @@ class TestNCBIDatasets(TestPluginBase):
         proteins = ProteinsDirectoryFormat()
 
         with open(self.zipped_data, 'rb') as fin:
-            fake_response = Mock(data=fin.read())
+            fake_response = fin.read()
 
             obs_accessions = \
                 _fetch_and_extract_dataset(
@@ -232,18 +232,19 @@ class TestNCBIDatasets(TestPluginBase):
 
     # just test that everything works together
     def test_get_ncbi_genomes(self):
-        with patch.object(GenomeApi, 'assembly_descriptors_by_taxon') as p1, \
-                patch.object(GenomeApi, 'download_assembly_package') as p2, \
-                patch('rescript.ncbi_datasets.get_taxonomies') as p3, \
+        with patch.object(
+                GenomeApi, 'genome_dataset_reports_by_taxon'
+        ) as p1, patch.object(
+            GenomeApi, 'download_assembly_package'
+        ) as p2, patch('rescript.ncbi_datasets.get_taxonomies') as p3, \
                 open(self.zipped_data, 'rb') as fin:
             p1.return_value = self.generate_fake_response(None, 2)
-            fake_response = Mock(data=fin.read())
-            p2.return_value = fake_response
+            p2.return_value = fin.read()
             p3.return_value = ({'AC_12.1': 'this;is;some;taxonomy',
                                 'AC_23.2': 'that;is;another;taxonomy'}, [])
 
             result = get_ncbi_genomes(
-                taxon='some taxon', assembly_source='refseq',
+                taxa=['some taxon'], assembly_source='refseq',
                 assembly_levels=['scaffold', 'contig'],
                 only_reference=True, page_size=12, tax_exact_match=True,
                 only_genomic=True
@@ -251,7 +252,7 @@ class TestNCBIDatasets(TestPluginBase):
             obs_genomes, obs_loci, obs_proteins, obs_taxa = result
 
             p1.assert_called_once_with(
-                taxon='some taxon', page_size=12,
+                taxons=['some taxon'], page_size=12,
                 filters_assembly_source='refseq',
                 filters_assembly_level=['scaffold', 'contig'],
                 filters_reference_only=True,
@@ -259,9 +260,11 @@ class TestNCBIDatasets(TestPluginBase):
                 tax_exact_match=True, page_token=''
             )
             p2.assert_called_once_with(
-                self.fake_assembly_ids, exclude_sequence=False,
-                include_annotation_type=['PROT_FASTA', 'GENOME_GFF'],
-                _preload_content=False
+                self.fake_assembly_ids,
+                include_annotation_type=[
+                    'PROT_FASTA', 'GENOME_GFF',
+                    'GENOME_FASTA', 'SEQUENCE_REPORT'
+                ],
             )
             p3.assert_called_once_with(
                 taxids={
