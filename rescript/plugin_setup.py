@@ -57,6 +57,7 @@ from rescript.ncbi import (
 from .get_gtdb import get_gtdb_data
 from .get_unite import get_unite_data
 from .get_pr2 import get_pr2_data, _allowed_pr2_ranks, _default_pr2_ranks
+from .get_midori2 import get_midori2_data
 
 citations = Citations.load('citations.bib', package='rescript')
 
@@ -93,6 +94,10 @@ PR2_LICENSE_NOTE = (
     'NOTE: THIS ACTION ACQUIRES DATA FROM PR2, which is licensed under '
     'MIT. To learn more, please visit https://pr2-database.org/ '
     'and https://github.com/pr2database/.')
+
+MIDORI2_LICENSE_NOTE = (
+    'NOTE: THIS ACTION ACQUIRES DATA FROM MIDORI2. To learn '
+    'more, please visit https://www.reference-midori.info/.')
 
 LINEPLOT_XAXIS_INTERPRETATION = (
     'The x-axis in these plots represents the taxonomic '
@@ -1103,6 +1108,48 @@ plugin.methods.register_function(
         'REQUIRES STABLE INTERNET CONNECTION. ' +
         PR2_LICENSE_NOTE),
     citations=[citations['Guillou2013pr2']]
+)
+
+
+plugin.methods.register_function(
+    function=get_midori2_data,
+    inputs={},
+    parameters={
+        'version': Str % Choices(['GenBank265_2025-03-08',
+                                  'GenBank264_2024-12-14']),
+        'mito_gene': Str % Choices(['A6', 'A8', 'CO1', 'CO2', 'CO3', 'Cytb',
+                                    'ND1', 'ND2', 'ND3', 'ND4L', 'ND4',
+                                    'ND5', 'ND6', 'lrRNA', 'srRNA']),
+        'ref_seq_type': Str % Choices(['uniq', 'long']),
+        'unspecified_species': Bool,
+        },
+    outputs=[('midori2_sequences', FeatureData[Sequence]),
+             ('midori2_taxonomy', FeatureData[Taxonomy])],
+    input_descriptions={},
+    parameter_descriptions={
+        'version': 'MIDORI 2 version to download.',
+        'mito_gene': 'The mitochondrial gene of interest.',
+        'ref_seq_type': ' \'uniq\': contains all unique haplotypes associated '
+                        'with each species. \'long\': contains the longest '
+                        'sequence for each species.',
+        'unspecified_species': 'Download reference sequences that contain '
+                               'species that are left unspecified. That is, '
+                               'any reference sequences that lack binomial '
+                               'species-level description, such as \'sp\', '
+                               '\'aff\', \'nr\', \'cf\', \'complex\' '
+                               'and \'nomen\', \'nudum\'.'},
+    output_descriptions={
+        'midori2_sequences': 'MIDORI 2 reference sequences.',
+        'midori2_taxonomy': 'MIDORI 2 reference taxonomy.'},
+    name='Download and import MIDORI 2 reference data.',
+    description=(
+        'Download and import a variety of mitochonrial gene sequences '
+        'along with their associated taxonomy from the MIDORI 2 database. '
+        'Simply provide the database version, the mitochondrial gene'
+        'of interest, the reference sequence type, and if reference '
+        'sequences with unspecified species information should be '
+        'downloaded. ' + MIDORI2_LICENSE_NOTE),
+    citations=[citations['Leray2022midori2']]
 )
 
 
