@@ -25,7 +25,6 @@ def _assemble_midori2_urls(mito_gene='srRNA',
                            unspecified_species=False,
                            ):
     print('Building URLs ...')
-
     if unspecified_species:
         spec = 'QIIME_sp'
         sp = 'SP_'
@@ -35,37 +34,31 @@ def _assemble_midori2_urls(mito_gene='srRNA',
 
     vernum = version.strip('GenBank').split('_')[0]
 
-    urls_to_retrieve = []
     base_url = ('https://www.reference-midori.info/download/Databases/'
                 '{full_version}/{spec}/{ref_seq_type}/MIDORI2_'
                 '{ref_seq_type_u}_NUC_'
                 '{sp}GB{vernum}_{mito_gene}_QIIME.{file_type}.gz')
 
-    for data_type in ['fasta', 'taxon']:
-        urls_to_retrieve.append(
-                    base_url.format(
-                        **{'full_version': version,
-                            'spec': spec,
-                            'ref_seq_type': ref_seq_type,
-                            'ref_seq_type_u': ref_seq_type.upper(),
-                            'sp': sp,
-                            'vernum': vernum,
-                            'mito_gene': mito_gene,
-                            'file_type': data_type}))
-    return urls_to_retrieve
+    base_format_dict = {'full_version': version,
+                        'spec': spec,
+                        'ref_seq_type': ref_seq_type,
+                        'ref_seq_type_u': ref_seq_type.upper(),
+                        'sp': sp,
+                        'vernum': vernum,
+                        'mito_gene': mito_gene}
+
+    fasta_url = base_url.format(**base_format_dict, **{'file_type': 'fasta'})
+    tax_url = base_url.format(**base_format_dict, **{'file_type': 'taxon'})
+
+    return fasta_url, tax_url
 
 
-def _retrieve_data_from_midori2(urls_to_retrieve):
-    # Perform check that the `urls_to_retrieve` should only
-    # contain 2 files, a 'fasta' and 'taxonomy' file.
-
-    if len(urls_to_retrieve) != 2:
-        raise ValueError('List should only contain 2 URLs!')
+def _retrieve_data_from_midori2(fasta_url, tax_url):
 
     print('\nDownloading and processing raw files ... \n')
 
     with tempfile.TemporaryDirectory() as tmpdirname:
-        for url in urls_to_retrieve:
+        for url in [fasta_url, tax_url]:
             compressed_fn = Path(url).name
             uncompressed_fn = Path(url).stem
             in_path = os.path.join(tmpdirname, compressed_fn)
@@ -99,13 +92,14 @@ def get_midori2_data(
     unspecified_species: bool = False,
         ) -> (DNAIterator, pd.DataFrame):
 
-    urls = _assemble_midori2_urls(mito_gene=mito_gene,
+    fasta_url, tax_url = _assemble_midori2_urls(
+                                  mito_gene=mito_gene,
                                   version=version,
                                   ref_seq_type=ref_seq_type,
                                   unspecified_species=unspecified_species,
                                   )
 
-    seqs, tax = _retrieve_data_from_midori2(urls)
+    seqs, tax = _retrieve_data_from_midori2(fasta_url, tax_url)
 
     print('\n Saving files...\n')
     return seqs, tax

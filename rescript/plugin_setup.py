@@ -1115,12 +1115,14 @@ plugin.methods.register_function(
     function=get_midori2_data,
     inputs={},
     parameters={
-        'version': Str % Choices(['GenBank265_2025-03-08',
-                                  'GenBank264_2024-12-14']),
+        'version': Str % Choices(
+                    ['GenBank265_2025-03-08', 'GenBank264_2024-12-14',
+                     'GenBank263_2024-10-13', 'GenBank262_2024-08-16',
+                     'GenBank261_2024-06-15', 'GenBank260_2024-04-15']),
         'mito_gene': Str % Choices(['A6', 'A8', 'CO1', 'CO2', 'CO3', 'Cytb',
                                     'ND1', 'ND2', 'ND3', 'ND4L', 'ND4',
                                     'ND5', 'ND6', 'lrRNA', 'srRNA']),
-        'ref_seq_type': Str % Choices(['uniq', 'long']),
+        'ref_seq_type': Str % Choices(['uniq', 'longest']),
         'unspecified_species': Bool,
         },
     outputs=[('midori2_sequences', FeatureData[Sequence]),
@@ -1130,20 +1132,18 @@ plugin.methods.register_function(
         'version': 'MIDORI 2 version to download.',
         'mito_gene': 'The mitochondrial gene of interest.',
         'ref_seq_type': ' \'uniq\': contains all unique haplotypes associated '
-                        'with each species. \'long\': contains the longest '
+                        'with each species. \'longest\': contains the longest '
                         'sequence for each species.',
         'unspecified_species': 'Download reference sequences that contain '
                                'species that are left unspecified. That is, '
                                'any reference sequences that lack binomial '
-                               'species-level description, such as \'sp\', '
-                               '\'aff\', \'nr\', \'cf\', \'complex\' '
-                               'and \'nomen\', \'nudum\'.'},
+                               'species-level description.'},
     output_descriptions={
         'midori2_sequences': 'MIDORI 2 reference sequences.',
         'midori2_taxonomy': 'MIDORI 2 reference taxonomy.'},
     name='Download and import MIDORI 2 reference data.',
     description=(
-        'Download and import a variety of mitochonrial gene sequences '
+        'Download and import a variety of mitochonrial DNA gene sequences '
         'along with their associated taxonomy from the MIDORI 2 database. '
         'Simply provide the database version, the mitochondrial gene'
         'of interest, the reference sequence type, and if reference '
