@@ -86,7 +86,7 @@ def _retrieve_data_from_midori2(fasta_url, tax_url):
 
 
 def get_midori2_data(
-    mito_gene: str = 'srRNA',
+    mito_gene: str,
     version: str = 'GenBank265_2025-03-08',
     ref_seq_type: str = 'uniq',
     unspecified_species: bool = False,
