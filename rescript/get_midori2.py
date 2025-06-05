@@ -19,7 +19,7 @@ from q2_types.feature_data import (TaxonomyFormat, DNAFASTAFormat,
                                    DNAIterator)
 
 
-def _assemble_midori2_urls(mito_gene='srRNA',
+def _assemble_midori2_urls(mito_gene,
                            version='GenBank265_2025-03-08',
                            ref_seq_type='uniq',
                            unspecified_species=False,
