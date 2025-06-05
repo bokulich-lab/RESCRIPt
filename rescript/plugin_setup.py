@@ -1145,7 +1145,7 @@ plugin.methods.register_function(
     description=(
         'Download and import a variety of mitochonrial DNA gene sequences '
         'along with their associated taxonomy from the MIDORI 2 database. '
-        'Simply provide the database version, the mitochondrial gene'
+        'Simply provide the database version, the mitochondrial gene '
         'of interest, the reference sequence type, and if reference '
         'sequences with unspecified species information should be '
         'downloaded. ' + MIDORI2_LICENSE_NOTE),
