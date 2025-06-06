@@ -10,7 +10,6 @@ import os
 import tempfile
 import shutil
 import gzip
-import warnings
 from urllib.request import urlretrieve
 from urllib.error import HTTPError
 from pathlib import Path
@@ -68,9 +67,8 @@ def _retrieve_data_from_midori2(fasta_url, tax_url):
                 print('Retrieving data from {0}'.format(url))
                 urlretrieve(url, in_path)
             except HTTPError:
-                msg = ("Unable to retrieve the following file from MIDORI2:\n"
-                       + url)
-                warnings.warn(msg, UserWarning)
+                raise ValueError('Unable to retrieve the following file '
+                                 'from MIDORI2:\n' + url)
 
             print('  Unzipping {0}...\n'.format(in_path))
             with gzip.open(in_path, 'rt') as gz_in:

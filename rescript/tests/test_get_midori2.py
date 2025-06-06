@@ -9,7 +9,8 @@
 import pkg_resources
 from qiime2.plugin.testing import TestPluginBase
 from qiime2.plugins import rescript
-from rescript.get_midori2 import _assemble_midori2_urls
+from rescript.get_midori2 import (_assemble_midori2_urls,
+                                  _retrieve_data_from_midori2)
 from q2_types.feature_data import (TaxonomyFormat,
                                    DNAFASTAFormat,
                                    DNAIterator)
@@ -81,6 +82,22 @@ class TestGetPR2(TestPluginBase):
                 urlopen(u)
             except HTTPError:
                 raise ValueError('Failed to open URL: ' + u)
+
+    def test_retrieve_data_from_midori2_raise_error(self):
+        # although two urls are provided, this should fail on
+        # the first url it processes, i.e. the fasta url.
+        incorrect_fasta_url = (
+                 'https://www.reference-midori.info/download/'
+                 'Databases/GenBank260_2024-04-15/QIIME/uniq/MIDORI2_'
+                 'LONGEST_NUC_GB260_ND4L_QIIME.fasta.gz')
+        incorrect_tax_url = (
+                 'https://www.reference-midori.info/download/'
+                 'Databases/GenBank260_2024-04-15/QIIME/uniq/MIDORI2_'
+                 'LONGEST_NUC_GB260_ND4L_QIIME.taxon.gz')
+
+        with self.assertRaises(ValueError):
+            _retrieve_data_from_midori2(incorrect_fasta_url,
+                                        incorrect_tax_url)
 
     def test_get_midori2(self):
         def _makey_fakey(fake_seq, fake_tax):
