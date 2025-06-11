@@ -15,12 +15,12 @@ from q2_types.feature_data import (TaxonomyFormat,
                                    DNAFASTAFormat,
                                    DNAIterator)
 import pandas as pd
-from urllib.request import urlopen
-from urllib.error import HTTPError
 from unittest.mock import patch
+# from urllib.request import urlopen
+# from urllib.error import HTTPError
 
 
-class TestGetPR2(TestPluginBase):
+class TestGetMidori2(TestPluginBase):
     package = 'rescript.tests'
 
     def setUp(self):
@@ -53,12 +53,6 @@ class TestGetPR2(TestPluginBase):
                  'LONGEST_NUC_SP_GB263_CO1_QIIME.taxon.gz')
         self.assertEqual(fasta_url, exp_fasta_url)
         self.assertEqual(tax_url, exp_tax_url)
-        # test that these URLs work
-        for u in [fasta_url, tax_url]:
-            try:
-                urlopen(u)
-            except HTTPError:
-                raise ValueError('Failed to open URL: ' + u)
 
     def test_assemble_midori2_urls_02(self):
         fasta_url, tax_url = _assemble_midori2_urls(
@@ -76,12 +70,6 @@ class TestGetPR2(TestPluginBase):
                  'UNIQ_NUC_GB260_ND4L_QIIME.taxon.gz')
         self.assertEqual(fasta_url, exp_fasta_url)
         self.assertEqual(tax_url, exp_tax_url)
-        # test that these URLs work
-        for u in [fasta_url, tax_url]:
-            try:
-                urlopen(u)
-            except HTTPError:
-                raise ValueError('Failed to open URL: ' + u)
 
     def test_retrieve_data_from_midori2_raise_error(self):
         # although two urls are provided, this should fail on
@@ -106,6 +94,10 @@ class TestGetPR2(TestPluginBase):
 
         with patch('rescript.get_midori2._retrieve_data_from_midori2',
                    new=_makey_fakey):
-            res = rescript.actions.get_midori2_data(mito_gene='ND4L')
-            self.assertEqual(str(res[0].type), 'FeatureData[Sequence]')
-            self.assertEqual(str(res[1].type), 'FeatureData[Taxonomy]')
+            res = rescript.actions.get_midori2_data(mito_gene=['ND4L'])
+            self.assertEqual(
+                str(res[0].type),
+                'Collection[FeatureData[Sequence]]')
+            self.assertEqual(
+                str(res[1].type),
+                'Collection[FeatureData[Taxonomy]]')

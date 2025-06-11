@@ -11,11 +11,14 @@ import tempfile
 import shutil
 import gzip
 from urllib.request import urlretrieve
-from urllib.error import HTTPError
 from pathlib import Path
 import pandas as pd
 from q2_types.feature_data import (TaxonomyFormat, DNAFASTAFormat,
                                    DNAIterator)
+
+MITO_GENE_LIST = ['A6', 'A8', 'CO1', 'CO2', 'CO3', 'Cytb',
+                  'ND1', 'ND2', 'ND3', 'ND4L', 'ND4',
+                  'ND5', 'ND6', 'lrRNA', 'srRNA', 'all']
 
 
 def _assemble_midori2_urls(mito_gene,
@@ -66,9 +69,10 @@ def _retrieve_data_from_midori2(fasta_url, tax_url):
             try:
                 print('Retrieving data from {0}'.format(url))
                 urlretrieve(url, in_path)
-            except HTTPError:
-                raise ValueError('Unable to retrieve the following file '
-                                 'from MIDORI2:\n' + url)
+            except Exception as e:
+                raise ValueError(
+                    f'''Unable to retrieve the following file
+                    from MIDORI2:\n{url}\n: {e}''') from e
 
             print('  Unzipping {0}...\n'.format(in_path))
             with gzip.open(in_path, 'rt') as gz_in:
@@ -84,20 +88,30 @@ def _retrieve_data_from_midori2(fasta_url, tax_url):
 
 
 def get_midori2_data(
-    mito_gene: str,
+    mito_gene: list,
     version: str = 'GenBank265_2025-03-08',
     ref_seq_type: str = 'uniq',
     unspecified_species: bool = False,
         ) -> (DNAIterator, pd.DataFrame):
 
-    fasta_url, tax_url = _assemble_midori2_urls(
-                                  mito_gene=mito_gene,
+    seq_res = {}
+    tax_res = {}
+
+    if 'all' in mito_gene:
+        MITO_GENE_LIST.pop()  # remove 'all' from choices.
+        mito_gene = MITO_GENE_LIST
+
+    for gene in mito_gene:
+        fasta_url, tax_url = _assemble_midori2_urls(
+                                  mito_gene=gene,
                                   version=version,
                                   ref_seq_type=ref_seq_type,
                                   unspecified_species=unspecified_species,
                                   )
 
-    seqs, tax = _retrieve_data_from_midori2(fasta_url, tax_url)
+        seqs, tax = _retrieve_data_from_midori2(fasta_url, tax_url)
+        seq_res[gene + '_seqs'] = seqs
+        tax_res[gene + '_taxa'] = tax
 
     print('\n Saving files...\n')
-    return seqs, tax
+    return seq_res, tax_res

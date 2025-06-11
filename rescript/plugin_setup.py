@@ -13,7 +13,7 @@ from q2_types.metadata import ImmutableMetadata
 from qiime2.core.type import TypeMatch
 from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int,
                            Float, Visualization, Bool, TypeMap, Metadata,
-                           MetadataColumn, Categorical, Numeric)
+                           MetadataColumn, Categorical, Numeric, Collection)
 
 from .bv_brc import get_bv_brc_genomes, get_bv_brc_metadata, \
     get_bv_brc_genome_features, data_fields_bvbrc
@@ -57,7 +57,7 @@ from rescript.ncbi import (
 from .get_gtdb import get_gtdb_data
 from .get_unite import get_unite_data
 from .get_pr2 import get_pr2_data, _allowed_pr2_ranks, _default_pr2_ranks
-from .get_midori2 import get_midori2_data
+from .get_midori2 import get_midori2_data, MITO_GENE_LIST
 
 citations = Citations.load('citations.bib', package='rescript')
 
@@ -1119,18 +1119,18 @@ plugin.methods.register_function(
                     ['GenBank265_2025-03-08', 'GenBank264_2024-12-14',
                      'GenBank263_2024-10-13', 'GenBank262_2024-08-16',
                      'GenBank261_2024-06-15', 'GenBank260_2024-04-15']),
-        'mito_gene': Str % Choices(['A6', 'A8', 'CO1', 'CO2', 'CO3', 'Cytb',
-                                    'ND1', 'ND2', 'ND3', 'ND4L', 'ND4',
-                                    'ND5', 'ND6', 'lrRNA', 'srRNA']),
+        'mito_gene': List[Str % Choices(MITO_GENE_LIST)],
         'ref_seq_type': Str % Choices(['uniq', 'longest']),
         'unspecified_species': Bool,
         },
-    outputs=[('midori2_sequences', FeatureData[Sequence]),
-             ('midori2_taxonomy', FeatureData[Taxonomy])],
+    outputs=[('midori2_sequences', Collection[FeatureData[Sequence]]),
+             ('midori2_taxonomy', Collection[FeatureData[Taxonomy]])],
     input_descriptions={},
     parameter_descriptions={
         'version': 'MIDORI 2 version to download.',
-        'mito_gene': 'The mitochondrial gene of interest.',
+        'mito_gene': 'Download the mitochondrial gene(s) of interest. '
+                     'Specify the respective gene(s), or download all genes '
+                     'using \'all\'.',
         'ref_seq_type': ' \'uniq\': contains all unique haplotypes associated '
                         'with each species. \'longest\': contains the longest '
                         'sequence for each species.',
@@ -1139,8 +1139,8 @@ plugin.methods.register_function(
                                'any reference sequences that lack binomial '
                                'species-level description.'},
     output_descriptions={
-        'midori2_sequences': 'MIDORI 2 reference sequences.',
-        'midori2_taxonomy': 'MIDORI 2 reference taxonomy.'},
+        'midori2_sequences': 'MIDORI 2 reference sequence output directory.',
+        'midori2_taxonomy': 'MIDORI 2 reference taxonomy output directory.'},
     name='Download and import MIDORI 2 reference data.',
     description=(
         'Download and import a variety of mitochonrial DNA gene sequences '
