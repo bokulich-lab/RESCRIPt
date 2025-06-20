@@ -71,8 +71,9 @@ def _retrieve_data_from_midori2(fasta_url, tax_url):
                 urlretrieve(url, in_path)
             except Exception as e:
                 raise ValueError(
-                    f'''Unable to retrieve the following file
-                    from MIDORI2:\n{url}\n: {e}''') from e
+                    'Unable to retrieve the following file '
+                    'from MIDORI2:\n{url}\n: {e}'.format(
+                                      url=url, e=e))
 
             print('  Unzipping {0}...\n'.format(in_path))
             with gzip.open(in_path, 'rt') as gz_in:
@@ -87,6 +88,10 @@ def _retrieve_data_from_midori2(fasta_url, tax_url):
     return seqs, tax
 
 
+# Note: add ability to trim txids from each rank.
+# In the interim, can do this with `edit-taxonomy`
+# using the following regex:
+#     `--p-search-strings '_\d+(;)|_\d+($)'`.
 def get_midori2_data(
     mito_gene: list,
     version: str = 'GenBank265_2025-03-08',

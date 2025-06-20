@@ -71,21 +71,14 @@ class TestGetMidori2(TestPluginBase):
         self.assertEqual(fasta_url, exp_fasta_url)
         self.assertEqual(tax_url, exp_tax_url)
 
-    def test_retrieve_data_from_midori2_raise_error(self):
-        # although two urls are provided, this should fail on
-        # the first url it processes, i.e. the fasta url.
-        incorrect_fasta_url = (
-                 'https://www.reference-midori.info/download/'
-                 'Databases/GenBank260_2024-04-15/QIIME/uniq/MIDORI2_'
-                 'LONGEST_NUC_GB260_ND4L_QIIME.fasta.gz')
-        incorrect_tax_url = (
-                 'https://www.reference-midori.info/download/'
-                 'Databases/GenBank260_2024-04-15/QIIME/uniq/MIDORI2_'
-                 'LONGEST_NUC_GB260_ND4L_QIIME.taxon.gz')
-
-        with self.assertRaises(ValueError):
-            _retrieve_data_from_midori2(incorrect_fasta_url,
-                                        incorrect_tax_url)
+    @patch("rescript.get_midori2.urlretrieve")
+    def test_run_amrfinder_u_error(self, mock_urlretrieve):
+        expected_message = ("Unable to retrieve the following "
+                            "file from MIDORI2:\n"
+                            "url_seq\n: Simulated network error")
+        mock_urlretrieve.side_effect = Exception("Simulated network error")
+        with self.assertRaisesRegex(Exception, expected_message):
+            _retrieve_data_from_midori2("url_seq", "url_tax")
 
     def test_get_midori2(self):
         def _makey_fakey(fake_seq, fake_tax):
