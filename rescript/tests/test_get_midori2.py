@@ -16,8 +16,6 @@ from q2_types.feature_data import (TaxonomyFormat,
                                    DNAIterator)
 import pandas as pd
 from unittest.mock import patch
-# from urllib.request import urlopen
-# from urllib.error import HTTPError
 
 
 class TestGetMidori2(TestPluginBase):
