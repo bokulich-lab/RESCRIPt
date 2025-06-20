@@ -13,7 +13,7 @@ from q2_types.metadata import ImmutableMetadata
 from qiime2.core.type import TypeMatch
 from qiime2.plugin import (Str, Plugin, Choices, List, Citations, Range, Int,
                            Float, Visualization, Bool, TypeMap, Metadata,
-                           MetadataColumn, Categorical, Numeric)
+                           MetadataColumn, Categorical, Numeric, Collection)
 
 from .bv_brc import get_bv_brc_genomes, get_bv_brc_metadata, \
     get_bv_brc_genome_features, data_fields_bvbrc
@@ -57,6 +57,7 @@ from rescript.ncbi import (
 from .get_gtdb import get_gtdb_data
 from .get_unite import get_unite_data
 from .get_pr2 import get_pr2_data, _allowed_pr2_ranks, _default_pr2_ranks
+from .get_midori2 import get_midori2_data, MITO_GENE_LIST
 
 citations = Citations.load('citations.bib', package='rescript')
 
@@ -93,6 +94,10 @@ PR2_LICENSE_NOTE = (
     'NOTE: THIS ACTION ACQUIRES DATA FROM PR2, which is licensed under '
     'MIT. To learn more, please visit https://pr2-database.org/ '
     'and https://github.com/pr2database/.')
+
+MIDORI2_LICENSE_NOTE = (
+    'NOTE: THIS ACTION ACQUIRES DATA FROM MIDORI2. To learn '
+    'more, please visit https://www.reference-midori.info/.')
 
 LINEPLOT_XAXIS_INTERPRETATION = (
     'The x-axis in these plots represents the taxonomic '
@@ -1103,6 +1108,48 @@ plugin.methods.register_function(
         'REQUIRES STABLE INTERNET CONNECTION. ' +
         PR2_LICENSE_NOTE),
     citations=[citations['Guillou2013pr2']]
+)
+
+
+plugin.methods.register_function(
+    function=get_midori2_data,
+    inputs={},
+    parameters={
+        'version': Str % Choices(
+                    ['GenBank265_2025-03-08', 'GenBank264_2024-12-14',
+                     'GenBank263_2024-10-13', 'GenBank262_2024-08-16',
+                     'GenBank261_2024-06-15', 'GenBank260_2024-04-15']),
+        'mito_gene': List[Str % Choices(MITO_GENE_LIST)],
+        'ref_seq_type': Str % Choices(['uniq', 'longest']),
+        'unspecified_species': Bool,
+        },
+    outputs=[('midori2_sequences', Collection[FeatureData[Sequence]]),
+             ('midori2_taxonomy', Collection[FeatureData[Taxonomy]])],
+    input_descriptions={},
+    parameter_descriptions={
+        'version': 'MIDORI 2 version to download.',
+        'mito_gene': 'Download the mitochondrial gene(s) of interest. '
+                     'Specify the respective gene(s), or download all genes '
+                     'using \'all\'.',
+        'ref_seq_type': ' \'uniq\': contains all unique haplotypes associated '
+                        'with each species. \'longest\': contains the longest '
+                        'sequence for each species.',
+        'unspecified_species': 'Download reference sequences that contain '
+                               'species that are left unspecified. That is, '
+                               'any reference sequences that lack binomial '
+                               'species-level description.'},
+    output_descriptions={
+        'midori2_sequences': 'MIDORI 2 reference sequence output directory.',
+        'midori2_taxonomy': 'MIDORI 2 reference taxonomy output directory.'},
+    name='Download and import MIDORI 2 reference data.',
+    description=(
+        'Download and import a variety of mitochonrial DNA gene sequences '
+        'along with their associated taxonomy from the MIDORI 2 database. '
+        'Simply provide the database version, the mitochondrial gene '
+        'of interest, the reference sequence type, and if reference '
+        'sequences with unspecified species information should be '
+        'downloaded. ' + MIDORI2_LICENSE_NOTE),
+    citations=[citations['Leray2022midori2']]
 )
 
 
