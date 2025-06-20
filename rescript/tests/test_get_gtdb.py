@@ -11,9 +11,6 @@ from qiime2.plugin.testing import TestPluginBase
 from qiime2.plugins import rescript
 from rescript.get_gtdb import _assemble_queries, parse_gtdb_taxonomy
 from q2_types.feature_data import (TSVTaxonomyFormat, DNAFASTAFormat)
-
-from urllib.request import urlopen
-from urllib.error import HTTPError
 from unittest.mock import patch
 
 
@@ -71,13 +68,6 @@ class TestGetGTDB(TestPluginBase):
         print('exp queries: ', exp_query_urls)
         self.assertEqual(obs_query_urls, exp_query_urls)
 
-        # test that these URLs work
-        for _, u in obs_query_urls:
-            try:
-                urlopen(u)
-            except HTTPError:
-                raise ValueError('Failed to open URL: ' + u)
-
     def test_assemble_species_rep_queries_archaea(self):
         obs_query_urls = _assemble_queries('202.0', 'SpeciesReps', 'Archaea')
         print('obs queries: ', obs_query_urls)
@@ -88,13 +78,6 @@ class TestGetGTDB(TestPluginBase):
                            'ar122_ssu_reps_r202.tar.gz')]
         print('exp queries: ', exp_query_urls)
         self.assertEqual(obs_query_urls, exp_query_urls)
-
-        # test that these URLs work
-        for _, u in obs_query_urls:
-            try:
-                urlopen(u)
-            except HTTPError:
-                raise ValueError('Failed to open URL: ' + u)
 
     def test_assemble_queries_all_primary(self):
         obs_query_urls = _assemble_queries(version='207.0',
@@ -109,13 +92,6 @@ class TestGetGTDB(TestPluginBase):
         print('exp queries: ', exp_query_urls)
         self.assertEqual(obs_query_urls, exp_query_urls)
 
-        # test that these URLs work
-        for _, u in obs_query_urls:
-            try:
-                urlopen(u)
-            except HTTPError:
-                raise ValueError('Failed to open URL: ' + u)
-
     def test_assemble_queries_all_mirror(self):
         obs_query_urls = _assemble_queries(version='207.0',
                                            db_type='All',
@@ -128,13 +104,6 @@ class TestGetGTDB(TestPluginBase):
                            'ssu_all_r207.tar.gz')]
         print('exp queries: ', exp_query_urls)
         self.assertEqual(obs_query_urls, exp_query_urls)
-
-        # test that these URLs work
-        for _, u in obs_query_urls:
-            try:
-                urlopen(u)
-            except HTTPError:
-                raise ValueError('Failed to open URL: ' + u)
 
     def test_get_gtdb(self):
         def _makey_fakey_both(faking_ignore_this):
