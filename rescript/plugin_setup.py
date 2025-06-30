@@ -58,7 +58,7 @@ from .get_gtdb import get_gtdb_data
 from .get_unite import get_unite_data
 from .get_pr2 import get_pr2_data, _allowed_pr2_ranks, _default_pr2_ranks
 from .get_midori2 import get_midori2_data, MITO_GENE_LIST
-from .get_eukaryome import get_eukaryome_data
+from .get_eukaryome import get_eukaryome_data, RRNA_GENE_LIST
 
 citations = Citations.load('citations.bib', package='rescript')
 
@@ -1163,8 +1163,7 @@ plugin.methods.register_function(
     inputs={},
     parameters={
         'version': Str % Choices(['1.9.4', '1.9.3', '1.9.2']),
-        'rrna_gene': List[Str % Choices(['SSU', 'LSU', 'ITS',
-                                        'longread', 'all'])],
+        'rrna_gene': List[Str % Choices(RRNA_GENE_LIST)],
         },
     outputs=[('eukaryome_sequences', Collection[FeatureData[Sequence]]),
              ('eukaryome_taxonomy', Collection[FeatureData[Taxonomy]])],

@@ -37,7 +37,7 @@ def _assemble_rrna_url(rrna_gene,
 def _get_eukaryome_data_path(tmpdirname, url, basename):
     destination = os.path.join(tmpdirname, basename)
     try:
-        print('Retrieving data from {0}'.format(url))
+        print(' Retrieving from {0}'.format(url))
         urlretrieve(url, destination)
     except HTTPError:
         msg = ("    Unable to retrieve the followng file from Eukaryome:\n "
@@ -83,6 +83,7 @@ def _retrieve_data_from_eukaryome(rrna_url, gene):
         basename = os.path.basename(rrna_url)
         uncompressed_base_fn = basename.rsplit('.', 1)[0]
 
+        print('Fetching \'{0}\' data ...'.format(gene))
         fasta_zfp = _get_eukaryome_data_path(tmpdirname, rrna_url,
                                              basename)
 
