@@ -16,6 +16,7 @@ requirements:
   - ncbi-datasets-pyclient >=17.0.0
   - requests
   - xmltodict
+  - py7zr
   - pandas {{ pandas }}
   - vsearch >=2.21.1
   - scikit-learn {{ scikit_learn }}
