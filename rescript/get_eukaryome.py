@@ -11,8 +11,6 @@ import tempfile
 import zipfile
 import py7zr
 from urllib.request import urlretrieve
-from urllib.error import HTTPError
-import warnings
 import pandas as pd
 from q2_types.feature_data import (TSVTaxonomyFormat, DNAFASTAFormat,
                                    DNAIterator)
@@ -39,10 +37,11 @@ def _get_eukaryome_data_path(tmpdirname, url, basename):
     try:
         print(' Retrieving from {0}'.format(url))
         urlretrieve(url, destination)
-    except HTTPError:
-        msg = ("    Unable to retrieve the followng file from Eukaryome:\n "
-               + url)
-        warnings.warn(msg, UserWarning)
+    except Exception as e:
+        raise ValueError(
+                    'Unable to retrieve the following file '
+                    'from Eukaryome:\n{url}\n: {e}'.format(
+                                      url=url, e=e))
     return destination
 
 
