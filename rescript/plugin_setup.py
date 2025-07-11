@@ -1079,7 +1079,7 @@ plugin.methods.register_function(
     function=get_pr2_data,
     inputs={},
     parameters={
-        'version': Str % Choices(['5.0.0', '4.14.0',]),
+        'version': Str % Choices(['5.1.0', '5.0.0']),
         'ranks': List[Str % Choices(_allowed_pr2_ranks)],
         # 'rank_propagation': Bool,
         },

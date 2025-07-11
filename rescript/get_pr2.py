@@ -19,8 +19,11 @@ from collections import OrderedDict
 from q2_types.feature_data import (TaxonomyFormat, DNAFASTAFormat,
                                    DNAIterator)
 
-# Note: No need for '5.0.1' '4.14.1'. Documentaiton says to refer to
+# Note: Only download files that suppport PR2s 9-rank system.
+# This includes '5.0.0' and later.
+# No need for '5.0.1' '4.14.1'. Documentaiton says to refer to
 # the '5.0.0' and '4.14.0' files respectively.
+# Version '4.14.1' only supports 8 ranks.
 # Also, might need to include extra code for 4.13 and earlier as
 # the 16S and 18S files are separated. Note the slight differences
 # in naming convention:
@@ -28,6 +31,14 @@ from q2_types.feature_data import (TaxonomyFormat, DNAFASTAFormat,
 #  VS
 #   pr2_version_4.13.0_16S_mothur.fasta.gz
 #   pr2_version_4.13.0_18S_mothur.fasta.gz
+
+BASE_PR2_URL = 'https://github.com/pr2database/pr2database/releases/download/'
+
+VER_DICT = {'5.0.0': {'seq': 'v5.0.0/pr2_version_5.0.0_SSU_mothur.fasta.gz',
+                      'tax': 'v5.0.0/pr2_version_5.0.0_SSU_mothur.tax.gz'},
+            '5.1.0': {'seq': 'v5.1.0.0/pr2_version_5.1.0_SSU_mothur.fasta.gz',
+                      'tax': 'v5.1.0.0/pr2_version_5.1.0_SSU_mothur.tax.gz'},
+            }
 
 _allowed_pr2_ranks = OrderedDict({'domain': 'd__', 'supergroup': 'sgr__',
                                   'division': 'dv__', 'subdivision': 'dvs__',
@@ -39,7 +50,7 @@ _default_pr2_ranks = ['domain', 'supergroup', 'division', 'subdivision',
 
 
 def get_pr2_data(
-    version: str = '5.0.0',
+    version: str = '5.1.0',
     ranks: list = None,
         ) -> (DNAIterator, pd.Series):
 
@@ -53,14 +64,10 @@ def get_pr2_data(
     return seqs, tax
 
 
-def _assemble_pr2_urls(version='5.0.0'):
-    urls_to_retrieve = []
-    base_url = ('https://github.com/pr2database/pr2database/releases/download/'
-                'v{ver}/pr2_version_{ver}_SSU_mothur.{ext}.gz')
+def _assemble_pr2_urls(version='5.1.0'):
+    urls_to_retrieve = [''.join([BASE_PR2_URL, VER_DICT[version][k]])
+                        for k in VER_DICT[version].keys()]
 
-    for data_type in ['fasta', 'tax']:
-        urls_to_retrieve.append(base_url.format(**{'ver': version,
-                                                   'ext': data_type}))
     return urls_to_retrieve
 
 
