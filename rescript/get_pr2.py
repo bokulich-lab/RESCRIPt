@@ -34,11 +34,8 @@ from q2_types.feature_data import (TaxonomyFormat, DNAFASTAFormat,
 
 BASE_PR2_URL = 'https://github.com/pr2database/pr2database/releases/download/'
 
-VER_DICT = {'5.0.0': {'seq': 'v5.0.0/pr2_version_5.0.0_SSU_mothur.fasta.gz',
-                      'tax': 'v5.0.0/pr2_version_5.0.0_SSU_mothur.tax.gz'},
-            '5.1.0': {'seq': 'v5.1.0.0/pr2_version_5.1.0_SSU_mothur.fasta.gz',
-                      'tax': 'v5.1.0.0/pr2_version_5.1.0_SSU_mothur.tax.gz'},
-            }
+VER_DICT = {'5.0.0': 'v5.0.0/pr2_version_5.0.0_SSU_mothur.',
+            '5.1.0': 'v5.1.0.0/pr2_version_5.1.0_SSU_mothur.'}
 
 _allowed_pr2_ranks = OrderedDict({'domain': 'd__', 'supergroup': 'sgr__',
                                   'division': 'dv__', 'subdivision': 'dvs__',
@@ -65,9 +62,8 @@ def get_pr2_data(
 
 
 def _assemble_pr2_urls(version='5.1.0'):
-    urls_to_retrieve = [''.join([BASE_PR2_URL, VER_DICT[version][k]])
-                        for k in VER_DICT[version].keys()]
-
+    urls_to_retrieve = [''.join([BASE_PR2_URL, VER_DICT[version], ft, '.gz'])
+                        for ft in ['fasta', 'tax']]
     return urls_to_retrieve
 
 
