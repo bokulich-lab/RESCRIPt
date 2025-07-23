@@ -13,7 +13,7 @@ requirements:
   - wheel
   run:
   - python {{ python }}
-  - ncbi-datasets-pyclient {{ ncbi-datasets-pyclient }}
+  - ncbi-datasets-pyclient {{ ncbi_datasets_pyclient }}
   - requests
   - xmltodict
   - pandas {{ pandas }}
