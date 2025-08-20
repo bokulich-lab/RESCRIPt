@@ -1116,10 +1116,10 @@ plugin.methods.register_function(
     inputs={},
     parameters={
         'version': Str % Choices(
-                    ['GenBank267_2025-06-19', 'GenBank265_2025-03-08',
-                     'GenBank264_2024-12-14', 'GenBank263_2024-10-13',
-                     'GenBank262_2024-08-16', 'GenBank261_2024-06-15',
-                     'GenBank260_2024-04-15']),
+                    ['GenBank267_2025-06-19', 'GenBank266_2025-04-24',
+                     'GenBank265_2025-03-08', 'GenBank264_2024-12-14',
+                     'GenBank263_2024-10-13', 'GenBank262_2024-08-16',
+                     'GenBank261_2024-06-15', 'GenBank260_2024-04-15']),
         'mito_gene': List[Str % Choices(MITO_GENE_LIST)],
         'ref_seq_type': Str % Choices(['uniq', 'longest']),
         'unspecified_species': Bool,
