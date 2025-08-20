@@ -70,7 +70,7 @@ class TestGetMidori2(TestPluginBase):
         self.assertEqual(tax_url, exp_tax_url)
 
     @patch("rescript.get_midori2.urlretrieve")
-    def test_run_amrfinder_u_error(self, mock_urlretrieve):
+    def test_run_midori_error(self, mock_urlretrieve):
         expected_message = ("Unable to retrieve the following "
                             "file from MIDORI2:\n"
                             "url_seq\n: Simulated network error")
