@@ -58,6 +58,7 @@ from .get_gtdb import get_gtdb_data
 from .get_unite import get_unite_data
 from .get_pr2 import get_pr2_data, _allowed_pr2_ranks, _default_pr2_ranks
 from .get_midori2 import get_midori2_data, MITO_GENE_LIST
+from .get_eukaryome import get_eukaryome_data, RRNA_GENE_LIST
 
 citations = Citations.load('citations.bib', package='rescript')
 
@@ -98,6 +99,10 @@ PR2_LICENSE_NOTE = (
 MIDORI2_LICENSE_NOTE = (
     'NOTE: THIS ACTION ACQUIRES DATA FROM MIDORI2. To learn '
     'more, please visit https://www.reference-midori.info/.')
+
+EUKARYOME_LICENSE_NOTE = (
+    'NOTE: THIS ACTION ACQUIRES DATA FROM EUKARYOME. To learn '
+    'more, please visit https://eukaryome.org/.')
 
 LINEPLOT_XAXIS_INTERPRETATION = (
     'The x-axis in these plots represents the taxonomic '
@@ -1151,6 +1156,39 @@ plugin.methods.register_function(
         'sequences with unspecified species information should be '
         'downloaded. ' + MIDORI2_LICENSE_NOTE),
     citations=[citations['Leray2022midori2']]
+)
+
+
+plugin.methods.register_function(
+    function=get_eukaryome_data,
+    inputs={},
+    parameters={
+        'version': Str % Choices(['1.9.4', '1.9.3', '1.9.2']),
+        'rrna_gene': List[Str % Choices(RRNA_GENE_LIST)],
+        },
+    outputs=[('eukaryome_sequences', Collection[FeatureData[Sequence]]),
+             ('eukaryome_taxonomy', Collection[FeatureData[Taxonomy]])],
+    input_descriptions={},
+    parameter_descriptions={
+        'version': 'Eukaryome version to download.',
+        'rrna_gene': 'Download the rRNA gene(s) of interest. '
+                     'Specify the respective gene(s), or download all genes '
+                     'using \'all\'.',
+        },
+    output_descriptions={
+        'eukaryome_sequences': 'Eukaryome reference sequence output '
+                               'directory.',
+        'eukaryome_taxonomy': 'Eukaryome reference taxonomy output '
+                              'directory.'},
+    name='Download and import Eukaryome reference data.',
+    description=(
+        'Download and import a variety of rRNA gene sequences '
+        'along with their associated taxonomy from the Eukaryome database. '
+        'Simply provide the database version, the rRNA gene '
+        'of interest, the reference sequence type, and if reference '
+        'sequences with unspecified species information should be '
+        'downloaded. ' + EUKARYOME_LICENSE_NOTE),
+    citations=[citations['Tedersoo2024']]
 )
 
 
