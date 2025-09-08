@@ -13,12 +13,12 @@ requirements:
   - wheel
   run:
   - python {{ python }}
-  - ncbi-datasets-pyclient >=17.0.0
+  - ncbi-datasets-pyclient {{ ncbi_datasets_pyclient }}
   - requests
   - xmltodict
   - py7zr
   - pandas {{ pandas }}
-  - vsearch >=2.21.1
+  - vsearch {{ vsearch }}
   - scikit-learn {{ scikit_learn }}
   - scikit-bio {{ scikit_bio }}
   - q2-types >={{ q2_types }}
