@@ -6,7 +6,6 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-import pkg_resources
 from qiime2.plugin.testing import TestPluginBase
 from qiime2.plugins import rescript
 from rescript.get_eukaryome import (_assemble_rrna_url,
@@ -22,19 +21,13 @@ class TestGetEukaryome(TestPluginBase):
     def setUp(self):
         super().setUp()
         self.eukaryome_seqs = DNAFASTAFormat(
-                            pkg_resources.resource_filename(
-                                 'rescript.tests',
-                                 'data/eukaryome-seqs.fasta'),
+                            self.get_data_path('eukaryome-seqs.fasta'),
                             mode='r')
         self.eukaryome_parsed_seqs = DNAFASTAFormat(
-                            pkg_resources.resource_filename(
-                                 'rescript.tests',
-                                 'data/eukaryome-parsed-seqs.fasta'),
+                            self.get_data_path('eukaryome-parsed-seqs.fasta'),
                             mode='r')
         self.eukaryome_parsed_tax = TSVTaxonomyFormat(
-                            pkg_resources.resource_filename(
-                                 'rescript.tests',
-                                 'data/eukaryome-parsed-taxa.tsv'),
+                            self.get_data_path('eukaryome-parsed-taxa.tsv'),
                             mode='r')
 
     def test_assemble_rrna_url_01(self):
