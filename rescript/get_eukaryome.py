@@ -69,16 +69,41 @@ def _extract_7zip_euk_seq_file(tmpdirname, uncompressed_base_fn, fasta_zfp):
     return seqs
 
 
-def _retrieve_data_from_eukaryome(rrna_url, gene):
+def _make_fasta_str(seqid, seq_str):
+    fasta_str = '>' + seqid + '\n' + seq_str + '\n'
+    return fasta_str
+
+
+def _make_taxonomy_df(tax_dict):
+    parsed_taxonomy_df = pd.DataFrame.from_dict(tax_dict, orient='index')
+    parsed_taxonomy_df.index.name = 'Feature ID'
+    parsed_taxonomy_df.rename(columns={parsed_taxonomy_df.columns[0]:
+                                       'Taxon'}, inplace=True)
+    return parsed_taxonomy_df
+
+
+def _process_eukaryome_data(euk_seq_data):
     proc_seqs = DNAFASTAFormat()
     proc_tax = TSVTaxonomyFormat()
     tax_dict = {}
+    with proc_seqs.open() as out_fasta, proc_tax.open() as out_tax:
+        for seq in euk_seq_data:
+            seqid, tax = seq.metadata['id'].split(';', 1)
+            seq_str = str(seq)
+            fasta_str = _make_fasta_str(seqid, seq_str)
+            out_fasta.write(fasta_str)
 
-    with \
-        tempfile.TemporaryDirectory() as tmpdirname, \
-            proc_seqs.open() as out_fasta, \
-            proc_tax.open() as out_tax:
+            tax_dict[seqid] = tax
+        print('    Sequences processed.')
+        print('    Processing taxonomy...')
+        parsed_taxonomy_df = _make_taxonomy_df(tax_dict)
+        parsed_taxonomy_df.to_csv(out_tax, sep='\t')
+        print('    Taxonomy processed.')
+        return proc_seqs, proc_tax
 
+
+def _retrieve_data_from_eukaryome(rrna_url, gene):
+    with tempfile.TemporaryDirectory() as tmpdirname:
         basename = os.path.basename(rrna_url)
         uncompressed_base_fn = basename.rsplit('.', 1)[0]
 
@@ -97,18 +122,7 @@ def _retrieve_data_from_eukaryome(rrna_url, gene):
                                              fasta_zfp)
 
         print('    Processing sequences ...')
-        for seq in seqs:
-            seqid, tax = seq.metadata['id'].split(';', 1)
-            out_fasta.write('>' + seqid + '\n' + str(seq) + '\n')
-            tax_dict[seqid] = tax
-        print('    Sequences processed.')
-        print('    Processing taxonomy...')
-        parsed_taxonomy_df = pd.DataFrame.from_dict(tax_dict, orient='index')
-        parsed_taxonomy_df.index.name = 'Feature ID'
-        parsed_taxonomy_df.rename(columns={parsed_taxonomy_df.columns[0]:
-                                           'Taxon'}, inplace=True)
-        parsed_taxonomy_df.to_csv(out_tax, sep='\t')
-        print('    Taxonomy processed.')
+        proc_seqs, proc_tax = _process_eukaryome_data(seqs)
         return proc_seqs, proc_tax
 
 
