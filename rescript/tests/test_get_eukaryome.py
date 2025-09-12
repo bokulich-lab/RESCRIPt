@@ -9,10 +9,16 @@
 from qiime2.plugin.testing import TestPluginBase
 from qiime2.plugins import rescript
 from rescript.get_eukaryome import (_assemble_rrna_url,
-                                    _retrieve_data_from_eukaryome)
+                                    _retrieve_data_from_eukaryome,
+                                    _make_fasta_str, _make_taxonomy_df,
+                                    _process_eukaryome_data
+                                    )
 from q2_types.feature_data import (TSVTaxonomyFormat,
-                                   DNAFASTAFormat)
+                                   DNAFASTAFormat,
+                                   DNAIterator)
 from unittest.mock import patch
+import pandas as pd
+from pandas import DataFrame
 
 
 class TestGetEukaryome(TestPluginBase):
@@ -47,6 +53,38 @@ class TestGetEukaryome(TestPluginBase):
                  'https://sisu.ut.ee/wp-content/uploads/sites/643/'
                  'General_EUK_longread_v1.9.2.zip')
         self.assertEqual(obs_url, exp_url)
+
+    def test_make_fasta_str(self):
+        seqid = 'Seq01'
+        seqstr = 'ATGCCGTA'
+        exp_fasta_str = '>Seq01\nATGCCGTA\n'
+        obs_fasta_str = _make_fasta_str(seqid, seqstr)
+        self.assertEqual(obs_fasta_str, exp_fasta_str)
+
+    def test_make_taxonomy_df(self):
+        tax_data = [['ID1', 'p__Rotifera;c__Bdelloidea'],
+                    ['ID2', 'p__Rotifera;c__Monogononta']]
+        exp_df = pd.DataFrame(tax_data,
+                              columns=['Feature ID', 'Taxon'])
+        exp_df.set_index('Feature ID', inplace=True)
+        tax_dict = {'ID1': 'p__Rotifera;c__Bdelloidea',
+                    'ID2': 'p__Rotifera;c__Monogononta'}
+        obs_df = _make_taxonomy_df(tax_dict)
+        self.assertEqual(True, obs_df.equals(exp_df))
+
+    def test_process_eukaryome_data(self):
+        euk_data = self.eukaryome_seqs.view(DNAIterator)
+        obs_seqs, obs_tax = _process_eukaryome_data(euk_data)
+        # tax
+        otdf = obs_tax.view(DataFrame)
+        etdf = self.eukaryome_parsed_tax.view(DataFrame)
+        self.assertEqual(True, otdf.equals(etdf))
+        # seq
+        exp_seqs_dict = {seq.metadata['id'].split(';', 1)[0]: str(seq)
+                         for seq in self.eukaryome_seqs.view(DNAIterator)}
+        obs_seqs_dict = {seq.metadata['id']: str(seq)
+                         for seq in obs_seqs.view(DNAIterator)}
+        self.assertEqual(exp_seqs_dict, obs_seqs_dict)
 
     def test_get_eukaryome(self):
         def _makey_fakey(fake_seq, fake_tax):
