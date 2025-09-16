@@ -84,8 +84,6 @@ class TestGetEukaryome(TestPluginBase):
         with tempfile.TemporaryDirectory() as tmpdirname:
             zfn = os.path.join(tmpdirname, 'eukaryome-pseqs.zip')
             with zipfile.ZipFile(zfn, "w", zipfile.ZIP_DEFLATED) as myzip:
-                # myzip.write(self.eukaryome_parsed_fasta,
-                #             arcname='eukaryome-pseqs.fasta')
                 szfn = os.path.join(tmpdirname, 'eukaryome-pseqs.7z')
                 with py7zr.SevenZipFile(szfn, 'w') as my7z:
                     my7z.write(self.eukaryome_parsed_fasta,
