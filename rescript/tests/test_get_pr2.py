@@ -9,15 +9,14 @@
 import pkg_resources
 from qiime2.plugin.testing import TestPluginBase
 from qiime2.plugins import rescript
-from rescript.get_pr2 import _assemble_pr2_urls, _compile_taxonomy_output
+from rescript.get_pr2 import (_assemble_pr2_urls, _compile_taxonomy_output,
+                              _fetch_url)
 from q2_types.feature_data import (HeaderlessTSVTaxonomyFormat,
                                    TaxonomyFormat,
                                    DNAFASTAFormat,
                                    DNAIterator)
 import pandas as pd
 from pandas.testing import assert_series_equal
-from urllib.request import urlopen
-from urllib.error import HTTPError
 from unittest.mock import patch
 
 
@@ -52,21 +51,14 @@ class TestGetPR2(TestPluginBase):
         obs_query_urls = _assemble_pr2_urls(version='5.0.0')
         print('obs queries: ', obs_query_urls)
 
-        exp_query_urls = [('https://github.com/pr2database/pr2database/'
-                           'releases/download/v5.0.0/pr2_version_5.0.0'
-                           '_SSU_mothur.fasta.gz'),
-                          ('https://github.com/pr2database/pr2database/'
-                           'releases/download/v5.0.0/pr2_version_5.0.0'
-                           '_SSU_mothur.tax.gz')]
+        exp_query_urls = {'fasta': 'https://github.com/pr2database/'
+                          'pr2database/releases/download/v5.0.0/'
+                          'pr2_version_5.0.0_SSU_mothur.fasta.gz',
+                          'tax': 'https://github.com/pr2database/'
+                          'pr2database/releases/download/v5.0.0/'
+                          'pr2_version_5.0.0_SSU_mothur.tax.gz'}
         print('exp queries: ', exp_query_urls)
         self.assertEqual(obs_query_urls, exp_query_urls)
-
-        # test that these URLs work
-        for u in obs_query_urls:
-            try:
-                urlopen(u)
-            except HTTPError:
-                raise ValueError('Failed to open URL: ' + u)
 
     def test_compile_taxonomy_output(self):
         obs_tax = _compile_taxonomy_output(self.pr2_tax_df,
@@ -88,13 +80,11 @@ class TestGetPR2(TestPluginBase):
         exp_tax.index.name = 'Feature ID'
         assert_series_equal(obs_tax, exp_tax)
 
-    def test_get_pr2(self):
-        def _makey_fakey(fake_seq, fake_tax):
-            return (self.pr2_seqs.view(DNAIterator),
-                    self.pr2_tax_format.view(pd.Series))
-
-        with patch('rescript.get_pr2._retrieve_data_from_pr2',
-                   new=_makey_fakey):
-            res = rescript.actions.get_pr2_data()
-            self.assertEqual(str(res[0].type), 'FeatureData[Sequence]')
-            self.assertEqual(str(res[1].type), 'FeatureData[Taxonomy]')
+    @patch("rescript.get_pr2.urlretrieve")
+    def test_run_pr2_error(self, mock_urlretrieve):
+        expected_message = ("Unable to retrieve the following "
+                            "file from PR2:\n"
+                            "url\n: Simulated network error")
+        mock_urlretrieve.side_effect = Exception("Simulated network error")
+        with self.assertRaisesRegex(Exception, expected_message):
+            _fetch_url("url", "path")

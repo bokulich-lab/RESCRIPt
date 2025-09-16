@@ -10,9 +10,9 @@ import os
 import tempfile
 import shutil
 import gzip
-import warnings
+# import warnings
 from urllib.request import urlretrieve
-from urllib.error import HTTPError
+# from urllib.error import HTTPError
 from pathlib import Path
 import pandas as pd
 from collections import OrderedDict
@@ -55,16 +55,67 @@ def get_pr2_data(
         ranks = _default_pr2_ranks
 
     urls = _assemble_pr2_urls(version=version)
-    seqs, tax = _retrieve_data_from_pr2(urls, ranks)
+
+    seqs = _get_fasta(urls['fasta'])
+    tax = _get_taxonomy(urls['tax'])
+    updated_tax = _compile_taxonomy_output(tax, ranks)
 
     print('\n Saving files...\n')
-    return seqs, tax
+    return seqs, updated_tax
 
 
 def _assemble_pr2_urls(version='5.1.0'):
-    urls_to_retrieve = [''.join([BASE_PR2_URL, VER_DICT[version], ft, '.gz'])
-                        for ft in ['fasta', 'tax']]
+    urls_to_retrieve = {ft: ''.join([BASE_PR2_URL, VER_DICT[version],
+                                     ft, '.gz'])
+                        for ft in ['fasta', 'tax']}
     return urls_to_retrieve
+
+
+def _get_paths(url, tmpdirname):
+    compressed_fn = Path(url).name
+    uncompressed_fn = Path(url).stem
+    in_path = os.path.join(tmpdirname, compressed_fn)
+    out_path = os.path.join(tmpdirname, uncompressed_fn)
+    return in_path, out_path
+
+
+def _fetch_url(url, in_path):
+    try:
+        print('Retrieving data from {0}'.format(url))
+        urlretrieve(url, in_path)
+    except Exception as e:
+        raise ValueError(
+            'Unable to retrieve the following file '
+            'from PR2:\n{url}\n: {e}'.format(
+                         url=url, e=e))
+
+
+def _unzip_fasta(in_path, out_path):
+    print('  Unzipping {0}...\n'.format(in_path))
+    with gzip.open(in_path, 'rt') as gz_in:
+        with open(out_path, 'w') as gz_out:
+            shutil.copyfileobj(gz_in, gz_out)
+            seqs = DNAFASTAFormat(
+                       out_path,
+                       mode="r").view(DNAIterator)
+            return seqs
+
+
+def _get_fasta(url):
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        in_path, out_path = _get_paths(url, tmpdirname)
+        _fetch_url(url, in_path)
+        seqs = _unzip_fasta(in_path, out_path)
+        return seqs
+
+
+def _unzip_taxonomy(in_path, out_path):
+    print('  Unzipping {0}...\n'.format(in_path))
+    with gzip.open(in_path, 'rt') as gz_in:
+        with open(out_path, 'w') as gz_out:
+            shutil.copyfileobj(gz_in, gz_out)
+            tax = TaxonomyFormat(out_path, mode="r").view(pd.DataFrame)
+            return tax
 
 
 def _compile_taxonomy_output(tax, ranks):
@@ -84,36 +135,9 @@ def _compile_taxonomy_output(tax, ranks):
     return taxonomy
 
 
-def _retrieve_data_from_pr2(urls_to_retrieve, ranks):
-    # Perform check that the `urls_to_retriev` should only
-    # contain 2 files, a 'fasta' and 'taxonomy' file.
-
-    print('\nDownloading and processing raw files ... \n')
-
+def _get_taxonomy(url):
     with tempfile.TemporaryDirectory() as tmpdirname:
-        for url in urls_to_retrieve:
-            compressed_fn = Path(url).name
-            uncompressed_fn = Path(url).stem
-            in_path = os.path.join(tmpdirname, compressed_fn)
-            out_path = os.path.join(tmpdirname, uncompressed_fn)
-
-            try:
-                print('Retrieving data from {0}'.format(url))
-                urlretrieve(url, in_path)
-            except HTTPError:
-                msg = ("Unable to retrieve the following file from PR2:\n"
-                       + url)
-                warnings.warn(msg, UserWarning)
-
-            print('  Unzipping {0}...\n'.format(in_path))
-            with gzip.open(in_path, 'rt') as gz_in:
-                with open(out_path, 'w') as gz_out:
-                    shutil.copyfileobj(gz_in, gz_out)
-                    if out_path.endswith('fasta'):
-                        seqs = DNAFASTAFormat(out_path,
-                                              mode="r").view(DNAIterator)
-                    elif out_path.endswith('tax'):
-                        tax = TaxonomyFormat(out_path,
-                                             mode="r").view(pd.DataFrame)
-                        updated_tax = _compile_taxonomy_output(tax, ranks)
-    return seqs, updated_tax
+        in_path, out_path = _get_paths(url, tmpdirname)
+        _fetch_url(url, in_path)
+        tax = _unzip_taxonomy(in_path, out_path)
+    return tax
