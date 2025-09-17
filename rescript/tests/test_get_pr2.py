@@ -8,13 +8,12 @@
 
 import pkg_resources
 from qiime2.plugin.testing import TestPluginBase
-from qiime2.plugins import rescript
+# from qiime2.plugins import rescript
 from rescript.get_pr2 import (_assemble_pr2_urls, _compile_taxonomy_output,
                               _fetch_url)
 from q2_types.feature_data import (HeaderlessTSVTaxonomyFormat,
                                    TaxonomyFormat,
-                                   DNAFASTAFormat,
-                                   DNAIterator)
+                                   DNAFASTAFormat)  # , DNAIterator)
 import pandas as pd
 from pandas.testing import assert_series_equal
 from unittest.mock import patch
