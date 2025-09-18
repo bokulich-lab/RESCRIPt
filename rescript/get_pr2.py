@@ -95,10 +95,10 @@ def _unzip_fasta(in_path, out_path):
     with gzip.open(in_path, 'rt') as gz_in:
         with open(out_path, 'w') as gz_out:
             shutil.copyfileobj(gz_in, gz_out)
-            seqs = DNAFASTAFormat(
-                       out_path,
-                       mode="r").view(DNAIterator)
-            return seqs
+        seqs = DNAFASTAFormat(
+                   out_path,
+                   mode="r").view(DNAIterator)
+        return seqs
 
 
 def _get_fasta(url):
@@ -114,8 +114,8 @@ def _unzip_taxonomy(in_path, out_path):
     with gzip.open(in_path, 'rt') as gz_in:
         with open(out_path, 'w') as gz_out:
             shutil.copyfileobj(gz_in, gz_out)
-            tax = TaxonomyFormat(out_path, mode="r").view(pd.DataFrame)
-            return tax
+        tax = TaxonomyFormat(out_path, mode="r").view(pd.DataFrame)
+        return tax
 
 
 def _compile_taxonomy_output(tax, ranks):

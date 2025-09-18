@@ -6,17 +6,21 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-import pkg_resources
-from qiime2.plugin.testing import TestPluginBase
 # from qiime2.plugins import rescript
+# import pkg_resources
+from qiime2.plugin.testing import TestPluginBase
 from rescript.get_pr2 import (_assemble_pr2_urls, _compile_taxonomy_output,
-                              _fetch_url)
-from q2_types.feature_data import (HeaderlessTSVTaxonomyFormat,
-                                   TaxonomyFormat,
-                                   DNAFASTAFormat)  # , DNAIterator)
+                              _fetch_url, _get_paths, _unzip_fasta,
+                              _unzip_taxonomy)
+from q2_types.feature_data import (TaxonomyFormat, DNAFASTAFormat,
+                                   DNAIterator)
 import pandas as pd
 from pandas.testing import assert_series_equal
 from unittest.mock import patch
+import tempfile
+import os
+import gzip
+import shutil
 
 
 class TestGetPR2(TestPluginBase):
@@ -24,26 +28,17 @@ class TestGetPR2(TestPluginBase):
 
     def setUp(self):
         super().setUp()
-        self.pr2_tax_df = TaxonomyFormat(
-                            pkg_resources.resource_filename(
-                                 'rescript.tests',
-                                 'data/pr2-tax.tsv'),
-                            mode="r").view(pd.DataFrame)
-        self.pr2_tax = HeaderlessTSVTaxonomyFormat(
-                            pkg_resources.resource_filename(
-                                 'rescript.tests',
-                                 'data/pr2-tax.tsv'),
-                            mode='r')
-        self.pr2_tax_format = TaxonomyFormat(
-                            pkg_resources.resource_filename(
-                                 'rescript.tests',
-                                 'data/pr2-tax-formatted.tsv'),
-                            mode='r')
-        self.pr2_seqs = DNAFASTAFormat(
-                            pkg_resources.resource_filename(
-                                 'rescript.tests',
-                                 'data/pr2-seqs.fasta'),
-                            mode='r')
+
+        self.pr2_tax_path = self.get_data_path('pr2-tax.tsv')
+        self.pr2_tax = TaxonomyFormat(self.pr2_tax_path, mode='r')
+        self.pr2_tax_df = self.pr2_tax.view(pd.DataFrame)
+
+        self.pr2_taxf_path = self.get_data_path('pr2-tax-formatted.tsv')
+        self.pr2_taxf = TaxonomyFormat(self.pr2_taxf_path, mode='r')
+        self.pr2_taxf_df = self.pr2_taxf.view(pd.DataFrame)
+
+        self.pr2_fasta_path = self.get_data_path('pr2-seqs.fasta')
+        self.pr2_seqs = DNAFASTAFormat(self.pr2_fasta_path, mode='r')
 
     # test that appropriate URLs are assembled
     def test_assemble_pr2_urls(self):
@@ -78,6 +73,50 @@ class TestGetPR2(TestPluginBase):
         exp_tax.name = 'Taxon'
         exp_tax.index.name = 'Feature ID'
         assert_series_equal(obs_tax, exp_tax)
+
+    def test_get_paths(self):
+        url = ('https://github.com/pr2database/'
+               'pr2database/releases/download/v5.0.0/'
+               'pr2_version_5.0.0_SSU_mothur.fasta.gz')
+        tmpdirname = 'my_tmp_dir'
+        obs_inp, obs_outp = _get_paths(url, tmpdirname)
+
+        exp_inp = 'my_tmp_dir/pr2_version_5.0.0_SSU_mothur.fasta.gz'
+        exp_outp = 'my_tmp_dir/pr2_version_5.0.0_SSU_mothur.fasta'
+
+        self.assertEqual(obs_inp, exp_inp)
+        self.assertEqual(obs_outp, exp_outp)
+
+    def test_unzip_fasta(self):
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            pr2_guz = os.path.join(tmpdirname, 'pr2-seqs.fasta')
+            pr2_gz = os.path.join(tmpdirname, 'pr2-seqs.fasta.gz')
+            with open(self.pr2_fasta_path) as pr2_seq_data:
+                with gzip.open(pr2_gz, 'wt') as gzfo:
+                    shutil.copyfileobj(pr2_seq_data, gzfo)
+
+                obs_pr2_iter = _unzip_fasta(pr2_gz,
+                                            pr2_guz)
+                obs_seqs_dict = {seq.metadata['id']: str(seq)
+                                 for seq in obs_pr2_iter}
+
+                exp_seqs_dict = {seq.metadata['id']: str(seq)
+                                 for seq in self.pr2_seqs.view(
+                                     DNAIterator)}
+                self.assertEqual(obs_seqs_dict, exp_seqs_dict)
+
+    def test_unzip_taxonomy(self):
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            pr2t_guz = os.path.join(tmpdirname, 'pr2-tax.tsv')
+            pr2t_gz = os.path.join(tmpdirname, 'pr2-tax.tsv.gz')
+            with open(self.pr2_tax_path) as pr2t_tax_data:
+                with gzip.open(pr2t_gz, 'wt') as gzto:
+                    shutil.copyfileobj(pr2t_tax_data, gzto)
+
+                obs_tax_df = _unzip_taxonomy(pr2t_gz,
+                                             pr2t_guz)
+
+                self.assertEqual(True, obs_tax_df.equals(self.pr2_tax_df))
 
     @patch("rescript.get_pr2.urlretrieve")
     def test_run_pr2_error(self, mock_urlretrieve):
