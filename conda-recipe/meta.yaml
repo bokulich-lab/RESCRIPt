@@ -16,6 +16,7 @@ requirements:
   - ncbi-datasets-pyclient {{ ncbi_datasets_pyclient }}
   - requests
   - xmltodict
+  - py7zr
   - pandas {{ pandas }}
   - vsearch {{ vsearch }}
   - scikit-learn {{ scikit_learn }}
