@@ -10,17 +10,20 @@ import os
 import tempfile
 import shutil
 import gzip
-import warnings
+# import warnings
 from urllib.request import urlretrieve
-from urllib.error import HTTPError
+# from urllib.error import HTTPError
 from pathlib import Path
 import pandas as pd
 from collections import OrderedDict
 from q2_types.feature_data import (TaxonomyFormat, DNAFASTAFormat,
                                    DNAIterator)
 
-# Note: No need for '5.0.1' '4.14.1'. Documentaiton says to refer to
+# Note: Only download files that suppport PR2s 9-rank system.
+# This includes '5.0.0' and later.
+# No need for '5.0.1' '4.14.1'. Documentaiton says to refer to
 # the '5.0.0' and '4.14.0' files respectively.
+# Version '4.14.1' only supports 8 ranks.
 # Also, might need to include extra code for 4.13 and earlier as
 # the 16S and 18S files are separated. Note the slight differences
 # in naming convention:
@@ -28,6 +31,11 @@ from q2_types.feature_data import (TaxonomyFormat, DNAFASTAFormat,
 #  VS
 #   pr2_version_4.13.0_16S_mothur.fasta.gz
 #   pr2_version_4.13.0_18S_mothur.fasta.gz
+
+BASE_PR2_URL = 'https://github.com/pr2database/pr2database/releases/download/'
+
+VER_DICT = {'5.0.0': 'v5.0.0/pr2_version_5.0.0_SSU_mothur.',
+            '5.1.0': 'v5.1.0.0/pr2_version_5.1.0_SSU_mothur.'}
 
 _allowed_pr2_ranks = OrderedDict({'domain': 'd__', 'supergroup': 'sgr__',
                                   'division': 'dv__', 'subdivision': 'dvs__',
@@ -39,7 +47,7 @@ _default_pr2_ranks = ['domain', 'supergroup', 'division', 'subdivision',
 
 
 def get_pr2_data(
-    version: str = '5.0.0',
+    version: str = '5.1.0',
     ranks: list = None,
         ) -> (DNAIterator, pd.Series):
 
@@ -47,21 +55,67 @@ def get_pr2_data(
         ranks = _default_pr2_ranks
 
     urls = _assemble_pr2_urls(version=version)
-    seqs, tax = _retrieve_data_from_pr2(urls, ranks)
+
+    seqs = _get_fasta(urls['fasta'])
+    tax = _get_taxonomy(urls['tax'])
+    updated_tax = _compile_taxonomy_output(tax, ranks)
 
     print('\n Saving files...\n')
-    return seqs, tax
+    return seqs, updated_tax
 
 
-def _assemble_pr2_urls(version='5.0.0'):
-    urls_to_retrieve = []
-    base_url = ('https://github.com/pr2database/pr2database/releases/download/'
-                'v{ver}/pr2_version_{ver}_SSU_mothur.{ext}.gz')
-
-    for data_type in ['fasta', 'tax']:
-        urls_to_retrieve.append(base_url.format(**{'ver': version,
-                                                   'ext': data_type}))
+def _assemble_pr2_urls(version='5.1.0'):
+    urls_to_retrieve = {ft: ''.join([BASE_PR2_URL, VER_DICT[version],
+                                     ft, '.gz'])
+                        for ft in ['fasta', 'tax']}
     return urls_to_retrieve
+
+
+def _get_paths(url, tmpdirname):
+    compressed_fn = Path(url).name
+    uncompressed_fn = Path(url).stem
+    in_path = os.path.join(tmpdirname, compressed_fn)
+    out_path = os.path.join(tmpdirname, uncompressed_fn)
+    return in_path, out_path
+
+
+def _fetch_url(url, in_path):
+    try:
+        print('Retrieving data from {0}'.format(url))
+        urlretrieve(url, in_path)
+    except Exception as e:
+        raise ValueError(
+            'Unable to retrieve the following file '
+            'from PR2:\n{url}\n: {e}'.format(
+                         url=url, e=e))
+
+
+def _unzip_fasta(in_path, out_path):
+    print('  Unzipping {0}...\n'.format(in_path))
+    with gzip.open(in_path, 'rt') as gz_in:
+        with open(out_path, 'w') as gz_out:
+            shutil.copyfileobj(gz_in, gz_out)
+        seqs = DNAFASTAFormat(
+                   out_path,
+                   mode="r").view(DNAIterator)
+        return seqs
+
+
+def _get_fasta(url):
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        in_path, out_path = _get_paths(url, tmpdirname)
+        _fetch_url(url, in_path)
+        seqs = _unzip_fasta(in_path, out_path)
+        return seqs
+
+
+def _unzip_taxonomy(in_path, out_path):
+    print('  Unzipping {0}...\n'.format(in_path))
+    with gzip.open(in_path, 'rt') as gz_in:
+        with open(out_path, 'w') as gz_out:
+            shutil.copyfileobj(gz_in, gz_out)
+        tax = TaxonomyFormat(out_path, mode="r").view(pd.DataFrame)
+        return tax
 
 
 def _compile_taxonomy_output(tax, ranks):
@@ -81,36 +135,9 @@ def _compile_taxonomy_output(tax, ranks):
     return taxonomy
 
 
-def _retrieve_data_from_pr2(urls_to_retrieve, ranks):
-    # Perform check that the `urls_to_retriev` should only
-    # contain 2 files, a 'fasta' and 'taxonomy' file.
-
-    print('\nDownloading and processing raw files ... \n')
-
+def _get_taxonomy(url):
     with tempfile.TemporaryDirectory() as tmpdirname:
-        for url in urls_to_retrieve:
-            compressed_fn = Path(url).name
-            uncompressed_fn = Path(url).stem
-            in_path = os.path.join(tmpdirname, compressed_fn)
-            out_path = os.path.join(tmpdirname, uncompressed_fn)
-
-            try:
-                print('Retrieving data from {0}'.format(url))
-                urlretrieve(url, in_path)
-            except HTTPError:
-                msg = ("Unable to retrieve the following file from PR2:\n"
-                       + url)
-                warnings.warn(msg, UserWarning)
-
-            print('  Unzipping {0}...\n'.format(in_path))
-            with gzip.open(in_path, 'rt') as gz_in:
-                with open(out_path, 'w') as gz_out:
-                    shutil.copyfileobj(gz_in, gz_out)
-                    if out_path.endswith('fasta'):
-                        seqs = DNAFASTAFormat(out_path,
-                                              mode="r").view(DNAIterator)
-                    elif out_path.endswith('tax'):
-                        tax = TaxonomyFormat(out_path,
-                                             mode="r").view(pd.DataFrame)
-                        updated_tax = _compile_taxonomy_output(tax, ranks)
-    return seqs, updated_tax
+        in_path, out_path = _get_paths(url, tmpdirname)
+        _fetch_url(url, in_path)
+        tax = _unzip_taxonomy(in_path, out_path)
+    return tax
