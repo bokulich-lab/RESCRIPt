@@ -1403,7 +1403,6 @@ plugin.methods.register_function(
         'ranks': 'List of taxonomic ranks for building a taxonomy from the '
                  'NCBI Taxonomy database.',
         'rank_propagation': RANK_PROPAGATE_DESCRIPTION,
-
     },
     output_descriptions={
         'genome_assemblies': 'Nucleotide sequences of requested genomes.',
@@ -1422,7 +1421,8 @@ plugin.methods.register_function(
         citations['clark2016'],
         citations['oleary2016'],
         citations['schoch2020']
-    ]
+    ],
+    deprecated=True,
 )
 
 
