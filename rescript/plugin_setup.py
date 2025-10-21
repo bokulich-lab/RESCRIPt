@@ -181,7 +181,9 @@ plugin.pipelines.register_function(
         'reference data are viable), hence THIS PIPELINE IS USEFUL FOR '
         'TRAINING FEATURE CLASSIFIERS AND THEN EVALUATING THEM ON-THE-FLY.'),
     citations=[citations['bokulich2018optimizing']],
-    deprecated=True,
+    migrated={'to_plugin': 'q2-feature-classifier',
+              'from_distro': 'amplicon & moshpit',
+              'to_distro': 'amplicon', 'epoch': '2026.1'},
 )
 
 
@@ -224,7 +226,9 @@ plugin.pipelines.register_function(
         'enable appropriate label stratification. See the cited reference '
         '(Bokulich et al. 2018) for more details.'),
     citations=[citations['bokulich2018optimizing']],
-    deprecated=True,
+    migrated={'to_plugin': 'q2-feature-classifier',
+              'from_distro': 'amplicon & moshpit',
+              'to_distro': 'amplicon', 'epoch': '2026.1'},
 )
 
 
@@ -1271,7 +1275,9 @@ plugin.pipelines.register_function(
         "inefficient for very large alignments and is only recommended for "
         "small alignments. For large alignments providing specific alignment "
         "positions is ideal."),
-    deprecated=True,
+    migrated={'to_plugin': 'q2-alignment',
+              'from_distro': 'moshpit & amplicon',
+              'to_distro': 'amplicon', 'epoch': '2026.1'},
 )
 
 T = TypeMatch([AlignedSequence, Sequence])
@@ -1422,7 +1428,9 @@ plugin.methods.register_function(
         citations['oleary2016'],
         citations['schoch2020']
     ],
-    deprecated=True,
+    migrated={'to_plugin': 'rescript',
+              'from_distro': 'amplicon',
+              'to_distro': 'moshpit', 'epoch': '2026.1'},
 )
 
 
@@ -1501,7 +1509,9 @@ plugin.methods.register_function(
                 "action get-bv-brc-metadata as a new query. Check "
                 "https://www.bv-brc.org/api/doc/ for documentation.",
     citations=[citations['olson2023introducing']],
-    deprecated=True,
+    migrated={'to_plugin': 'rescript',
+              'from_distro': 'amplicon',
+              'to_distro': 'moshpit', 'epoch': '2026.1'},
 )
 
 
@@ -1548,7 +1558,9 @@ plugin.methods.register_function(
                 "other data types as a new query. Check "
                 "https://www.bv-brc.org/api/doc/ for documentation.",
     citations=[citations['olson2023introducing']],
-    deprecated=True,
+    migrated={'to_plugin': 'rescript',
+              'from_distro': 'amplicon',
+              'to_distro': 'moshpit', 'epoch': '2026.1'},
 )
 
 
@@ -1605,7 +1617,9 @@ plugin.methods.register_function(
                 'get-bv-brc-metadata as a new query. Check '
                 'https://www.bv-brc.org/api/doc/ for documentation.',
     citations=[citations['olson2023introducing']],
-    deprecated=True,
+    migrated={'to_plugin': 'rescript',
+              'from_distro': 'amplicon',
+              'to_distro': 'moshpit', 'epoch': '2026.1'},
 )
 
 
