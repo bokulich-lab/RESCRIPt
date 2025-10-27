@@ -182,7 +182,7 @@ plugin.pipelines.register_function(
         'TRAINING FEATURE CLASSIFIERS AND THEN EVALUATING THEM ON-THE-FLY.'),
     citations=[citations['bokulich2018optimizing']],
     migrated={'to_plugin': 'q2-feature-classifier',
-              'from_distro': 'amplicon & moshpit',
+              'from_distro': 'amplicon',
               'to_distro': 'amplicon', 'epoch': '2026.1'},
 )
 
@@ -227,7 +227,7 @@ plugin.pipelines.register_function(
         '(Bokulich et al. 2018) for more details.'),
     citations=[citations['bokulich2018optimizing']],
     migrated={'to_plugin': 'q2-feature-classifier',
-              'from_distro': 'amplicon & moshpit',
+              'from_distro': 'amplicon',
               'to_distro': 'amplicon', 'epoch': '2026.1'},
 )
 
@@ -1276,7 +1276,7 @@ plugin.pipelines.register_function(
         "small alignments. For large alignments providing specific alignment "
         "positions is ideal."),
     migrated={'to_plugin': 'q2-alignment',
-              'from_distro': 'moshpit & amplicon',
+              'from_distro': 'amplicon',
               'to_distro': 'amplicon', 'epoch': '2026.1'},
 )
 
@@ -1428,9 +1428,6 @@ plugin.methods.register_function(
         citations['oleary2016'],
         citations['schoch2020']
     ],
-    migrated={'to_plugin': 'rescript',
-              'from_distro': 'amplicon',
-              'to_distro': 'moshpit', 'epoch': '2026.1'},
 )
 
 
@@ -1509,9 +1506,6 @@ plugin.methods.register_function(
                 "action get-bv-brc-metadata as a new query. Check "
                 "https://www.bv-brc.org/api/doc/ for documentation.",
     citations=[citations['olson2023introducing']],
-    migrated={'to_plugin': 'rescript',
-              'from_distro': 'amplicon',
-              'to_distro': 'moshpit', 'epoch': '2026.1'},
 )
 
 
@@ -1558,9 +1552,6 @@ plugin.methods.register_function(
                 "other data types as a new query. Check "
                 "https://www.bv-brc.org/api/doc/ for documentation.",
     citations=[citations['olson2023introducing']],
-    migrated={'to_plugin': 'rescript',
-              'from_distro': 'amplicon',
-              'to_distro': 'moshpit', 'epoch': '2026.1'},
 )
 
 
@@ -1617,9 +1608,6 @@ plugin.methods.register_function(
                 'get-bv-brc-metadata as a new query. Check '
                 'https://www.bv-brc.org/api/doc/ for documentation.',
     citations=[citations['olson2023introducing']],
-    migrated={'to_plugin': 'rescript',
-              'from_distro': 'amplicon',
-              'to_distro': 'moshpit', 'epoch': '2026.1'},
 )
 
 
