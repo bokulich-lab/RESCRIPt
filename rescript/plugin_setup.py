@@ -180,7 +180,10 @@ plugin.pipelines.register_function(
         're-used for classification of other sequences (provided the '
         'reference data are viable), hence THIS PIPELINE IS USEFUL FOR '
         'TRAINING FEATURE CLASSIFIERS AND THEN EVALUATING THEM ON-THE-FLY.'),
-    citations=[citations['bokulich2018optimizing']]
+    citations=[citations['bokulich2018optimizing']],
+    migrated={'to_plugin': 'q2-feature-classifier',
+              'from_distro': 'amplicon',
+              'to_distro': 'amplicon', 'epoch': '2026.1'},
 )
 
 
@@ -222,7 +225,10 @@ plugin.pipelines.register_function(
         'taxonomic classification. Unique taxonomic labels are truncated to '
         'enable appropriate label stratification. See the cited reference '
         '(Bokulich et al. 2018) for more details.'),
-    citations=[citations['bokulich2018optimizing']]
+    citations=[citations['bokulich2018optimizing']],
+    migrated={'to_plugin': 'q2-feature-classifier',
+              'from_distro': 'amplicon',
+              'to_distro': 'amplicon', 'epoch': '2026.1'},
 )
 
 
@@ -1269,6 +1275,9 @@ plugin.pipelines.register_function(
         "inefficient for very large alignments and is only recommended for "
         "small alignments. For large alignments providing specific alignment "
         "positions is ideal."),
+    migrated={'to_plugin': 'q2-alignment',
+              'from_distro': 'amplicon',
+              'to_distro': 'amplicon', 'epoch': '2026.1'},
 )
 
 T = TypeMatch([AlignedSequence, Sequence])
@@ -1400,7 +1409,6 @@ plugin.methods.register_function(
         'ranks': 'List of taxonomic ranks for building a taxonomy from the '
                  'NCBI Taxonomy database.',
         'rank_propagation': RANK_PROPAGATE_DESCRIPTION,
-
     },
     output_descriptions={
         'genome_assemblies': 'Nucleotide sequences of requested genomes.',
@@ -1419,7 +1427,7 @@ plugin.methods.register_function(
         citations['clark2016'],
         citations['oleary2016'],
         citations['schoch2020']
-    ]
+    ],
 )
 
 
@@ -1497,7 +1505,7 @@ plugin.methods.register_function(
                 "column can be provided, to use metadata obtained with the "
                 "action get-bv-brc-metadata as a new query. Check "
                 "https://www.bv-brc.org/api/doc/ for documentation.",
-    citations=[citations['olson2023introducing']]
+    citations=[citations['olson2023introducing']],
 )
 
 
@@ -1543,7 +1551,7 @@ plugin.methods.register_function(
                 "metadata column can be provided, to use the results from "
                 "other data types as a new query. Check "
                 "https://www.bv-brc.org/api/doc/ for documentation.",
-    citations=[citations['olson2023introducing']]
+    citations=[citations['olson2023introducing']],
 )
 
 
@@ -1599,7 +1607,7 @@ plugin.methods.register_function(
                 'to use metadata obtained with the action '
                 'get-bv-brc-metadata as a new query. Check '
                 'https://www.bv-brc.org/api/doc/ for documentation.',
-    citations=[citations['olson2023introducing']]
+    citations=[citations['olson2023introducing']],
 )
 
 
