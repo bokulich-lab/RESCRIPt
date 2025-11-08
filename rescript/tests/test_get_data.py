@@ -45,7 +45,7 @@ class TestGetSILVA(TestPluginBase):
         # we do not check the outputs, since a successful return implies
         # that the contents are valid and imported successfully.
         queries = [
-            ('taxa', 'https://www.arb-silva.de/archive/'
+            ('taxa', 'https://www.arb-silva.de/fileadmin/silva_databases/'
                      'release_138/Exports/taxonomy/tax_slv_ssu_138.tre.gz',
              'Phylogeny[Rooted]')]
         _retrieve_data_from_silva(queries)
