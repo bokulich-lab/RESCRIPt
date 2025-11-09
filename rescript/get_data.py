@@ -14,7 +14,7 @@ import gzip
 import warnings
 
 import qiime2
-from urllib.request import Request, urlopen
+from urllib.request import urlretrieve
 from urllib.error import HTTPError
 from q2_types.feature_data import RNAFASTAFormat
 
@@ -103,15 +103,6 @@ def _assemble_silva_data_urls(version, target, download_sequences=True):
     return queries
 
 
-def _download_with_headers(url, dest):
-    req = Request(url, headers={
-        'User-Agent': 'Mozilla/5.0',
-        'Referer': 'https://www.arb-silva.de/',
-    })
-    with urlopen(req) as r, open(dest, 'wb') as out:
-        shutil.copyfileobj(r, out)
-
-
 def _retrieve_data_from_silva(queries):
     '''
     Download data from SILVA, given a list of queries.
@@ -125,13 +116,13 @@ def _retrieve_data_from_silva(queries):
             print('retrieving {0} from: {1}'.format(name, query))
             # grab url
             destination = os.path.join(tmpdirname, os.path.basename(query))
-            _download_with_headers(query, destination)
+            urlretrieve(query, destination)
             file_md5 = _get_md5(destination)
             # grab expected md5
             # NOTE: SILVA is missing md5s for some files, so we will just skip
             try:
                 md5_destination = os.path.join(tmpdirname, 'md5')
-                _download_with_headers(query + '.md5', md5_destination)
+                urlretrieve(query + '.md5', md5_destination)
                 exp_md5 = _read_silva_md5(md5_destination)
                 # validate md5 checksum
                 _validate_md5(exp_md5, file_md5, query)
