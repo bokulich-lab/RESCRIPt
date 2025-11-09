@@ -48,7 +48,16 @@ class TestGetSILVA(TestPluginBase):
             ('taxa', 'https://www.arb-silva.de/fileadmin/silva_databases/'
                      'release_138/Exports/taxonomy/tax_slv_ssu_138.tre.gz',
              'Phylogeny[Rooted]')]
-        _retrieve_data_from_silva(queries)
+        fallback_queries = [
+            ('taxa', 'https://packages.qiime2.org/silva_fallback/'
+                     'tax_slv_ssu_138.tre.gz',
+             'Phylogeny[Rooted]')]
+        try:
+            _retrieve_data_from_silva(queries)
+        except HTTPError as e:
+            if e.code != 403:
+                raise
+            _retrieve_data_from_silva(fallback_queries)
         self.assertTrue(True)
 
     # This tests the full get_silva_data pipeline, using mock data and
