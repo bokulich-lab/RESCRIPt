@@ -64,7 +64,7 @@ class TestGetUNITE(TestPluginBase):
             with patch("requests.get", return_value=mock_bad):
                 with self.assertRaisesRegex(ValueError,
                                             "File incomplete on try"):
-                    _unite_get_tgz("https://files.plutof.ut.ee/nope",
+                    _unite_get_tgz("https://example.com/",
                                    tmpdirname)
 
     def test_unite_get_artifacts(self):
