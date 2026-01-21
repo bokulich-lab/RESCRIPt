@@ -59,13 +59,12 @@ class TestGetUNITE(TestPluginBase):
             # mock the response object (for failure case)
             mock_bad = Mock()
             mock_bad.iter_content.return_value = [b"x"]
-            mock_bad.headers.get.return_value = "999999" # mismatched size
+            mock_bad.headers.get.return_value = "999999"  # mismatched size
             # mock failed download
             with patch("requests.get", return_value=mock_bad):
                 with self.assertRaisesRegex(ValueError,
                                             "File incomplete on try"):
-                    _unite_get_tgz("https://example.com/",
-                                   tmpdirname)
+                    _unite_get_tgz("https://example.test/nope", tmpdirname)
 
     def test_unite_get_artifacts(self):
         # Test on small data/unitefile.tgz with two items inside
