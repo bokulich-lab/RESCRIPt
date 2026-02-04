@@ -10,7 +10,7 @@ import pandas as pd
 import pandas.testing as pdt
 import numpy as np
 import tempfile
-import pkg_resources
+import importlib
 
 from qiime2.plugin import ValidationError
 from qiime2.plugin.testing import TestPluginBase
@@ -36,8 +36,7 @@ class RescriptTypesTestPluginBase(TestPluginBase):
         self.temp_dir.cleanup()
 
     def get_data_path(self, filename):
-        return pkg_resources.resource_filename(self.package,
-                                               'data/%s' % filename)
+        return importlib.resources.files(self.package) / 'data' / filename
 
 
 class TestSILVATypesAndFormats(RescriptTypesTestPluginBase):
@@ -206,8 +205,9 @@ class TestRNATransformers(RescriptTypesTestPluginBase):
 
     def setUp(self):
         super().setUp()
-        dna_path = pkg_resources.resource_filename(
-            'rescript.tests', 'data/derep-test.fasta')
+        dna_path = \
+            importlib.resources.files(
+                'rescript') / 'tests' / 'data' / 'derep-test.fasta'
         self.dna_seqs = DNAFASTAFormat(dna_path, mode='r').view(DNAIterator)
 
     def test_rna_fasta_format_to_dna_fasta_format(self):
@@ -234,8 +234,9 @@ class TestRNATransformers(RescriptTypesTestPluginBase):
 class TestDNAIteratorTransformers(RescriptTypesTestPluginBase):
     def setUp(self):
         super().setUp()
-        self.aligned_dna_path = pkg_resources.resource_filename(
-            'rescript.tests', 'data/trim-test-alignment.fasta')
+        self.aligned_dna_path = \
+            importlib.resources.files(
+                'rescript') / 'tests' / 'data' / 'trim-test-alignment.fasta'
         self.aligned_dna_seqs = AlignedDNAFASTAFormat(
             self.aligned_dna_path, mode='r').view(AlignedDNAIterator)
 
@@ -243,6 +244,6 @@ class TestDNAIteratorTransformers(RescriptTypesTestPluginBase):
         transformer = self.get_transformer(DNAIterator, AlignedDNAFASTAFormat)
         obs = transformer(self.aligned_dna_seqs)
         obs = _read_dna_alignment_fasta(str(obs))
-        exp = _read_dna_alignment_fasta(self.aligned_dna_path)
+        exp = _read_dna_alignment_fasta(str(self.aligned_dna_path))
         for observed, expected in zip(obs, exp):
             self.assertEqual(observed, expected)

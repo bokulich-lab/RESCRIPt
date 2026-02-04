@@ -22,11 +22,11 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from collections import Counter
 from itertools import zip_longest
-import pkg_resources
+import importlib
 
 from ._utilities import _taxon_to_list
 
-TEMPLATES = pkg_resources.resource_filename('rescript', 'assets')
+TEMPLATES = importlib.resources.files('rescript') / 'assets'
 
 
 def evaluate_taxonomy(ctx,

@@ -7,7 +7,7 @@
 # ----------------------------------------------------------------------------
 
 import qiime2
-import pkg_resources
+import importlib
 from qiime2.plugin.testing import TestPluginBase
 from qiime2.plugins import rescript
 from rescript.get_data import (_assemble_silva_data_urls,
@@ -70,8 +70,9 @@ class TestGetSILVA(TestPluginBase):
         def _fake_data_on_demand(give_me_anything_i_shall_ignore_it):
             tr = qiime2.Artifact.import_data(
                 'FeatureData[SILVATaxonomy]',
-                pkg_resources.resource_filename(
-                    'rescript.types.tests', 'data/silva_taxa.tsv'))
+                importlib.resources.files(
+                    'rescript') / 'types' / 'tests' / 'data' / 'silva_taxa.tsv'
+            )
             tt = qiime2.Artifact.import_data(
                 'Phylogeny[Rooted]', self.get_data_path('taxid_tree.tre'))
             tm2 = qiime2.Artifact.import_data(
