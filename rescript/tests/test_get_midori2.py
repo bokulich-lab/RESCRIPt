@@ -6,7 +6,7 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-import pkg_resources
+import importlib
 from qiime2.plugin.testing import TestPluginBase
 from qiime2.plugins import rescript
 from rescript.get_midori2 import (_assemble_midori2_urls,
@@ -23,16 +23,14 @@ class TestGetMidori2(TestPluginBase):
 
     def setUp(self):
         super().setUp()
-        self.midori2_tax = TaxonomyFormat(
-                            pkg_resources.resource_filename(
-                                 'rescript.tests',
-                                 'data/midori2-taxa.tsv'),
-                            mode='r')
-        self.midori2_seqs = DNAFASTAFormat(
-                            pkg_resources.resource_filename(
-                                 'rescript.tests',
-                                 'data/midori2-seqs.fasta'),
-                            mode='r')
+        self.midori2_tax = \
+            TaxonomyFormat(importlib.resources.files(
+                'rescript') / 'tests' / 'data' / 'midori2-taxa.tsv', mode='r'
+            )
+        self.midori2_seqs = \
+            DNAFASTAFormat(importlib.resources.files(
+                'rescript') / 'tests' / 'data' / 'midori2-seqs.fasta', mode='r'
+            )
 
     # test that appropriate URLs are assembled
     def test_assemble_midori2_urls_01(self):

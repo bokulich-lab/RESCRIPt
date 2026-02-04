@@ -6,7 +6,7 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-import pkg_resources
+import importlib
 import tempfile
 import pandas.core.frame
 import q2_types.feature_data
@@ -28,12 +28,12 @@ class TestGetUNITE(TestPluginBase):
 
     def setUp(self):
         super().setUp()
-        self.unitefile = pkg_resources.resource_filename(
-            "rescript.tests", "data/unitefile.tgz"
-        )
-        self.unitefile_no_dev = pkg_resources.resource_filename(
-            "rescript.tests", "data/unitefile_no_dev.tgz"
-        )
+        self.unitefile = \
+            importlib.resources.files(
+                "rescript") / "tests" / "data" / "unitefile.tgz"
+        self.unitefile_no_dev = \
+            importlib.resources.files(
+                "rescript") / "tests" / "data" / "unitefile_no_dev.tgz"
 
     # Requires internet access
     def test_unite_get_url(self):
