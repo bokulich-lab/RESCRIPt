@@ -236,7 +236,7 @@ class TestDNAIteratorTransformers(RescriptTypesTestPluginBase):
         super().setUp()
         self.aligned_dna_path = \
             importlib.resources.files(
-                'rescript') / 'tests' / 'data' / 'trim-test-alignment.fasta'
+                'rescript') / 'tests' / 'data' / 'test-alignment.fasta'
         self.aligned_dna_seqs = AlignedDNAFASTAFormat(
             self.aligned_dna_path, mode='r').view(AlignedDNAIterator)
 
