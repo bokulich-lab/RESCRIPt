@@ -22,8 +22,8 @@ class TestSubsampleSeq(TestPluginBase):
 
     def setUp(self):
         super().setUp()
-        aligned_input_fp = self.get_data_path('trim-test-alignment.fasta')
-        unaligned_input_fp = self.get_data_path('trim-test-sequences.fasta')
+        aligned_input_fp = self.get_data_path('test-alignment.fasta')
+        unaligned_input_fp = self.get_data_path('test-unaln-sequences.fasta')
         self.alignedseqs = AlignedDNAFASTAFormat(
             aligned_input_fp, mode='r').view(AlignedDNAIterator)
         self.seqs = DNAFASTAFormat(
