@@ -6,7 +6,7 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-import pkg_resources
+import importlib
 from qiime2.plugin.testing import TestPluginBase
 from qiime2.plugins import rescript
 from rescript.get_gtdb import _assemble_queries, parse_gtdb_taxonomy
@@ -19,36 +19,30 @@ class TestGetGTDB(TestPluginBase):
 
     def setUp(self):
         super().setUp()
-        self.gtdb_tax = TSVTaxonomyFormat(
-                            pkg_resources.resource_filename(
-                                 'rescript.tests',
-                                 'data/gtdb-tax.tsv'),
-                            mode='r')
-        self.gtdb_seqs = DNAFASTAFormat(
-                            pkg_resources.resource_filename(
-                                 'rescript.tests',
-                                 'data/gtdb-seqs.fasta'),
-                            mode='r')
-        self.gtdb_arch_tax = TSVTaxonomyFormat(
-                            pkg_resources.resource_filename(
-                                 'rescript.tests',
-                                 'data/gtdb-taxa-archaea.tsv'),
-                            mode='r')
-        self.gtdb_arch_seqs = DNAFASTAFormat(
-                            pkg_resources.resource_filename(
-                                 'rescript.tests',
-                                 'data/gtdb-seqs-archaea.fasta'),
-                            mode='r')
-        self.gtdb_bact_tax = TSVTaxonomyFormat(
-                            pkg_resources.resource_filename(
-                                 'rescript.tests',
-                                 'data/gtdb-taxa-bacteria.tsv'),
-                            mode='r')
-        self.gtdb_bact_seqs = DNAFASTAFormat(
-                            pkg_resources.resource_filename(
-                                 'rescript.tests',
-                                 'data/gtdb-seqs-bacteria.fasta'),
-                            mode='r')
+        self.gtdb_tax = \
+            TSVTaxonomyFormat(importlib.resources.files(
+                'rescript') / 'tests' / 'data' / 'gtdb-tax.tsv',
+                mode='r')
+        self.gtdb_seqs = \
+            DNAFASTAFormat(importlib.resources.files(
+                'rescript') / 'tests' / 'data' / 'gtdb-seqs.fasta',
+                mode='r')
+        self.gtdb_arch_tax = \
+            TSVTaxonomyFormat(importlib.resources.files(
+                'rescript') / 'tests' / 'data' / 'gtdb-taxa-archaea.tsv',
+                mode='r')
+        self.gtdb_arch_seqs = \
+            DNAFASTAFormat(importlib.resources.files(
+                'rescript') / 'tests' / 'data' / 'gtdb-seqs-archaea.fasta',
+                mode='r')
+        self.gtdb_bact_tax = \
+            TSVTaxonomyFormat(importlib.resources.files(
+                'rescript') / 'tests' / 'data' / 'gtdb-taxa-bacteria.tsv',
+                mode='r')
+        self.gtdb_bact_seqs = \
+            DNAFASTAFormat(importlib.resources.files(
+                'rescript') / 'tests' / 'data' / 'gtdb-seqs-bacteria.fasta',
+                mode='r')
 
     # test that appropriate URLs are assembled
     def test_assemble_species_rep_queries(self):

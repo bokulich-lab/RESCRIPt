@@ -5,7 +5,7 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
-import pkg_resources
+import importlib
 
 import qiime2
 from q2_types.feature_data import DNAFASTAFormat, DNAIterator
@@ -18,8 +18,9 @@ class TestReverseTranscribe(RescriptTypesTestPluginBase):
 
     def setUp(self):
         super().setUp()
-        dna_path = pkg_resources.resource_filename(
-            'rescript.tests', 'data/derep-test.fasta')
+        dna_path = \
+            importlib.resources.files(
+                'rescript') / 'tests' / 'data' / 'derep-test.fasta'
         self.dna_seqs = DNAFASTAFormat(dna_path, mode='r').view(DNAIterator)
 
     # this is technically already tested as a transformer and is a really

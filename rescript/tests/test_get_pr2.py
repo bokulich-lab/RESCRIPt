@@ -7,7 +7,6 @@
 # ----------------------------------------------------------------------------
 
 # from qiime2.plugins import rescript
-# import pkg_resources
 from qiime2.plugin.testing import TestPluginBase
 from rescript.get_pr2 import (_assemble_pr2_urls, _compile_taxonomy_output,
                               _fetch_url, _get_paths, _unzip_fasta,

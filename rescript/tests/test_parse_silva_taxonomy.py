@@ -7,7 +7,7 @@
 # ----------------------------------------------------------------------------
 
 import qiime2
-import pkg_resources
+import importlib
 from qiime2.plugin.testing import TestPluginBase
 from rescript.parse_silva_taxonomy import (parse_silva_taxonomy,
                                            _keep_allowed_chars, _prep_taxranks,
@@ -29,8 +29,9 @@ class TestParseSilvaTaxonomy(TestPluginBase):
     def setUp(self):
         super().setUp()
         # taxonomy mapping file 1
-        tm_path = pkg_resources.resource_filename('rescript.types.tests',
-                                                  'data/silva_taxamap.tsv')
+        tm_path = \
+            importlib.resources.files(
+                'rescript') / 'types' / 'tests' / 'data' / 'silva_taxamap.tsv'
         tm = qiime2.Artifact.import_data('FeatureData[SILVATaxidMap]', tm_path)
         self.taxmap = tm.view(pd.DataFrame)
         # Note: below, the tax ranks and tree files below need to be
@@ -40,8 +41,9 @@ class TestParseSilvaTaxonomy(TestPluginBase):
         # We'll keep taxmap 1 for better test case with more data.
         # So self.taxmap2, self.taxtree2, and self.tr must match.
         # silva taxonomy ranks file:
-        tr_path = pkg_resources.resource_filename('rescript.types.tests',
-                                                  'data/silva_taxa.tsv')
+        tr_path = \
+            importlib.resources.files(
+                'rescript') / 'types' / 'tests' / 'data' / 'silva_taxa.tsv'
         tr = qiime2.Artifact.import_data('FeatureData[SILVATaxonomy]', tr_path)
         self.taxranks = tr.view(pd.DataFrame)
         # silva taxonomy tree file 1
