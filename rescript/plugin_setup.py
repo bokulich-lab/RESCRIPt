@@ -27,8 +27,7 @@ from .parse_silva_taxonomy import (parse_silva_taxonomy, ALLOWED_RANKS,
                                    DEFAULT_RANKS)
 from .edit_taxonomy import edit_taxonomy
 from .get_data import get_silva_data
-from .cross_validate import (evaluate_cross_validate,
-                             evaluate_classifications,
+from .cross_validate import (evaluate_classifications,
                              evaluate_fit_classifier)
 from .filter_length import (filter_seqs_length_by_taxon, filter_seqs_length,
                             filter_taxa)
@@ -179,51 +178,6 @@ plugin.pipelines.register_function(
         're-used for classification of other sequences (provided the '
         'reference data are viable), hence THIS PIPELINE IS USEFUL FOR '
         'TRAINING FEATURE CLASSIFIERS AND THEN EVALUATING THEM ON-THE-FLY.'),
-    citations=[citations['bokulich2018optimizing']],
-    migrated={'to_plugin': 'q2-feature-classifier',
-              'from_distro': 'amplicon',
-              'to_distro': 'amplicon', 'epoch': '2026.1'},
-)
-
-
-plugin.pipelines.register_function(
-    function=evaluate_cross_validate,
-    inputs={'sequences': FeatureData[Sequence],
-            'taxonomy': FeatureData[Taxonomy]},
-    parameters={
-        'k': Int % Range(2, None),
-        'random_state': Int % Range(0, None),
-        'reads_per_batch': _classify_parameters['reads_per_batch'],
-        'n_jobs': _classify_parameters['n_jobs'],
-        'confidence': _classify_parameters['confidence']},
-    outputs=[('expected_taxonomy', FeatureData[Taxonomy]),
-             ('observed_taxonomy', FeatureData[Taxonomy]),
-             ('evaluation', Visualization)],
-    input_descriptions={
-        'sequences': 'Reference sequences to use for classifier '
-                     'training/testing.',
-        'taxonomy': 'Reference taxonomy to use for classifier '
-                    'training/testing.'},
-    parameter_descriptions={
-        'k': 'Number of stratified folds.',
-        'random_state': 'Seed used by the random number generator.',
-        'reads_per_batch': _parameter_descriptions['reads_per_batch'],
-        'n_jobs': _parameter_descriptions['n_jobs'],
-        'confidence': _parameter_descriptions['confidence']},
-    output_descriptions={
-        'expected_taxonomy': 'Expected taxonomic label for each input '
-                             'sequence. Taxonomic labels may be truncated due '
-                             'to k-fold CV and stratification.',
-        'observed_taxonomy': 'Observed taxonomic label for each input '
-                             'sequence, predicted by cross-validation.',
-        'evaluation': 'Visualization of cross-validated accuracy results.'},
-    name=('Evaluate DNA sequence reference database via cross-validated '
-          'taxonomic classification.'),
-    description=(
-        'Evaluate DNA sequence reference database via cross-validated '
-        'taxonomic classification. Unique taxonomic labels are truncated to '
-        'enable appropriate label stratification. See the cited reference '
-        '(Bokulich et al. 2018) for more details.'),
     citations=[citations['bokulich2018optimizing']],
     migrated={'to_plugin': 'q2-feature-classifier',
               'from_distro': 'amplicon',
