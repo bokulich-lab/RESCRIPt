@@ -8,68 +8,8 @@
 
 import pandas as pd
 import qiime2 as q2
-import timeit
-
-from q2_types.feature_data import DNAIterator
 
 from .evaluate import _taxonomic_depth, _process_labels
-
-
-def evaluate_fit_classifier(ctx,
-                            sequences,
-                            taxonomy,
-                            reads_per_batch='auto',
-                            n_jobs=1,
-                            confidence=0.7):
-    '''
-    taxonomy: FeatureData[Taxonomy] artifact of taxonomy labels
-    sequences: FeatureData[Sequence] artifact of sequences
-    k: number of kfold cv splits to perform.
-    '''
-    # Validate inputs
-    start = timeit.default_timer()
-    taxa, seq_ids = _validate_cross_validate_inputs(taxonomy, sequences)
-    taxa = taxa.loc[list(seq_ids)]
-    taxonomy = q2.Artifact.import_data('FeatureData[Taxonomy]', taxa)
-    new_time = _check_time(start, 'Validation')
-
-    fit = ctx.get_action('feature_classifier', 'fit_classifier_naive_bayes')
-    classify = ctx.get_action('feature_classifier', 'classify_sklearn')
-    _eval = ctx.get_action('rescript', 'evaluate_classifications')
-
-    # Deploy perfect classifier! (no CV, lots of data leakage)
-    classifier, = fit(reference_reads=sequences,
-                      reference_taxonomy=taxonomy)
-    new_time = _check_time(new_time, 'Training')
-    observed_taxonomy, = classify(reads=sequences,
-                                  classifier=classifier,
-                                  reads_per_batch=reads_per_batch,
-                                  n_jobs=n_jobs,
-                                  confidence=confidence,
-                                  read_orientation='same')
-    new_time = _check_time(new_time, 'Classification')
-    evaluation, = _eval([taxonomy], [observed_taxonomy])
-    _check_time(new_time, 'Evaluation')
-    _check_time(start, 'Total Runtime')
-    return classifier, evaluation, observed_taxonomy
-
-
-def _check_time(old_time, name='Time'):
-    new_time = timeit.default_timer()
-    print('{0}: {1:.2f}s'.format(name, new_time - old_time))
-    return new_time
-
-
-# input validation for cross-validation functions
-def _validate_cross_validate_inputs(taxonomy, sequences):
-    taxa = taxonomy.view(pd.Series)
-    # taxonomies must have even ranks (this is used for confidence estimation
-    # with the current NB classifier; we could relax this if we implement other
-    # methods later on for CV classification).
-    _validate_even_rank_taxonomy(taxa)
-    seq_ids = {i.metadata['id'] for i in sequences.view(DNAIterator)}
-    _validate_index_is_superset(set(taxa.index), seq_ids)
-    return taxa, seq_ids
 
 
 def _evaluate_classifications_stats(expected_taxonomies,
@@ -183,21 +123,6 @@ def _precision_recall_fscore(exp, obs, sample_weight=None):
         f = 2.*p*r / (p + r)
 
     return p, r, f
-
-
-def _validate_even_rank_taxonomy(taxa):
-    '''
-    Check + raise error if taxonomy does not have 100% even taxonomic levels.
-    taxa: pd.Series of taxonomic labels.
-    '''
-    depths = taxa.str.count(';')
-    uniq_values = depths.unique()
-    if len(uniq_values) > 1:
-        max_value = max(uniq_values)
-        raise ValueError('Taxonomic label depth is uneven. All taxonomies '
-                         'must have the same number of semicolon-delimited '
-                         'ranks. The following features are too short: ' +
-                         ', '.join(depths[depths < max_value].index))
 
 
 def _validate_index_is_superset(idx1, idx2):
