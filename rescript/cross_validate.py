@@ -132,20 +132,6 @@ def evaluate_classifications(ctx,
     return plots
 
 
-def _relabel_stratified_taxonomy(taxonomy, valid_taxonomies):
-    '''
-    Relabel taxonomy label to match nearest valid taxonomic label.
-    taxonomy: str
-    valid_taxonomies: set
-    '''
-    t = taxonomy.split(';')
-    for level in range(len(t), 0, -1):
-        if ';'.join(t[:level]) in valid_taxonomies:
-            return ';'.join(t[:level]).strip()
-    else:
-        raise RuntimeError('unknown kingdom in query set: ' + taxonomy)
-
-
 def _calculate_per_rank_precision_recall(expected_taxonomies,
                                          observed_taxonomies):
     max_depth = max(_taxonomic_depth(expected_taxonomies, "").max(),
@@ -212,18 +198,6 @@ def _validate_even_rank_taxonomy(taxa):
                          'must have the same number of semicolon-delimited '
                          'ranks. The following features are too short: ' +
                          ', '.join(depths[depths < max_value].index))
-
-
-def _validate_indices_match(idx1, idx2):
-    '''
-    match indices of two pd.Index objects.
-    idx1: pd.Index
-    idx2: pd.Index or array-like
-    '''
-    diff = idx1.symmetric_difference(idx2)
-    if len(diff) > 0:
-        raise ValueError('Input features must match. The following features '
-                         'are missing from one input: ' + ', '.join(diff))
 
 
 def _validate_index_is_superset(idx1, idx2):

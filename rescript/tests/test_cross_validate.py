@@ -154,60 +154,6 @@ class TestTaxaUtilities(TestPluginBase):
         with self.assertRaisesRegex(ValueError, "too short: C1b"):
             cross_validate._validate_even_rank_taxonomy(self.taxa)
 
-    def test_validate_indices_match_pass(self):
-        cross_validate._validate_indices_match(
-            self.taxa.index, self.seqs.index)
-
-    def test_validate_indices_match_fail(self):
-        taxa = self.taxa.copy().drop(['A1', 'B1'])
-        with self.assertRaisesRegex(ValueError, "one input: A1, B1"):
-            cross_validate._validate_indices_match(taxa.index, self.seqs.index)
-
-
-class TestRelabelStratifiedTaxonomy(TestPluginBase):
-    package = 'rescript.tests'
-
-    def setUp(self):
-        super().setUp()
-
-        self.valid_taxonomies = {
-            'k__Bacteria',
-            'k__Bacteria; p__Firmicutes',
-            'k__Bacteria; p__Firmicutes; c__Bacilli',
-            'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales',
-            'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales; '
-            'f__Lactobacillaceae',
-            'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales; '
-            'f__Lactobacillaceae; g__Lactobacillus',
-            'k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales; '
-            'f__Lactobacillaceae; g__Lactobacillus; s__casei'}
-
-    def test_relabel_stratified_taxonomy_known_species(self):
-        species = ('k__Bacteria; p__Firmicutes; c__Bacilli; '
-                   'o__Lactobacillales; f__Lactobacillaceae; '
-                   'g__Lactobacillus; s__casei')
-        exp = ('k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales; '
-               'f__Lactobacillaceae; g__Lactobacillus; s__casei')
-        obs = cross_validate._relabel_stratified_taxonomy(
-            species, self.valid_taxonomies)
-        self.assertEqual(exp, obs)
-
-    def test_relabel_stratified_taxonomy_unknown_species(self):
-        species = ('k__Bacteria; p__Firmicutes; c__Bacilli; '
-                   'o__Lactobacillales; f__Lactobacillaceae; '
-                   'g__Lactobacillus; s__reuteri')
-        exp = ('k__Bacteria; p__Firmicutes; c__Bacilli; o__Lactobacillales; '
-               'f__Lactobacillaceae; g__Lactobacillus')
-        obs = cross_validate._relabel_stratified_taxonomy(
-            species, self.valid_taxonomies)
-        self.assertEqual(exp, obs)
-
-    def test_relabel_stratified_taxonomy_unknown_kingdom(self):
-        species = 'k__Peanut'
-        with self.assertRaisesRegex(RuntimeError, "unknown kingdom"):
-            cross_validate._relabel_stratified_taxonomy(
-                species, self.valid_taxonomies)
-
 
 paeni = 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; ' \
         'f__Paenibacillaceae; g__Paenibacillus'
