@@ -35,30 +35,6 @@ class TestPipelines(TestPluginBase):
         self.seqs = import_data(
             'FeatureData[Sequence]', seqs.view(pd.Series).drop('C1b'))
 
-    def test_evaluate_fit_classifier(self):
-        # exp species should equal the input taxonomy when k='disable'
-        classifier, evaluation, obs = rescript.actions.evaluate_fit_classifier(
-            self.seqs, self.taxa)
-        # obs species will equal best possible predictive accuracy.
-        exp_obs = pd.Series({
-            'A1': palvei,
-            'A2': palvei,
-            'A3': palvei,
-            'A4': palvei,
-            'A5': palvei,
-            'B1': lcasei,
-            'B1a': lcasei,
-            'B1b': lacto,
-            'B2': lcasei,
-            'B3': lcasei,
-            'C1': pdamnosus,
-            'C1a': pacidilacti,
-            'C1c': pacidilacti,
-            'C1d': pacidilacti,
-            'C2': pdamnosus})
-        pdt.assert_series_equal(
-            obs.view(pd.Series).sort_index(), exp_obs, check_names=False)
-
     def test_evaluate_classifications_stats(self):
         # simulate predicted classifications at genus level
         taxa = self.taxa_series.copy().apply(
@@ -145,23 +121,3 @@ class TestTaxaUtilities(TestPluginBase):
         obs = cross_validate._calculate_per_rank_precision_recall(
             self.taxa, warped_taxa)
         pdt.assert_frame_equal(exp, obs)
-
-    def test_validate_even_rank_taxonomy_pass(self):
-        taxa = self.taxa.copy().drop('C1b')
-        cross_validate._validate_even_rank_taxonomy(taxa)
-
-    def test_validate_even_rank_taxonomy_fail(self):
-        with self.assertRaisesRegex(ValueError, "too short: C1b"):
-            cross_validate._validate_even_rank_taxonomy(self.taxa)
-
-
-paeni = 'k__Bacteria; p__Firmicutes; c__Bacilli; o__Bacillales; ' \
-        'f__Paenibacillaceae; g__Paenibacillus'
-palvei = paeni + '; s__alvei'
-lactobacillaceae = 'k__Bacteria; p__Firmicutes; c__Bacilli; ' \
-                   'o__Lactobacillales; f__Lactobacillaceae'
-lacto = lactobacillaceae + '; g__Lactobacillus'
-pedio = lactobacillaceae + '; g__Pediococcus'
-lcasei = lacto + '; s__casei'
-pdamnosus = pedio + '; s__damnosus'
-pacidilacti = pedio + '; s__acidilacti'

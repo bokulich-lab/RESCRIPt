@@ -27,8 +27,7 @@ from .parse_silva_taxonomy import (parse_silva_taxonomy, ALLOWED_RANKS,
                                    DEFAULT_RANKS)
 from .edit_taxonomy import edit_taxonomy
 from .get_data import get_silva_data
-from .cross_validate import (evaluate_classifications,
-                             evaluate_fit_classifier)
+from .cross_validate import evaluate_classifications
 from .filter_length import (filter_seqs_length_by_taxon, filter_seqs_length,
                             filter_taxa)
 from .orient import orient_seqs, orient_reads
@@ -41,9 +40,6 @@ from q2_types.feature_data import (FeatureData, Taxonomy, Sequence,
                                    AlignedSequence, RNASequence,
                                    AlignedRNASequence, ProteinSequence)
 from q2_types.tree import Phylogeny, Rooted
-from q2_feature_classifier.classifier import (_parameter_descriptions,
-                                              _classify_parameters)
-from q2_feature_classifier._taxonomic_classifier import TaxonomicClassifier
 import rescript
 from rescript.types._format import (
     SILVATaxonomyFormat, SILVATaxonomyDirectoryFormat, SILVATaxidMapFormat,
@@ -137,52 +133,6 @@ super_lca_desc = (
     'contradict a less specific taxonomy, the more specific is '
     'chosen. That is, "g__Faecalibacterium; s__prausnitzii", '
     'will be preferred over "g__Faecalibacterium; s__"')
-
-plugin.pipelines.register_function(
-    function=evaluate_fit_classifier,
-    inputs={'sequences': FeatureData[Sequence],
-            'taxonomy': FeatureData[Taxonomy]},
-    parameters={
-        'reads_per_batch': _classify_parameters['reads_per_batch'],
-        'n_jobs': _classify_parameters['n_jobs'],
-        'confidence': _classify_parameters['confidence']},
-    outputs=[('classifier', TaxonomicClassifier),
-             ('evaluation', Visualization),
-             ('observed_taxonomy', FeatureData[Taxonomy])],
-    input_descriptions={
-        'sequences': 'Reference sequences to use for classifier '
-                     'training/testing.',
-        'taxonomy': 'Reference taxonomy to use for classifier '
-                    'training/testing.'},
-    parameter_descriptions={
-        'reads_per_batch': _parameter_descriptions['reads_per_batch'],
-        'n_jobs': _parameter_descriptions['n_jobs'],
-        'confidence': _parameter_descriptions['confidence']},
-    output_descriptions={
-        'classifier': 'Trained naive Bayes taxonomic classifier.',
-        'evaluation': 'Visualization of classification accuracy results.',
-        'observed_taxonomy': 'Observed taxonomic label for each input '
-                             'sequence, predicted by the trained classifier.'},
-    name=('Evaluate and train naive Bayes classifier on reference sequences.'),
-    description=(
-        'Train a naive Bayes classifier on a set of reference sequences, then '
-        'test performance accuracy on this same set of sequences. This '
-        'results in a "perfect" classifier that "knows" the correct identity '
-        'of each input sequence. Such a leaky classifier indicates the upper '
-        'limit of classification accuracy based on sequence information '
-        'alone, as misclassifications are an indication of unresolvable kmer '
-        'profiles. This test simulates the case where all query sequences '
-        'are present in a fully comprehensive reference database. To simulate '
-        'more realistic conditions, see `evaluate_cross_validate`. THE '
-        'CLASSIFIER OUTPUT BY THIS PIPELINE IS PRODUCTION-READY and can be '
-        're-used for classification of other sequences (provided the '
-        'reference data are viable), hence THIS PIPELINE IS USEFUL FOR '
-        'TRAINING FEATURE CLASSIFIERS AND THEN EVALUATING THEM ON-THE-FLY.'),
-    citations=[citations['bokulich2018optimizing']],
-    migrated={'to_plugin': 'q2-feature-classifier',
-              'from_distro': 'amplicon',
-              'to_distro': 'amplicon', 'epoch': '2026.1'},
-)
 
 
 plugin.pipelines.register_function(
