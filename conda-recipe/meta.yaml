@@ -25,7 +25,7 @@ requirements:
   - q2-types >={{ q2_types }}
   - q2-vizard >={{ q2_vizard }}
   - qiime2 >={{ qiime2 }}
-  - q2templates >= {{ q2templates }}
+  - q2templates >={{ q2templates }}
   build:
   - python {{ python }}
   - setuptools
