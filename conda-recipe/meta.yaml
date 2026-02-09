@@ -21,9 +21,11 @@ requirements:
   - vsearch {{ vsearch }}
   - scikit-learn {{ scikit_learn }}
   - scikit-bio {{ scikit_bio }}
+  - seaborn {{ seaborn }}
   - q2-types >={{ q2_types }}
   - q2-vizard >={{ q2_vizard }}
   - qiime2 >={{ qiime2 }}
+  - q2templates >= {{ q2templates }}
   build:
   - python {{ python }}
   - setuptools
@@ -34,7 +36,6 @@ test:
   - q2-types >={{ q2_types }}
   - q2-vizard >={{ q2_vizard }}
   - qiime2 >={{ qiime2 }}
-  - q2templates >={{ q2templates }}
   imports:
   - rescript
   - qiime2.plugins.rescript
