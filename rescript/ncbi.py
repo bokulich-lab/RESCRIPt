@@ -243,7 +243,7 @@ def _esearch(params, logging_level, entrez_delay=0.334):
         if 'WebEnv' not in webenv:
             raise ValueError('No sequences for given query')
         params = dict(
-            db='nuccore', rettype='fasta', retmode='xml',
+            rettype='fasta', retmode='xml',
             WebEnv=webenv['WebEnv'],
             query_key=webenv['QueryKey'], **_entrez_params
         )
@@ -387,9 +387,9 @@ def get_data_for_query(query, logging_level, n_jobs, request_lock,
     )
     params, expected_num_records = _esearch(params, logging_level,
                                             entrez_delay)
+    params['db'] = db
     if expected_num_records > 166666:
         _large_warning(logging_level)
-    records = []
     logger = _get_logger(logging_level)
     logger.info('Downloading ' + str(expected_num_records) + ' sequences')
 
