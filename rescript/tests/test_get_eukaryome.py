@@ -55,10 +55,10 @@ class TestGetEukaryome(TestPluginBase):
     def test_assemble_rrna_url_02(self):
         obs_url = _assemble_rrna_url(
                             rrna_gene='longread',
-                            version='1.9.2')
+                            version='1.9')
         exp_url = (
                  'https://sisu.ut.ee/wp-content/uploads/sites/643/'
-                 'General_EUK_longread_v1.9.2.zip')
+                 'General_EUK_longread_v1.9.zip')
         self.assertEqual(obs_url, exp_url)
 
     def test_extract_zip_euk_seq_file(self):
