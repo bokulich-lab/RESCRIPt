@@ -8,6 +8,7 @@ build:
 requirements:
   host:
   - python {{ python }}
+  - pip
   - setuptools
   - versioningit
   - wheel
