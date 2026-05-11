@@ -12,9 +12,7 @@ from rescript.get_eukaryome import (_assemble_rrna_url,
                                     _retrieve_data_from_eukaryome,
                                     _make_fasta_str, _make_taxonomy_df,
                                     _process_eukaryome_data,
-                                    _extract_zip_euk_seq_file,
-                                    _extract_7zip_euk_seq_file
-                                    )
+                                    _extract_zip_euk_seq_file)
 from q2_types.feature_data import (TSVTaxonomyFormat,
                                    DNAFASTAFormat,
                                    DNAIterator)
@@ -35,7 +33,6 @@ class TestGetEukaryome(TestPluginBase):
         self.eukaryome_fasta = self.get_data_path('eukaryome-seqs.fasta')
         self.eukaryome_seqs = DNAFASTAFormat(
                             self.eukaryome_fasta,
-                            # self.get_data_path('eukaryome-seqs.fasta'),
                             mode='r')
         self.eukaryome_parsed_fasta = \
             self.get_data_path('eukaryome-parsed-seqs.fasta')
@@ -58,10 +55,10 @@ class TestGetEukaryome(TestPluginBase):
     def test_assemble_rrna_url_02(self):
         obs_url = _assemble_rrna_url(
                             rrna_gene='longread',
-                            version='1.9.2')
+                            version='1.9')
         exp_url = (
                  'https://sisu.ut.ee/wp-content/uploads/sites/643/'
-                 'General_EUK_longread_v1.9.2.zip')
+                 'General_EUK_longread_v1.9.zip')
         self.assertEqual(obs_url, exp_url)
 
     def test_extract_zip_euk_seq_file(self):
@@ -80,7 +77,7 @@ class TestGetEukaryome(TestPluginBase):
                              for seq in obs_uzs}
             self.assertEqual(exp_seqs_dict, obs_seqs_dict)
 
-    def test_extract_7zip_euk_seq_file(self):
+    def test_extract_zip_euk_seq_file_7zip(self):
         with tempfile.TemporaryDirectory() as tmpdirname:
             zfn = os.path.join(tmpdirname, 'eukaryome-pseqs.zip')
             with zipfile.ZipFile(zfn, "w", zipfile.ZIP_DEFLATED) as myzip:
@@ -90,7 +87,7 @@ class TestGetEukaryome(TestPluginBase):
                                arcname='eukaryome-pseqs.fasta')
                 myzip.write(szfn, arcname='eukaryome-pseqs.7z')
 
-            obs_uzs = _extract_7zip_euk_seq_file(
+            obs_uzs = _extract_zip_euk_seq_file(
                         tmpdirname, 'eukaryome-pseqs', zfn)
             exp_seqs_dict = {seq.metadata['id'].split(';', 1)[0]: str(seq)
                              for seq in self.eukaryome_parsed_seqs.view(
@@ -98,6 +95,17 @@ class TestGetEukaryome(TestPluginBase):
             obs_seqs_dict = {seq.metadata['id']: str(seq)
                              for seq in obs_uzs}
             self.assertEqual(exp_seqs_dict, obs_seqs_dict)
+
+    def test_extract_zip_euk_seq_file_filenotfound(self):
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            zfn = os.path.join(tmpdirname, 'eukaryome-pseqs.zip')
+            with zipfile.ZipFile(zfn, "w", zipfile.ZIP_DEFLATED) as myzip:
+                myzip.write(self.eukaryome_parsed_fasta,
+                            arcname='eukaryome-pseqs.NOT_USABLE')
+
+            with self.assertRaises(FileNotFoundError):
+                _extract_zip_euk_seq_file(tmpdirname,
+                                          'eukaryome-pseqs', zfn)
 
     def test_make_fasta_str(self):
         seqid = 'Seq01'
