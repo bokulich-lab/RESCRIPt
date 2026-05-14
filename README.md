@@ -65,3 +65,9 @@ However, other resources accessible via RESCRIPt are released under different li
 **If using GTDB data** (*e.g.*, with `get-gtdb-data`): See the [GTDB "about" page](https://gtdb.ecogenomic.org/about) for more details. [How to cite GTDB](https://gtdb.ecogenomic.org/about).
 
 **If using UNITE data** (*e.g.*, with `get-unite-data`): See the [UNITE citation page](https://unite.ut.ee/cite.php) for more details. [How to cite UNITE](https://unite.ut.ee/cite.php). 
+
+**If using PR2 data** (*e.g.*, with `get-pr2-data`): See [The PR2 Databases](https://pr2-database.org/) for more details. [How to cite PR2](https://pr2-database.org/papers/papers-citing-pr2/).
+
+**If using MIDORI2 data** (*e.g.*, with `get-midori2-data`): See [MIDORI Refrence 2](https://www.reference-midori.info) for more details. [How to cite MIDORI2](https://www.reference-midori.info/).
+
+**If using EUKARYOME data** (*e.g.*, with `get-eukaryome-data`): See [EUKARYOME](https://eukaryome.org/) for more details. [How to cite Eukaryome](https://eukaryome.org/).
