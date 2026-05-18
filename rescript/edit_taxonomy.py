@@ -6,11 +6,10 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-from qiime2.plugin import MetadataColumn, Categorical
+from qiime2 import CategoricalMetadataColumn
 import warnings
 import pandas as pd
 import re
-from qiime2.plugin import List
 
 
 def make_search_replace_dict(search_strings, replacement_strings):
@@ -28,9 +27,9 @@ def make_search_replace_dict(search_strings, replacement_strings):
 
 
 def edit_taxonomy(taxonomy: pd.Series,
-                  replacement_map: MetadataColumn[Categorical] = None,
-                  search_strings: List = None,
-                  replacement_strings: List = None,
+                  replacement_map: CategoricalMetadataColumn = None,
+                  search_strings: list = None,
+                  replacement_strings: list = None,
                   use_regex: bool = False,
                   ) -> pd.Series:
 
