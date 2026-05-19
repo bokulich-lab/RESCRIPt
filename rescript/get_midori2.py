@@ -76,8 +76,8 @@ def _retrieve_data_from_midori2(fasta_url, tax_url):
                                       url=url, e=e))
 
             print('  Unzipping {0}...\n'.format(in_path))
-            with gzip.open(in_path, 'rt') as gz_in:
-                with open(out_path, 'w') as gz_out:
+            with gzip.open(in_path, 'rb') as gz_in:
+                with open(out_path, 'wb') as gz_out:
                     shutil.copyfileobj(gz_in, gz_out)
                     if out_path.endswith('fasta'):
                         seqs = DNAFASTAFormat(out_path,
