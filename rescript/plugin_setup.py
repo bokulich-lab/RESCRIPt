@@ -673,7 +673,7 @@ INCLUDE_ORGNAME_LABELS_DESCRIPTION = (
     'Include \'organism_name\' as the species rank labels in the '
     'taxonomy output. Note: these \'organism_name\' labels might '
     'not serve as reliable \'species\' labels in all cases. '
-    'NOT RECOMENDED FOR GENERAL USE! CONSIDER FOR TESTING PURPOSES ONLY!')
+    'NOT RECOMMENDED FOR GENERAL USE! CONSIDER FOR TESTING PURPOSES ONLY!')
 
 RANK_PROPAGATE_DESCRIPTION = (
     'If a rank has no taxonomy associated with it, the taxonomy from the '
