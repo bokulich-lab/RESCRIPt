@@ -248,9 +248,9 @@ class TestParseSilvaTaxonomy(TestPluginBase):
         input_taxmap = _prep_taxmap(self.taxmap2)
         updated_taxmap = pd.merge(input_taxmap, silva_tax, left_on='taxid',
                                   right_index=True)
-        obs_6r_tax = _compile_taxonomy_output(updated_taxmap,
-                                              ranks=DEFAULT_RANKS,
-                                              include_species_labels=False)
+        obs_6r_tax = _compile_taxonomy_output(
+                        updated_taxmap, ranks=DEFAULT_RANKS,
+                        include_organism_name_labels=False)
         obs_6r_tax.sort_index(inplace=True)
         # expected 6-rank taxonomy
         t1 = ("d__Archaea; p__Aenigmarchaeota; c__Aenigmarchaeia; "
@@ -288,7 +288,7 @@ class TestParseSilvaTaxonomy(TestPluginBase):
     def test_parse_silva_taxonomy(self):
         obs_res = parse_silva_taxonomy(self.taxtree, self.taxmap2,
                                        self.taxranks,
-                                       include_species_labels=True)
+                                       include_organism_name_labels=True)
         obs_res.sort_index(inplace=True)
         # expected:
         t1 = ("d__Archaea; p__Aenigmarchaeota; c__Aenigmarchaeia; "
@@ -303,7 +303,7 @@ class TestParseSilvaTaxonomy(TestPluginBase):
     def test_parse_silva_taxonomy_no_propagation(self):
         obs_res = parse_silva_taxonomy(self.taxtree, self.taxmap2,
                                        self.taxranks,
-                                       include_species_labels=False,
+                                       include_organism_name_labels=False,
                                        rank_propagation=False)
         obs_res.sort_index(inplace=True)
         # expected:
@@ -318,7 +318,7 @@ class TestParseSilvaTaxonomy(TestPluginBase):
     def test_parse_silva_taxonomy_no_propagation_with_species(self):
         obs_res = parse_silva_taxonomy(self.taxtree, self.taxmap2,
                                        self.taxranks,
-                                       include_species_labels=True,
+                                       include_organism_name_labels=True,
                                        rank_propagation=False)
         obs_res.sort_index(inplace=True)
         # expected:
@@ -334,7 +334,7 @@ class TestParseSilvaTaxonomy(TestPluginBase):
     def test_parse_silva_taxonomy_no_prop_outoforder_noclass_wsp(self):
         obs_res = parse_silva_taxonomy(self.taxtree, self.taxmap2,
                                        self.taxranks,
-                                       include_species_labels=True,
+                                       include_organism_name_labels=True,
                                        rank_propagation=False,
                                        ranks=['domain', 'phylum', 'genus',
                                               'family', 'order'])

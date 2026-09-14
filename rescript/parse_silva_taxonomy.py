@@ -162,7 +162,7 @@ def _validate_taxrank_taxmap_taxtree(prepped_taxrank, prepped_taxmap, taxtree):
 
 
 def _compile_taxonomy_output(updated_taxmap, ranks,
-                             include_species_labels=False):
+                             include_organism_name_labels=False):
     # Takes the updated_taxmap dataframe (i.e. the combined
     # output from _build_base_silva_taxonomy and _prep_taxmap) and only
     # returns the desired ranks (as a pandas Series).
@@ -176,7 +176,7 @@ def _compile_taxonomy_output(updated_taxmap, ranks,
     # add rank prefixes (i.e. 'p__')
     updated_taxmap.loc[:, sorted_ranks] = \
         updated_taxmap.loc[:, sorted_ranks].apply(lambda x: x.name + x)
-    if include_species_labels:
+    if include_organism_name_labels:
         updated_taxmap.loc[:, 'organism_name'] = updated_taxmap.loc[
             :, 'organism_name'].apply(lambda x: 's__' + x)
         sorted_ranks.append('organism_name')
@@ -190,7 +190,8 @@ def parse_silva_taxonomy(taxonomy_tree: TreeNode,
                          taxonomy_ranks: pd.DataFrame,
                          rank_propagation: bool = True,
                          ranks: list = None,
-                         include_species_labels: bool = False) -> pd.Series:
+                         include_organism_name_labels: bool = False
+                         ) -> pd.Series:
     # Traverse the taxonomy hierarchy tree (taxonomy_tree) to obtain the
     # taxids. These will be used to look up the taxonomy and rank information
     # from the taxonomy_ranks file. Finally the taxonomy information is
@@ -208,5 +209,5 @@ def parse_silva_taxonomy(taxonomy_tree: TreeNode,
     updated_taxmap = pd.merge(taxmap, silva_tax_id_df, left_on='taxid',
                               right_index=True)
     taxonomy = _compile_taxonomy_output(updated_taxmap, ranks,
-                                        include_species_labels)
+                                        include_organism_name_labels)
     return taxonomy

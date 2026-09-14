@@ -22,7 +22,7 @@ from q2_types.feature_data import RNAFASTAFormat
 def get_silva_data(ctx,
                    version='144',
                    target='SSURef_NR99',
-                   include_species_labels=False,
+                   include_organism_name_labels=False,
                    rank_propagation=True,
                    ranks=None,
                    download_sequences=True):
@@ -37,7 +37,7 @@ def get_silva_data(ctx,
         taxonomy_tree=results['taxonomy tree'],
         taxonomy_map=results['taxonomy map'],
         taxonomy_ranks=results['taxonomy ranks'],
-        include_species_labels=include_species_labels,
+        include_organism_name_labels=include_organism_name_labels,
         ranks=ranks,
         rank_propagation=rank_propagation)
     # if skipping sequences, need to output an empty sequence file.
