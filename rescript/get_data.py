@@ -20,15 +20,16 @@ from q2_types.feature_data import RNAFASTAFormat
 
 
 def get_silva_data(ctx,
-                   version='138.2',
+                   version='144',
                    target='SSURef_NR99',
-                   include_species_labels=False,
+                   include_organism_name_labels=False,
                    rank_propagation=True,
                    ranks=None,
                    download_sequences=True):
     # download data from SILVA
     print('Downloading raw files may take some time... get some coffee.')
-    queries = _assemble_silva_data_urls(version, target, download_sequences)
+    queries = _assemble_silva_data_urls(version, target,
+                                        download_sequences)
     results = _retrieve_data_from_silva(queries)
     # parse taxonomy
     parse_taxonomy = ctx.get_action('rescript', 'parse_silva_taxonomy')
@@ -36,7 +37,7 @@ def get_silva_data(ctx,
         taxonomy_tree=results['taxonomy tree'],
         taxonomy_map=results['taxonomy map'],
         taxonomy_ranks=results['taxonomy ranks'],
-        include_species_labels=include_species_labels,
+        include_organism_name_labels=include_organism_name_labels,
         ranks=ranks,
         rank_propagation=rank_propagation)
     # if skipping sequences, need to output an empty sequence file.
@@ -46,7 +47,8 @@ def get_silva_data(ctx,
     return results['sequences'], taxonomy
 
 
-def _assemble_silva_data_urls(version, target, download_sequences=True):
+def _assemble_silva_data_urls(version, target,
+                              download_sequences=True):
     '''Generate SILVA urls, given database version and reference target.'''
     # assemble target urls
     ref_map = {'SSURef_NR99': 'ssu_ref_nr',
@@ -70,10 +72,20 @@ def _assemble_silva_data_urls(version, target, download_sequences=True):
     # if we find more inconsistencies.
 
     # construct file urls
-    base_url_seqs = base_url + 'SILVA_{0}_{1}_tax_silva.fasta.gz'.format(
-        version, target)
-    base_url_taxmap = '{0}taxonomy/taxmap_slv_{1}_{2}'.format(
-        base_url, insert, version)
+    base_url_seqs = base_url + 'SILVA_{0}_{1}_tax_silva_trunc.fasta.gz'.format(
+            version, target)
+
+    # SILVA 144 taxmap file schema has changed to
+    # `taxmap_slv_ssu_ref144.txt.gz`
+    # Prior versions of silva have always been in the form of:
+    #  `taxmap_slv_ssu_ref_144.txt.gz`
+    if target == 'SSURef' and float(version) >= 144:
+        under = ''
+    else:
+        under = '_'
+
+    base_url_taxmap = '{0}taxonomy/taxmap_slv_{1}{2}{3}'.format(
+        base_url, insert, under, version)
 
     # More SILVA release inconsistencies
     if target == 'SSURef' and version == '132':
@@ -82,11 +94,12 @@ def _assemble_silva_data_urls(version, target, download_sequences=True):
         base_url_taxmap += '.txt.gz'
     base_url_tax = '{0}taxonomy/tax_slv_{1}_{2}'.format(
         base_url, insert.split('_')[0], version)
+
+    # tree & taxonomy urls
     tree_url = base_url_tax + '.tre'
     tax_url = base_url_tax + '.txt'
-
     # add ".gz" for the following versions:
-    if version in ['138', '138.1', '138.2']:
+    if version in ['138', '138.1', '138.2', '144']:
         tree_url += '.gz'
         tax_url += '.gz'
 

@@ -669,9 +669,11 @@ plugin.methods.register_function(
 )
 
 
-INCLUDE_SPECIES_LABELS_DESCRIPTION = (
-    'Include species rank labels in taxonomy output. Note: species-labels may '
-    'not be reliable in all cases.')
+INCLUDE_ORGNAME_LABELS_DESCRIPTION = (
+    'Include \'organism_name\' as the species rank labels in the '
+    'taxonomy output. Note: these \'organism_name\' labels might '
+    'not serve as reliable \'species\' labels in all cases. '
+    'NOT RECOMMENDED FOR GENERAL USE! CONSIDER FOR TESTING PURPOSES ONLY!')
 
 RANK_PROPAGATE_DESCRIPTION = (
     'If a rank has no taxonomy associated with it, the taxonomy from the '
@@ -682,22 +684,29 @@ RANK_PROPAGATE_DESCRIPTION = (
 )
 
 RANK_DESCRIPTION = ('List of taxonomic ranks for building a taxonomy from the '
-                    'SILVA Taxonomy database. Use \'include_species_labels\' '
-                    'to append the organism name as the species label. '
+                    'SILVA Taxonomy database. Use '
+                    '\'include_organism_name_labels\' to append the organism '
+                    'name as the species label. '
                     "[default: '" +
                     "', '".join(DEFAULT_RANKS) + "']")
 
-_SILVA_VERSIONS = ['128', '132', '138', '138.1', '138.2']
+_SILVA_VERSIONS = ['128', '132', '138', '138.1', '138.2', '144']
 _SILVA_TARGETS = ['SSURef_NR99', 'SSURef', 'LSURef_NR99', 'LSURef']
 
 version_map, target_map, _ = TypeMap({
     (Str % Choices('128', '132'),
-     Str % Choices('SSURef_NR99', 'SSURef', 'LSURef')): Visualization,
+     Str % Choices('SSURef_NR99', 'SSURef', 'LSURef'),
+     ): Visualization,
     (Str % Choices('138'),
-     Str % Choices('SSURef_NR99', 'SSURef')): Visualization,
+     Str % Choices('SSURef_NR99', 'SSURef'),
+     ): Visualization,
     (Str % Choices('138.1', '138.2'),
      Str % Choices('SSURef_NR99', 'SSURef', 'LSURef_NR99',
-                   'LSURef')): Visualization,
+                   'LSURef'),
+     ): Visualization,
+    (Str % Choices('144'),
+     Str % Choices('SSURef_NR99', 'SSURef'),
+     ): Visualization,
 })
 
 
@@ -707,7 +716,7 @@ plugin.pipelines.register_function(
     parameters={
         'version': version_map,
         'target': target_map,
-        'include_species_labels': Bool,
+        'include_organism_name_labels': Bool,
         'rank_propagation': Bool,
         'ranks': List[Str % Choices(ALLOWED_RANKS)],
         'download_sequences': Bool},
@@ -720,7 +729,7 @@ plugin.pipelines.register_function(
                   'small subunit reference. LSURef = redundant large subunit '
                   'reference. SSURef_NR99 = non-redundant (clustered at 99% '
                   'similarity) small subunit reference.',
-        'include_species_labels': INCLUDE_SPECIES_LABELS_DESCRIPTION,
+        'include_organism_name_labels': INCLUDE_ORGNAME_LABELS_DESCRIPTION,
         'rank_propagation': RANK_PROPAGATE_DESCRIPTION,
         'ranks': RANK_DESCRIPTION,
         'download_sequences': 'Toggle whether or not to download and import '
@@ -754,7 +763,7 @@ plugin.methods.register_function(
         'taxonomy_ranks': FeatureData[SILVATaxonomy],
     },
     parameters={
-        'include_species_labels': Bool,
+        'include_organism_name_labels': Bool,
         'rank_propagation': Bool,
         'ranks': List[Str % Choices(ALLOWED_RANKS)]
     },
@@ -779,7 +788,7 @@ plugin.methods.register_function(
                          'version number.',
     },
     parameter_descriptions={
-        'include_species_labels': INCLUDE_SPECIES_LABELS_DESCRIPTION,
+        'include_organism_name_labels': INCLUDE_ORGNAME_LABELS_DESCRIPTION,
         'rank_propagation': RANK_PROPAGATE_DESCRIPTION,
         'ranks': RANK_DESCRIPTION
     },
@@ -790,11 +799,11 @@ plugin.methods.register_function(
     description=(
         'Parses several files from the SILVA reference database to produce a '
         'GreenGenes-like fixed rank taxonomy that is 6 or 7 ranks deep, '
-        'depending on whether or not `include_species_labels` is applied. '
-        'The generated ranks (and the rank handles used to label these '
-        'ranks in the resulting taxonomy) are: domain (d__), phylum (p__), '
-        'class (c__), order (o__), family (f__), genus (g__), and species '
-        '(s__). ' + SILVA_LICENSE_NOTE
+        'depending on whether or not `include_organism_name_labels` is '
+        'applied. The generated ranks (and the rank handles used to label '
+        'these ranks in the resulting taxonomy) are: domain (d__), phylum '
+        '(p__), class (c__), order (o__), family (f__), genus (g__), and '
+        'species (s__). ' + SILVA_LICENSE_NOTE
     ),
     citations=[citations['Pruesse2007'],
                citations['Quast2013']]

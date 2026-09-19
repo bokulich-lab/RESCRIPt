@@ -9,15 +9,15 @@
 import qiime2
 import importlib
 from qiime2.plugin.testing import TestPluginBase
-from rescript.parse_silva_taxonomy import (parse_silva_taxonomy,
-                                           _keep_allowed_chars, _prep_taxranks,
-                                           _prep_taxmap, ALLOWED_RANKS,
-                                           DEFAULT_RANKS,
-                                           _build_base_silva_taxonomy,
-                                           _validate_taxrank_taxmap_taxtree,
-                                           _compile_taxonomy_output,
-                                           _get_clean_organism_name,
-                                           _get_terminal_taxon)
+from rescript.parse_silva_taxonomy import (
+                                parse_silva_taxonomy,
+                                _keep_allowed_chars, _prep_taxranks,
+                                _prep_taxmap, ALLOWED_RANKS,
+                                DEFAULT_RANKS, _build_base_silva_taxonomy,
+                                _validate_taxrank_taxmap_taxtree,
+                                _compile_taxonomy_output,
+                                _get_clean_organism_name, _get_terminal_taxon,
+                                get_last_taxmap_taxpath_label_add_unknown)
 from skbio.tree import TreeNode
 import pandas as pd
 from pandas.testing import assert_frame_equal, assert_series_equal
@@ -55,6 +55,10 @@ class TestParseSilvaTaxonomy(TestPluginBase):
             'FeatureData[SILVATaxidMap]',
             self.get_data_path('taxmap_test_match_tree.txt'))
         self.taxmap2 = tm2.view(pd.DataFrame)
+        tm_s144 = qiime2.Artifact.import_data(
+            'FeatureData[SILVATaxidMap]',
+            self.get_data_path('taxmap_144_no_org_name.tsv'))
+        self.taxmap_s144 = tm_s144.view(pd.DataFrame)
         # taxonomy tree file with missing taxid:
         tt2 = qiime2.Artifact.import_data(
             'Phylogeny[Rooted]',
@@ -127,6 +131,30 @@ class TestParseSilvaTaxonomy(TestPluginBase):
                                 'Oryza_sativa'],
               'taxid': ['3698', '45177', '46692', '46463', '2852', '10099',
                         '47183', '4432', '4432', '44317']}
+        exp_taxmap = pd.DataFrame(dm)
+        exp_taxmap.set_index('Feature ID', inplace=True)
+        exp_taxmap.sort_index(inplace=True)
+        assert_frame_equal(obs_taxmap, exp_taxmap)
+
+    def test_get_last_taxmap_taxpath_label_add_unknown(self):
+        ts = ('Bacteria;Bacillati;Actinomycetota;'
+              'Actinomycetes;Actinomycetales--other;'
+              'Actinomycetaceae--other;Scrofimicrobium;')
+        obs_last_label = get_last_taxmap_taxpath_label_add_unknown(ts)
+        exp_last_label = 'unknown_Scrofimicrobium'
+        self.assertEqual(obs_last_label, exp_last_label)
+
+    def test_prep_taxmap_v144_missing_organism_name(self):
+        obs_taxmap = _prep_taxmap(self.taxmap_s144)
+        obs_taxmap.sort_index(inplace=True)
+        dm = {'Feature ID': ['AB007908.1.1516', 'AJ487049.1.1722',
+                             'MZ209196.3.1436', 'MZ215963.2.1378'],
+              'organism_name': [
+                    'Lactobacillus_delbrueckii',
+                    'Mniobia_russeola',
+                    'unknown_Leclercia-Silvania-Enterobacter--other',
+                    'unknown_Scrofimicrobium'],
+              'taxid': ['59284', '47473', '65389', '58063']}
         exp_taxmap = pd.DataFrame(dm)
         exp_taxmap.set_index('Feature ID', inplace=True)
         exp_taxmap.sort_index(inplace=True)
@@ -220,9 +248,9 @@ class TestParseSilvaTaxonomy(TestPluginBase):
         input_taxmap = _prep_taxmap(self.taxmap2)
         updated_taxmap = pd.merge(input_taxmap, silva_tax, left_on='taxid',
                                   right_index=True)
-        obs_6r_tax = _compile_taxonomy_output(updated_taxmap,
-                                              ranks=DEFAULT_RANKS,
-                                              include_species_labels=False)
+        obs_6r_tax = _compile_taxonomy_output(
+                        updated_taxmap, ranks=DEFAULT_RANKS,
+                        include_organism_name_labels=False)
         obs_6r_tax.sort_index(inplace=True)
         # expected 6-rank taxonomy
         t1 = ("d__Archaea; p__Aenigmarchaeota; c__Aenigmarchaeia; "
@@ -260,7 +288,7 @@ class TestParseSilvaTaxonomy(TestPluginBase):
     def test_parse_silva_taxonomy(self):
         obs_res = parse_silva_taxonomy(self.taxtree, self.taxmap2,
                                        self.taxranks,
-                                       include_species_labels=True)
+                                       include_organism_name_labels=True)
         obs_res.sort_index(inplace=True)
         # expected:
         t1 = ("d__Archaea; p__Aenigmarchaeota; c__Aenigmarchaeia; "
@@ -275,7 +303,7 @@ class TestParseSilvaTaxonomy(TestPluginBase):
     def test_parse_silva_taxonomy_no_propagation(self):
         obs_res = parse_silva_taxonomy(self.taxtree, self.taxmap2,
                                        self.taxranks,
-                                       include_species_labels=False,
+                                       include_organism_name_labels=False,
                                        rank_propagation=False)
         obs_res.sort_index(inplace=True)
         # expected:
@@ -290,7 +318,7 @@ class TestParseSilvaTaxonomy(TestPluginBase):
     def test_parse_silva_taxonomy_no_propagation_with_species(self):
         obs_res = parse_silva_taxonomy(self.taxtree, self.taxmap2,
                                        self.taxranks,
-                                       include_species_labels=True,
+                                       include_organism_name_labels=True,
                                        rank_propagation=False)
         obs_res.sort_index(inplace=True)
         # expected:
@@ -306,7 +334,7 @@ class TestParseSilvaTaxonomy(TestPluginBase):
     def test_parse_silva_taxonomy_no_prop_outoforder_noclass_wsp(self):
         obs_res = parse_silva_taxonomy(self.taxtree, self.taxmap2,
                                        self.taxranks,
-                                       include_species_labels=True,
+                                       include_organism_name_labels=True,
                                        rank_propagation=False,
                                        ranks=['domain', 'phylum', 'genus',
                                               'family', 'order'])

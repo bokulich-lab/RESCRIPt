@@ -1,0 +1,5 @@
+primaryAccession	start	stop	path	organism_name	taxid
+AB007908	1	1516	Bacteria;Bacillati;Bacillota;Bacilli;Lactobacillales;Lactobacillaceae;Lactobacillus;	Lactobacillus delbrueckii	59284
+AJ487049	1	1722	Eukaryota;Amorphea;Obazoa;Opisthokonta;Holozoa;Choanozoa;Metazoa;Animalia;BCP clade;Bilateria;Protostomia;Lophotrochozoa;Rotifera;Bdelloidea;Philodinida;	Mniobia russeola	47473
+MZ209196	3	1436	Bacteria;Pseudomonadati;Pseudomonadota;Gammaproteobacteria;Enterobacterales;Enterobacteriaceae;Leclercia-Silvania-Enterobacter--other;		65389
+MZ215963	2	1378	Bacteria;Bacillati;Actinomycetota;Actinomycetes;Actinomycetales--other;Actinomycetaceae--other;Scrofimicrobium;		58063
