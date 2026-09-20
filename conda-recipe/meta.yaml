@@ -25,8 +25,8 @@ requirements:
   - seaborn {{ seaborn }}
   - q2-types >={{ q2_types }}
   - q2-vizard >={{ q2_vizard }}
-  - qiime2 >={{ qiime2 }}
   - q2templates >={{ q2templates }}
+  - rachis >={{ rachis }}
   build:
   - python {{ python }}
   - setuptools
@@ -36,7 +36,7 @@ test:
   - pytest
   - q2-types >={{ q2_types }}
   - q2-vizard >={{ q2_vizard }}
-  - qiime2 >={{ qiime2 }}
+  - rachis >={{ rachis }}
   imports:
   - rescript
   - qiime2.plugins.rescript

@@ -20,9 +20,9 @@ from q2_types.feature_data import RNAFASTAFormat, AlignedRNAFASTAFormat
 
 
 def get_silva_data(ctx,
-                   version='138.2',
+                   version='144',
                    target='SSURef_NR99',
-                   include_species_labels=False,
+                   include_organism_name_labels=False,
                    rank_propagation=True,
                    ranks=None,
                    seq_format='Unaligned',
@@ -38,7 +38,7 @@ def get_silva_data(ctx,
         taxonomy_tree=results['taxonomy tree'],
         taxonomy_map=results['taxonomy map'],
         taxonomy_ranks=results['taxonomy ranks'],
-        include_species_labels=include_species_labels,
+        include_organism_name_labels=include_organism_name_labels,
         ranks=ranks,
         rank_propagation=rank_propagation)
     # if skipping sequences, need to output an empty sequence file.
@@ -83,6 +83,18 @@ def _assemble_silva_data_urls(version, target, seq_format):
     base_url_taxmap = '{0}taxonomy/taxmap_slv_{1}_{2}'.format(
         base_url, insert, version)
 
+    # SILVA 144 taxmap file schema has changed to
+    # `taxmap_slv_ssu_ref144.txt.gz`
+    # Prior versions of silva have always been in the form of:
+    #  `taxmap_slv_ssu_ref_144.txt.gz`
+    if target == 'SSURef' and float(version) >= 144:
+        under = ''
+    else:
+        under = '_'
+
+    base_url_taxmap = '{0}taxonomy/taxmap_slv_{1}{2}{3}'.format(
+        base_url, insert, under, version)
+
     # More SILVA release inconsistencies
     if target == 'SSURef' and version == '132':
         base_url_taxmap += '-corrected.txt.gz'
@@ -90,11 +102,12 @@ def _assemble_silva_data_urls(version, target, seq_format):
         base_url_taxmap += '.txt.gz'
     base_url_tax = '{0}taxonomy/tax_slv_{1}_{2}'.format(
         base_url, insert.split('_')[0], version)
+
+    # tree & taxonomy urls
     tree_url = base_url_tax + '.tre'
     tax_url = base_url_tax + '.txt'
-
     # add ".gz" for the following versions:
-    if version in ['138', '138.1', '138.2']:
+    if version in ['138', '138.1', '138.2', '144']:
         tree_url += '.gz'
         tax_url += '.gz'
 
