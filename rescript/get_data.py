@@ -25,7 +25,7 @@ def get_silva_data(ctx,
                    include_organism_name_labels=False,
                    rank_propagation=True,
                    ranks=None,
-                   seq_format='Unaligned',
+                   seq_format='unaligned',
                    # download_sequences=True,
                    ):
     # download data from SILVA

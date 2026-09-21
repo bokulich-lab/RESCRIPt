@@ -719,7 +719,7 @@ plugin.pipelines.register_function(
         'include_organism_name_labels': Bool,
         'rank_propagation': Bool,
         'ranks': List[Str % Choices(ALLOWED_RANKS)],
-        'seq_format': Str % Choices(['Aligned', 'Unaligned', 'Both', 'None'])
+        'seq_format': Str % Choices(['aligned', 'unaligned', 'both', 'none'])
         },
     outputs=[('silva_sequences', FeatureData[RNASequence]),
              ('silva_sequences_aligned', FeatureData[AlignedRNASequence]),
@@ -735,8 +735,8 @@ plugin.pipelines.register_function(
         'rank_propagation': RANK_PROPAGATE_DESCRIPTION,
         'ranks': RANK_DESCRIPTION,
         'seq_format': 'Select the format of sequence data to be downlaoded. '
-                      'Choose \'Both\' to download the aligned and unaliged '
-                      'sequenced data. Choose \'None\' if no sequence data '
+                      'Choose \'both\' to download the aligned and unaliged '
+                      'sequenced data. Choose \'none\' if no sequence data '
                       'should be downlaoded.',
                               },
     output_descriptions={
