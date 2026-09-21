@@ -155,7 +155,7 @@ def _retrieve_data_from_silva(queries):
                 pass
             # import as artifacts
             results[name] = qiime2.Artifact.import_data(
-                dtype, destination, validation_level="min"
+                dtype, destination, validate_level="min"
             )
     return results
 
