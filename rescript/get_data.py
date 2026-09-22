@@ -26,10 +26,11 @@ def get_silva_data(ctx,
                    rank_propagation=True,
                    ranks=None,
                    seq_format='unaligned',
-                   # download_sequences=True,
+                   download_sequences=True,
                    ):
     # download data from SILVA
     print('Downloading raw files may take some time... get some coffee.')
+
     queries = _assemble_silva_data_urls(version, target, seq_format)
     results = _retrieve_data_from_silva(queries)
     # parse taxonomy
@@ -42,10 +43,10 @@ def get_silva_data(ctx,
         ranks=ranks,
         rank_propagation=rank_propagation)
     # if skipping sequences, need to output an empty sequence file.
-    if seq_format == 'Unaligned' or seq_format == 'None':
+    if seq_format == 'unaligned' or seq_format == 'none':
         results['aligned sequences'] = qiime2.Artifact.import_data(
             'FeatureData[AlignedRNASequence]', AlignedRNAFASTAFormat())
-    if seq_format == 'Aligned' or seq_format == 'None':
+    if seq_format == 'aligned' or seq_format == 'none':
         results['sequences'] = qiime2.Artifact.import_data(
             'FeatureData[RNASequence]', RNAFASTAFormat())
     return results['sequences'], results['aligned sequences'], taxonomy
@@ -120,14 +121,12 @@ def _assemble_silva_data_urls(version, target, seq_format):
                ('taxonomy ranks', tax_url, 'FeatureData[SILVATaxonomy]')]
 
     # optionally skip downloading sequences
-    if seq_format == 'None':
+    if seq_format == 'none' or 'download_sequences' == 'False':
         queries = queries[2:]
-    if seq_format == 'Unaligned':
+    if seq_format == 'unaligned':
         queries = queries[1:]
-    if seq_format == 'Aligned':
+    if seq_format == 'aligned':
         queries = [queries[0]] + queries[2:]
-    # if not download_sequences:
-    #     queries = queries[1:]
 
     return queries
 
