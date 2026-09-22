@@ -22,7 +22,7 @@ MITO_GENE_LIST = ['A6', 'A8', 'CO1', 'CO2', 'CO3', 'Cytb',
 
 
 def _assemble_midori2_urls(mito_gene,
-                           version='GenBank270_2026-02-15',
+                           version='GenBank272_2026-06-07',
                            ref_seq_type='uniq',
                            unspecified_species=False,
                            ):
@@ -94,7 +94,7 @@ def _retrieve_data_from_midori2(fasta_url, tax_url):
 #     `--p-search-strings '_\d+(;)|_\d+($)'`.
 def get_midori2_data(
     mito_gene: list,
-    version: str = 'GenBank270_2026-02-15',
+    version: str = 'GenBank272_2026-06-07',
     ref_seq_type: str = 'uniq',
     unspecified_species: bool = False,
         ) -> (DNAIterator, pd.DataFrame):
