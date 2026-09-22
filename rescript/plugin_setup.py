@@ -1083,7 +1083,7 @@ plugin.methods.register_function(
     function=get_eukaryome_data,
     inputs={},
     parameters={
-        'version': Str % Choices(['2.0', '1.9.4', '1.9.3', '1.9']),
+        'version': Str % Choices(['2.1', '2.0', '1.9.4', '1.9.3', '1.9']),
         # Note: 1.9 is actually 1.9.2
         'rrna_gene': List[Str % Choices(RRNA_GENE_LIST)],
         },
