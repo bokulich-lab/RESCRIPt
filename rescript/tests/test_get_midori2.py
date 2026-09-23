@@ -7,6 +7,10 @@
 # ----------------------------------------------------------------------------
 
 import importlib
+import gzip
+import os
+import shutil
+import tempfile
 from qiime2.plugin.testing import TestPluginBase
 from qiime2.plugins import rescript
 from rescript.get_midori2 import (_assemble_midori2_urls,
@@ -75,6 +79,32 @@ class TestGetMidori2(TestPluginBase):
         mock_urlretrieve.side_effect = Exception("Simulated network error")
         with self.assertRaisesRegex(Exception, expected_message):
             _retrieve_data_from_midori2("url_seq", "url_tax")
+
+    def test_retrieve_data_after_decompression_is_closed(self):
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            fasta_gz = os.path.join(tmpdirname, 'midori2-seqs.fasta.gz')
+            taxon_gz = os.path.join(tmpdirname, 'midori2-taxa.taxon.gz')
+            for source, destination in [
+                    (self.midori2_seqs.path, fasta_gz),
+                    (self.midori2_tax.path, taxon_gz)]:
+                with open(source, 'rb') as source_fh:
+                    with gzip.open(destination, 'wb') as destination_fh:
+                        shutil.copyfileobj(source_fh, destination_fh)
+
+            def copy_download(url, destination):
+                source = fasta_gz if url.endswith('.fasta.gz') else taxon_gz
+                shutil.copyfile(source, destination)
+
+            with patch('rescript.get_midori2.urlretrieve',
+                       side_effect=copy_download):
+                obs_seqs, obs_tax = _retrieve_data_from_midori2(
+                    'midori2-seqs.fasta.gz', 'midori2-taxa.taxon.gz')
+
+        obs_seq_dict = {seq.metadata['id']: str(seq) for seq in obs_seqs}
+        exp_seq_dict = {seq.metadata['id']: str(seq)
+                        for seq in self.midori2_seqs.view(DNAIterator)}
+        self.assertEqual(obs_seq_dict, exp_seq_dict)
+        self.assertTrue(obs_tax.equals(self.midori2_tax.view(pd.DataFrame)))
 
     def test_get_midori2(self):
         def _makey_fakey(fake_seq, fake_tax):
