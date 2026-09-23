@@ -46,8 +46,9 @@ class TestGetSILVA(TestPluginBase):
         # we do not check the outputs, since a successful return implies
         # that the contents are valid and imported successfully.
         queries = [
-            ('taxa', 'https://www.arb-silva.de/archive/release_138_2/'
-                     'Exports/taxonomy/tax_slv_ssu_138.tre.gz',
+            ('taxa', 'https://www.arb-silva.de/fileadmin/'
+             'silva_databases/release_138/Exports/taxonomy/'
+             'tax_slv_ssu_138.tre.gz',
              'Phylogeny[Rooted]')]
         fallback_queries = [
             ('taxa', 'https://packages.qiime2.org/silva_fallback/'
