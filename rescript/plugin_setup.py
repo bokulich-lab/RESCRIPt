@@ -1044,7 +1044,8 @@ plugin.methods.register_function(
     inputs={},
     parameters={
         'version': Str % Choices(
-                    ['GenBank270_2026-02-15',
+                    ['GenBank272_2026-06-07',
+                     'GenBank271_2026-04-07', 'GenBank270_2026-02-15',
                      'GenBank269_2025-12-09', 'GenBank268_2025-08-14',
                      'GenBank267_2025-06-19', 'GenBank266_2025-04-24',
                      'GenBank265_2025-03-08', 'GenBank264_2024-12-14',
