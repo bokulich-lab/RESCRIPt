@@ -19,7 +19,7 @@ RRNA_GENE_LIST = ['SSU', 'LSU', 'ITS', 'longread', 'all']
 
 
 def _assemble_rrna_url(rrna_gene,
-                       version='2.0',
+                       version='2.1',
                        ):
 
     base_url = ('https://sisu.ut.ee/wp-content/uploads/sites/643/'
@@ -129,7 +129,7 @@ def _retrieve_data_from_eukaryome(rrna_url, gene):
 
 def get_eukaryome_data(
     rrna_gene: list,
-    version: str = '2.0',
+    version: str = '2.1',
         ) -> (DNAFASTAFormat, TSVTaxonomyFormat):
 
     seq_res = {}
