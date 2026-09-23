@@ -742,9 +742,10 @@ plugin.pipelines.register_function(
                       'Choose \'both\' to download the aligned and unaliged '
                       'sequenced data. Choose \'none\' if no sequence data '
                       'should be downlaoded. NOTE: output files for both '
-                      'aligned and unaligned sequences will be generated '
-                      'even if either, or both, of them were not selected '
-                      'for download.'},
+                      '\'aligned\' and \'unaligned\' sequences will be '
+                      'generated even if either, or both of them were not '
+                      'selected for download. If no option is selected '
+                      '\'unaligned\' seqences will be dowloaded.'},
     output_descriptions={
         'silva_sequences': 'SILVA reference sequences.',
         'silva_sequences_aligned': 'SILVA reference sequences, aligned.',
