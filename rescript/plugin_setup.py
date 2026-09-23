@@ -709,18 +709,6 @@ version_map, target_map, _ = TypeMap({
      ): Visualization,
 })
 
-# `download_seqs`` deprecation typemap
-# `download_seqs` to be removed in later version of RESCRIPt,
-# as will this typemap.
-dl_map, sf_map, _ = TypeMap({
-    (Bool % Choices(True),
-     Str % Choices('aligned', 'unaligned', 'both'),
-     ): Visualization,
-    (Bool % Choices(False),
-     Str % Choices('none'),
-     ): Visualization,
-})
-
 plugin.pipelines.register_function(
     function=get_silva_data,
     inputs={},
@@ -730,9 +718,8 @@ plugin.pipelines.register_function(
         'include_organism_name_labels': Bool,
         'rank_propagation': Bool,
         'ranks': List[Str % Choices(ALLOWED_RANKS)],
-        'download_sequences': dl_map,
-        'seq_format': sf_map
-        # 'seq_format': Str % Choices(['aligned', 'unaligned', 'both', 'none'])
+        'download_sequences': Bool,
+        'seq_format': Str % Choices(['aligned', 'unaligned', 'both', 'none']),
         },
     outputs=[('silva_sequences', FeatureData[RNASequence]),
              ('silva_sequences_aligned', FeatureData[AlignedRNASequence]),
@@ -747,27 +734,14 @@ plugin.pipelines.register_function(
         'include_organism_name_labels': INCLUDE_ORGNAME_LABELS_DESCRIPTION,
         'rank_propagation': RANK_PROPAGATE_DESCRIPTION,
         'ranks': RANK_DESCRIPTION,
-        'download_sequences': 'Toggle whether or not to download and import '
-                              'the SILVA reference sequences associated with '
-                              'the release. Skipping the sequences is useful '
-                              'if you only want to download and parse the '
-                              'taxonomy, e.g., a local copy of the sequences '
-                              'already exists or for testing purposes. If '
-                              'this option is set to \'False\', also set '
-                              '\'seq-format\' to \'none\'. NOTE: '
-                              'if this option is used, both `silva_sequences` '
-                              'and `silva_sequences_aligned` output will '
-                              'still be created. But neither, will contain '
-                              'data. '
-                              'THIS OPTION WILL BE DEPRECATED IN A '
-                              'FUTURE RELEASE AND CONTROLLED BY THE '
-                              '\'seq-format\' FLAG.',
+        'download_sequences': 'DEPRECATED: use \'seq-format\' instead. '
+                              'When set to \'False\', sequence downloads '
+                              'are skipped as if \'seq-format\' were '
+                              '\'none\'.',
         'seq_format': 'Select the format of sequence data to be downlaoded. '
                       'Choose \'both\' to download the aligned and unaliged '
                       'sequenced data. Choose \'none\' if no sequence data '
-                      'should be downlaoded. If this option is set to '
-                      '\'none\', also set \'download-sequences\' '
-                      'to \'False\'. NOTE: output files for both '
+                      'should be downlaoded. NOTE: output files for both '
                       'aligned and unaligned sequences will be generated '
                       'even if either, or both, of them were not selected '
                       'for download.'},

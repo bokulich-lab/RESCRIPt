@@ -17,17 +17,44 @@ import qiime2
 from urllib.request import urlretrieve
 from urllib.error import HTTPError
 from q2_types.feature_data import RNAFASTAFormat, AlignedRNAFASTAFormat
+from qiime2.plugin import CaptureHolder, IContext
+from qiime2.core.exceptions import RachisWarning
 
 
-def get_silva_data(ctx,
-                   version='144',
-                   target='SSURef_NR99',
-                   include_organism_name_labels=False,
-                   rank_propagation=True,
-                   ranks=None,
-                   seq_format='unaligned',
-                   download_sequences=True,
-                   ):
+def get_silva_data(ctx: IContext,
+                   version: str = '144',
+                   target: str = 'SSURef_NR99',
+                   include_organism_name_labels: bool = False,
+                   rank_propagation: bool = True,
+                   ranks: list = None,
+                   seq_format: CaptureHolder[str] = None,
+                   download_sequences: bool = None,
+                   ) -> tuple[qiime2.Artifact,
+                              qiime2.Artifact,
+                              qiime2.Artifact]:
+    # TODO(2027.1): Remove `download_sequences` compatibility handling.
+    if download_sequences is not None:
+        warnings.warn(
+            "The `download_sequences` parameter is deprecated and will be "
+            "removed in a future version. Use `seq_format` instead.",
+            RachisWarning,
+            stacklevel=2,
+        )
+
+    seq_format = CaptureHolder.get_or_set(
+        seq_format,
+        lambda: 'none' if download_sequences is False else 'unaligned'
+    )
+
+    if download_sequences is False and seq_format != 'none':
+        raise ValueError(
+            "`download_sequences=False` requires `seq_format='none'`."
+        )
+    if download_sequences is True and seq_format == 'none':
+        raise ValueError(
+            "`download_sequences=True` conflicts with `seq_format='none'`."
+        )
+
     # download data from SILVA
     print('Downloading raw files may take some time... get some coffee.')
 
