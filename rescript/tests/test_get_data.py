@@ -10,8 +10,9 @@ import qiime2
 import importlib
 from qiime2.plugin.testing import TestPluginBase
 from qiime2.plugins import rescript
+from rachis.core.exceptions import RachisWarning
 from rescript.get_data import (_assemble_silva_data_urls,
-                               _retrieve_data_from_silva)
+                               _retrieve_data_from_silva, get_silva_data)
 from rescript.plugin_setup import _SILVA_VERSIONS, _SILVA_TARGETS
 from urllib.request import urlopen
 from urllib.error import HTTPError
@@ -45,8 +46,9 @@ class TestGetSILVA(TestPluginBase):
         # we do not check the outputs, since a successful return implies
         # that the contents are valid and imported successfully.
         queries = [
-            ('taxa', 'https://www.arb-silva.de/fileadmin/silva_databases/'
-                     'release_138/Exports/taxonomy/tax_slv_ssu_138.tre.gz',
+            ('taxa', 'https://www.arb-silva.de/fileadmin/'
+             'silva_databases/release_138/Exports/taxonomy/'
+             'tax_slv_ssu_138.tre.gz',
              'Phylogeny[Rooted]')]
         fallback_queries = [
             ('taxa', 'https://packages.qiime2.org/silva_fallback/'
@@ -86,12 +88,29 @@ class TestGetSILVA(TestPluginBase):
         with patch('rescript.get_data._retrieve_data_from_silva',
                    new=_fake_data_on_demand):
             rescript.actions.get_silva_data(
-                version='132', target='SSURef_NR99', download_sequences=False)
+                version='132', target='SSURef_NR99', seq_format='none')
             self.assertTrue(True)
         # test with user-selected ranks
         with patch('rescript.get_data._retrieve_data_from_silva',
                    new=_fake_data_on_demand):
             rescript.actions.get_silva_data(
                 version='132', target='SSURef_NR99', ranks=['genus', 'phylum'],
-                download_sequences=False)
+                seq_format='none')
             self.assertTrue(True)
+
+    # TODO(2027.1): Remove deprecated `download_sequences` tests below.
+    def test_get_silva_data_warns_when_download_sequences_is_used(self):
+        with self.assertWarns(RachisWarning):
+            with self.assertRaisesRegex(
+                    ValueError,
+                    "`download_sequences=False` requires `seq_format='none'`"):
+                get_silva_data(
+                    None, download_sequences=False, seq_format='unaligned')
+
+    def test_get_silva_data_rejects_conflicting_sequence_options(self):
+        with self.assertRaisesRegex(
+                ValueError,
+                "`download_sequences=False` requires `seq_format='none'`"):
+            rescript.actions.get_silva_data(
+                version='132', target='SSURef_NR99',
+                download_sequences=False, seq_format='unaligned')

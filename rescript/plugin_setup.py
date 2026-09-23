@@ -709,7 +709,6 @@ version_map, target_map, _ = TypeMap({
      ): Visualization,
 })
 
-
 plugin.pipelines.register_function(
     function=get_silva_data,
     inputs={},
@@ -719,8 +718,11 @@ plugin.pipelines.register_function(
         'include_organism_name_labels': Bool,
         'rank_propagation': Bool,
         'ranks': List[Str % Choices(ALLOWED_RANKS)],
-        'download_sequences': Bool},
+        'download_sequences': Bool,
+        'seq_format': Str % Choices(['aligned', 'unaligned', 'both', 'none']),
+        },
     outputs=[('silva_sequences', FeatureData[RNASequence]),
+             ('silva_sequences_aligned', FeatureData[AlignedRNASequence]),
              ('silva_taxonomy', FeatureData[Taxonomy])],
     input_descriptions={},
     parameter_descriptions={
@@ -732,17 +734,21 @@ plugin.pipelines.register_function(
         'include_organism_name_labels': INCLUDE_ORGNAME_LABELS_DESCRIPTION,
         'rank_propagation': RANK_PROPAGATE_DESCRIPTION,
         'ranks': RANK_DESCRIPTION,
-        'download_sequences': 'Toggle whether or not to download and import '
-                              'the SILVA reference sequences associated with '
-                              'the release. Skipping the sequences is useful '
-                              'if you only want to download and parse the '
-                              'taxonomy, e.g., a local copy of the sequences '
-                              'already exists or for testing purposes. NOTE: '
-                              'if this option is used, a `silva_sequences` '
-                              'output is still created, but contains no '
-                              'data.'},
+        'download_sequences': 'DEPRECATED: use \'seq-format\' instead. '
+                              'When set to \'False\', sequence downloads '
+                              'are skipped as if \'seq-format\' were '
+                              '\'none\'.',
+        'seq_format': 'Select the format of sequence data to be downlaoded. '
+                      'Choose \'both\' to download the aligned and unaliged '
+                      'sequenced data. Choose \'none\' if no sequence data '
+                      'should be downlaoded. NOTE: output files for both '
+                      '\'aligned\' and \'unaligned\' sequences will be '
+                      'generated even if either, or both of them were not '
+                      'selected for download. If no option is selected '
+                      '\'unaligned\' seqences will be dowloaded.'},
     output_descriptions={
         'silva_sequences': 'SILVA reference sequences.',
+        'silva_sequences_aligned': 'SILVA reference sequences, aligned.',
         'silva_taxonomy': 'SILVA reference taxonomy.'},
     name='Download, parse, and import SILVA database.',
     description=(

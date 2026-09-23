@@ -16,20 +16,49 @@ import warnings
 import qiime2
 from urllib.request import urlretrieve
 from urllib.error import HTTPError
-from q2_types.feature_data import RNAFASTAFormat
+from q2_types.feature_data import RNAFASTAFormat, AlignedRNAFASTAFormat
+from qiime2.plugin import CaptureHolder, IContext
+from qiime2.core.exceptions import RachisWarning
 
 
-def get_silva_data(ctx,
-                   version='144',
-                   target='SSURef_NR99',
-                   include_organism_name_labels=False,
-                   rank_propagation=True,
-                   ranks=None,
-                   download_sequences=True):
+def get_silva_data(ctx: IContext,
+                   version: str = '144',
+                   target: str = 'SSURef_NR99',
+                   include_organism_name_labels: bool = False,
+                   rank_propagation: bool = True,
+                   ranks: list = None,
+                   seq_format: CaptureHolder[str] = None,
+                   download_sequences: bool = None,
+                   ) -> tuple[qiime2.Artifact,
+                              qiime2.Artifact,
+                              qiime2.Artifact]:
+    # TODO(2027.1): Remove `download_sequences` compatibility handling.
+    if download_sequences is not None:
+        warnings.warn(
+            "The `download_sequences` parameter is deprecated and will be "
+            "removed in a future version. Use `seq_format` instead.",
+            RachisWarning,
+            stacklevel=2,
+        )
+
+    seq_format = CaptureHolder.get_or_set(
+        seq_format,
+        lambda: 'none' if download_sequences is False else 'unaligned'
+    )
+
+    if download_sequences is False and seq_format != 'none':
+        raise ValueError(
+            "`download_sequences=False` requires `seq_format='none'`."
+        )
+    if download_sequences is True and seq_format == 'none':
+        raise ValueError(
+            "`download_sequences=True` conflicts with `seq_format='none'`."
+        )
+
     # download data from SILVA
     print('Downloading raw files may take some time... get some coffee.')
-    queries = _assemble_silva_data_urls(version, target,
-                                        download_sequences)
+
+    queries = _assemble_silva_data_urls(version, target, seq_format)
     results = _retrieve_data_from_silva(queries)
     # parse taxonomy
     parse_taxonomy = ctx.get_action('rescript', 'parse_silva_taxonomy')
@@ -41,14 +70,16 @@ def get_silva_data(ctx,
         ranks=ranks,
         rank_propagation=rank_propagation)
     # if skipping sequences, need to output an empty sequence file.
-    if not download_sequences:
+    if seq_format == 'unaligned' or seq_format == 'none':
+        results['aligned sequences'] = qiime2.Artifact.import_data(
+            'FeatureData[AlignedRNASequence]', AlignedRNAFASTAFormat())
+    if seq_format == 'aligned' or seq_format == 'none':
         results['sequences'] = qiime2.Artifact.import_data(
             'FeatureData[RNASequence]', RNAFASTAFormat())
-    return results['sequences'], taxonomy
+    return results['sequences'], results['aligned sequences'], taxonomy
 
 
-def _assemble_silva_data_urls(version, target,
-                              download_sequences=True):
+def _assemble_silva_data_urls(version, target, seq_format):
     '''Generate SILVA urls, given database version and reference target.'''
     # assemble target urls
     ref_map = {'SSURef_NR99': 'ssu_ref_nr',
@@ -73,7 +104,12 @@ def _assemble_silva_data_urls(version, target,
 
     # construct file urls
     base_url_seqs = base_url + 'SILVA_{0}_{1}_tax_silva_trunc.fasta.gz'.format(
+        version, target)
+    base_url_seqs_aln = base_url + \
+        'SILVA_{0}_{1}_tax_silva_full_align_trunc.fasta.gz'.format(
             version, target)
+    base_url_taxmap = '{0}taxonomy/taxmap_slv_{1}_{2}'.format(
+        base_url, insert, version)
 
     # SILVA 144 taxmap file schema has changed to
     # `taxmap_slv_ssu_ref144.txt.gz`
@@ -104,14 +140,20 @@ def _assemble_silva_data_urls(version, target,
         tax_url += '.gz'
 
     # download and validate silva files
-    queries = [('sequences', base_url_seqs, 'FeatureData[RNASequence]'),
+    queries = [('aligned sequences', base_url_seqs_aln,
+                'FeatureData[AlignedRNASequence]'),
+               ('sequences', base_url_seqs, 'FeatureData[RNASequence]'),
                ('taxonomy map', base_url_taxmap, 'FeatureData[SILVATaxidMap]'),
                ('taxonomy tree', tree_url, 'Phylogeny[Rooted]'),
                ('taxonomy ranks', tax_url, 'FeatureData[SILVATaxonomy]')]
 
     # optionally skip downloading sequences
-    if not download_sequences:
+    if seq_format == 'none' or 'download_sequences' == 'False':
+        queries = queries[2:]
+    if seq_format == 'unaligned':
         queries = queries[1:]
+    if seq_format == 'aligned':
+        queries = [queries[0]] + queries[2:]
 
     return queries
 
