@@ -196,7 +196,9 @@ def _retrieve_data_from_silva(queries):
             except OSError:
                 pass
             # import as artifacts
-            results[name] = qiime2.Artifact.import_data(dtype, destination)
+            results[name] = qiime2.Artifact.import_data(
+                dtype, destination, validate_level="min"
+            )
     return results
 
 

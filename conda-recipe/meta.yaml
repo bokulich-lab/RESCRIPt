@@ -26,7 +26,7 @@ requirements:
   - q2-types >={{ q2_types }}
   - q2-vizard >={{ q2_vizard }}
   - q2templates >={{ q2templates }}
-  - rachis >={{ rachis }}
+  - qiime2 >={{ qiime2 }}
   build:
   - python {{ python }}
   - setuptools
@@ -36,7 +36,7 @@ test:
   - pytest
   - q2-types >={{ q2_types }}
   - q2-vizard >={{ q2_vizard }}
-  - rachis >={{ rachis }}
+  - qiime2 >={{ qiime2 }}
   imports:
   - rescript
   - qiime2.plugins.rescript

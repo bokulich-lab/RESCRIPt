@@ -79,12 +79,14 @@ def _retrieve_data_from_midori2(fasta_url, tax_url):
             with gzip.open(in_path, 'rb') as gz_in:
                 with open(out_path, 'wb') as gz_out:
                     shutil.copyfileobj(gz_in, gz_out)
-                    if out_path.endswith('fasta'):
-                        seqs = DNAFASTAFormat(out_path,
-                                              mode="r").view(DNAIterator)
-                    elif out_path.endswith('taxon'):
-                        tax = TaxonomyFormat(out_path,
-                                             mode="r").view(pd.DataFrame)
+            # ``open`` returns a buffered writer. Parse only after its context
+            # closes so the final buffered bytes are visible to the formats.
+            if out_path.endswith('fasta'):
+                seqs = DNAFASTAFormat(out_path,
+                                      mode="r").view(DNAIterator)
+            elif out_path.endswith('taxon'):
+                tax = TaxonomyFormat(out_path,
+                                     mode="r").view(pd.DataFrame)
     return seqs, tax
 
 
