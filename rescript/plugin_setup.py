@@ -930,7 +930,8 @@ plugin.methods.register_function(
                                   '220.0', '226.0', '232.0']),
         'domain': Str % Choices(['Both', 'Bacteria', 'Archaea']),
         'db_type': Str % Choices(['All', 'SpeciesReps']),
-        'url_type': Str % Choices(['Primary', 'Mirror'])
+        'db_url': Str % Choices(['world-wide-europe',
+                                 'world-wide-asia', 'australia'])
         },
     outputs=[('gtdb_taxonomy', FeatureData[Taxonomy]),
              ('gtdb_sequences', FeatureData[Sequence])],
@@ -951,10 +952,11 @@ plugin.methods.register_function(
                    'parameter will be ignored as GTDB does not maintain '
                    'separate domain-level files for these non-clustered '
                    'data.',
-        'url_type': 'Toggle download URL. \'Primary\' will download data '
-                    'from the primary GTDB URL. \'Mirror\' will dowload data '
-                    'from the GTDB data mirror. Use \'Mirror\' if downloads '
-                    'from \'Primary\' are slow.'},
+        'db_url': 'Toggle download URL. \'world-wide-europe\' will download '
+                  'data from European servers. \'world-wide-asia\' will '
+                  'download data from Asian-Pacific servers. and '
+                  '\'australia\' will download from Australian servers. '
+                  'Choose the server that is best for your reagion.'},
     output_descriptions={
         'gtdb_taxonomy': 'SSU GTDB reference taxonomy.',
         'gtdb_sequences': 'SSU GTDB reference sequences.'},
