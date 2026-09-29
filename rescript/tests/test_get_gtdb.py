@@ -48,26 +48,30 @@ class TestGetGTDB(TestPluginBase):
     def test_assemble_species_rep_queries(self):
         # checking v220 as GTDB updated the file format for the "ssu_rep"
         # FASTA files to 'fna.gz' from their usual 'tar.gz'.
-        obs_query_urls = _assemble_queries('220.0', 'SpeciesReps', 'Both')
+        obs_query_urls = _assemble_queries('220.0', 'SpeciesReps',
+                                           'Both', 'world-wide-europe')
         print('obs queries: ', obs_query_urls)
 
         exp_query_urls = [('Archaea',
-                           'https://data.gtdb.ecogenomic.org/releases/'
+                           'https://data.gtdb.aau.ecogenomic.org/releases/'
                            'release220/220.0/genomic_files_reps/'
                            'ar53_ssu_reps_r220.fna.gz'),
                           ('Bacteria',
-                           'https://data.gtdb.ecogenomic.org/releases/'
+                           'https://data.gtdb.aau.ecogenomic.org/releases/'
                            'release220/220.0/genomic_files_reps/'
                            'bac120_ssu_reps_r220.fna.gz')]
         print('exp queries: ', exp_query_urls)
         self.assertEqual(obs_query_urls, exp_query_urls)
 
     def test_assemble_species_rep_queries_archaea(self):
-        obs_query_urls = _assemble_queries('202.0', 'SpeciesReps', 'Archaea')
+        obs_query_urls = _assemble_queries(version='202.0',
+                                           domain='Archaea',
+                                           db_type='SpeciesReps',
+                                           db_url='world-wide-europe')
         print('obs queries: ', obs_query_urls)
 
         exp_query_urls = [('Archaea',
-                           'https://data.gtdb.ecogenomic.org/releases/'
+                           'https://data.gtdb.aau.ecogenomic.org/releases/'
                            'release202/202.0/genomic_files_reps/'
                            'ar122_ssu_reps_r202.tar.gz')]
         print('exp queries: ', exp_query_urls)
@@ -76,26 +80,41 @@ class TestGetGTDB(TestPluginBase):
     def test_assemble_queries_all_primary(self):
         obs_query_urls = _assemble_queries(version='207.0',
                                            db_type='All',
-                                           url_type='Primary')
+                                           db_url='world-wide-europe')
         print('obs queries: ', obs_query_urls)
 
         exp_query_urls = [('All',
-                           'https://data.gtdb.ecogenomic.org/releases/'
+                           'https://data.gtdb.aau.ecogenomic.org/releases/'
                            'release207/207.0/genomic_files_all/'
                            'ssu_all_r207.tar.gz')]
         print('exp queries: ', exp_query_urls)
         self.assertEqual(obs_query_urls, exp_query_urls)
 
-    def test_assemble_queries_all_mirror(self):
+    def test_assemble_queries_all_asia(self):
         obs_query_urls = _assemble_queries(version='207.0',
                                            db_type='All',
-                                           url_type='Mirror')
+                                           db_url='world-wide-asia')
         print('obs queries: ', obs_query_urls)
 
-        exp_query_urls = [('All',
-                           'https://data.ace.uq.edu.au/public/gtdb/data/'
-                           'releases/release207/207.0/genomic_files_all/'
-                           'ssu_all_r207.tar.gz')]
+        exp_query_urls = [(
+                'All',
+                'https://data.ace.uq.edu.au/public/gtdb/data/releases/'
+                'release207/207.0/genomic_files_all/'
+                'ssu_all_r207.tar.gz')]
+        print('exp queries: ', exp_query_urls)
+        self.assertEqual(obs_query_urls, exp_query_urls)
+
+    def test_assemble_queries_all_australia(self):
+        obs_query_urls = _assemble_queries(version='232.0',
+                                           db_type='All',
+                                           db_url='australia')
+        print('obs queries: ', obs_query_urls)
+
+        exp_query_urls = [(
+                'All',
+                'https://data.gtdb.ecogenomic.org/releases/'
+                'release232/232.0/genomic_files_all/'
+                'ssu_all_r232.fna.gz')]
         print('exp queries: ', exp_query_urls)
         self.assertEqual(obs_query_urls, exp_query_urls)
 
@@ -113,7 +132,8 @@ class TestGetGTDB(TestPluginBase):
         with patch('rescript.get_gtdb._retrieve_data_from_gtdb',
                    new=_makey_fakey_both):
             res = rescript.actions.get_gtdb_data(
-                version='214.1', db_type='SpeciesReps', domain='Both')
+                version='214.1', db_type='SpeciesReps',
+                domain='Both', db_url='world-wide-europe')
             self.assertEqual(str(res[0].type), 'FeatureData[Taxonomy]')
             self.assertEqual(str(res[1].type), 'FeatureData[Sequence]')
 
@@ -121,7 +141,8 @@ class TestGetGTDB(TestPluginBase):
         with patch('rescript.get_gtdb._retrieve_data_from_gtdb',
                    new=_makey_fakey_arch):
             resa = rescript.actions.get_gtdb_data(
-                version='202.0', domain='Archaea')
+                version='202.0', domain='Archaea',
+                db_url='world-wide-europe')
             self.assertEqual(str(resa[0].type), 'FeatureData[Taxonomy]')
             self.assertEqual(str(resa[1].type), 'FeatureData[Sequence]')
 
@@ -129,7 +150,8 @@ class TestGetGTDB(TestPluginBase):
         with patch('rescript.get_gtdb._retrieve_data_from_gtdb',
                    new=_makey_fakey_bact):
             resb = rescript.actions.get_gtdb_data(
-                version='207.0', domain='Bacteria')
+                version='207.0', domain='Bacteria',
+                db_url='world-wide-europe')
             self.assertEqual(str(resb[0].type), 'FeatureData[Taxonomy]')
             self.assertEqual(str(resb[1].type), 'FeatureData[Sequence]')
 
@@ -137,7 +159,8 @@ class TestGetGTDB(TestPluginBase):
         with patch('rescript.get_gtdb._retrieve_data_from_gtdb',
                    new=_makey_fakey_both):
             resc = rescript.actions.get_gtdb_data(
-                version='214.1', db_type='All')
+                version='214.1', db_type='All',
+                db_url='world-wide-europe')
             self.assertEqual(str(resc[0].type), 'FeatureData[Taxonomy]')
             self.assertEqual(str(resc[1].type), 'FeatureData[Sequence]')
 

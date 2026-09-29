@@ -37,13 +37,13 @@ def get_gtdb_data(
     version: str = '232.0',
     domain: str = 'Both',
     db_type: str = 'SpeciesReps',
-    url_type: str = 'Primary'
+    db_url: str = 'world-wide-europe'
         ) -> (TSVTaxonomyFormat, DNAFASTAFormat):
 
     queries = _assemble_queries(version=version,
                                 db_type=db_type,
                                 domain=domain,
-                                url_type=url_type)
+                                db_url=db_url)
     tax_q, seqs_q = _retrieve_data_from_gtdb(queries)
 
     print('\n Saving files...\n')
@@ -53,13 +53,16 @@ def get_gtdb_data(
 def _assemble_queries(version='232.0',
                       db_type='SpeciesReps',
                       domain='Both',
-                      url_type='Primary'):
+                      db_url='world-wide-europe',
+                      ):
     queries = []
 
-    if url_type == 'Primary':
+    if db_url == 'australia':
         base_url = 'https://data.gtdb.ecogenomic.org/releases/'
-    elif url_type == 'Mirror':
+    elif db_url == 'world-wide-asia':
         base_url = 'https://data.ace.uq.edu.au/public/gtdb/data/releases/'
+    elif db_url == 'world-wide-europe':
+        base_url = 'https://data.gtdb.aau.ecogenomic.org/releases/'
 
     base_version = version.split('.')[0]
     # ^^ Set `base_version` variable becuase number after the decimal is
