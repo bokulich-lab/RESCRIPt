@@ -34,7 +34,7 @@ VERSION_MAP_DICT = {'232.0': {'Archaea': 'ar53', 'Bacteria': 'bac120'},
 
 
 def get_gtdb_data(
-    db_url: str,
+    db_url: str = 'world-wide-europe',
     version: str = '232.0',
     domain: str = 'Both',
     db_type: str = 'SpeciesReps',

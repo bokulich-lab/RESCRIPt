@@ -956,7 +956,7 @@ plugin.methods.register_function(
                   'data from European servers. \'world-wide-asia\' will '
                   'download data from Asian-Pacific servers. and '
                   '\'australia\' will download from Australian servers. '
-                  'Choose the server that is best for your reagion.'},
+                  'Choose the server that is best for your region.'},
     output_descriptions={
         'gtdb_taxonomy': 'SSU GTDB reference taxonomy.',
         'gtdb_sequences': 'SSU GTDB reference sequences.'},
