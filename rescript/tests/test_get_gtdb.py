@@ -48,8 +48,8 @@ class TestGetGTDB(TestPluginBase):
     def test_assemble_species_rep_queries(self):
         # checking v220 as GTDB updated the file format for the "ssu_rep"
         # FASTA files to 'fna.gz' from their usual 'tar.gz'.
-        obs_query_urls = _assemble_queries('world-wide-europe',
-                                           '220.0', 'SpeciesReps', 'Both')
+        obs_query_urls = _assemble_queries('220.0', 'SpeciesReps',
+                                           'Both', 'world-wide-europe')
         print('obs queries: ', obs_query_urls)
 
         exp_query_urls = [('Archaea',
@@ -64,8 +64,10 @@ class TestGetGTDB(TestPluginBase):
         self.assertEqual(obs_query_urls, exp_query_urls)
 
     def test_assemble_species_rep_queries_archaea(self):
-        obs_query_urls = _assemble_queries('world-wide-europe', '202.0',
-                                           'SpeciesReps', 'Archaea')
+        obs_query_urls = _assemble_queries(version='202.0',
+                                           domain='Archaea',
+                                           db_type='SpeciesReps',
+                                           db_url='world-wide-europe')
         print('obs queries: ', obs_query_urls)
 
         exp_query_urls = [('Archaea',
@@ -76,9 +78,9 @@ class TestGetGTDB(TestPluginBase):
         self.assertEqual(obs_query_urls, exp_query_urls)
 
     def test_assemble_queries_all_primary(self):
-        obs_query_urls = _assemble_queries(db_url='world-wide-europe',
-                                           version='207.0',
-                                           db_type='All')
+        obs_query_urls = _assemble_queries(version='207.0',
+                                           db_type='All',
+                                           db_url='world-wide-europe')
         print('obs queries: ', obs_query_urls)
 
         exp_query_urls = [('All',
@@ -89,9 +91,9 @@ class TestGetGTDB(TestPluginBase):
         self.assertEqual(obs_query_urls, exp_query_urls)
 
     def test_assemble_queries_all_asia(self):
-        obs_query_urls = _assemble_queries(db_url='world-wide-asia',
-                                           version='207.0',
-                                           db_type='All')
+        obs_query_urls = _assemble_queries(version='207.0',
+                                           db_type='All',
+                                           db_url='world-wide-asia')
         print('obs queries: ', obs_query_urls)
 
         exp_query_urls = [(
@@ -103,9 +105,9 @@ class TestGetGTDB(TestPluginBase):
         self.assertEqual(obs_query_urls, exp_query_urls)
 
     def test_assemble_queries_all_australia(self):
-        obs_query_urls = _assemble_queries(db_url='australia',
-                                           version='232.0',
-                                           db_type='All')
+        obs_query_urls = _assemble_queries(version='232.0',
+                                           db_type='All',
+                                           db_url='australia')
         print('obs queries: ', obs_query_urls)
 
         exp_query_urls = [(
@@ -130,8 +132,8 @@ class TestGetGTDB(TestPluginBase):
         with patch('rescript.get_gtdb._retrieve_data_from_gtdb',
                    new=_makey_fakey_both):
             res = rescript.actions.get_gtdb_data(
-                db_url='world-wide-europe', version='214.1',
-                db_type='SpeciesReps', domain='Both')
+                version='214.1', db_type='SpeciesReps',
+                domain='Both', db_url='world-wide-europe')
             self.assertEqual(str(res[0].type), 'FeatureData[Taxonomy]')
             self.assertEqual(str(res[1].type), 'FeatureData[Sequence]')
 
@@ -139,8 +141,8 @@ class TestGetGTDB(TestPluginBase):
         with patch('rescript.get_gtdb._retrieve_data_from_gtdb',
                    new=_makey_fakey_arch):
             resa = rescript.actions.get_gtdb_data(
-                db_url='world-wide-europe', version='202.0',
-                domain='Archaea')
+                version='202.0', domain='Archaea',
+                db_url='world-wide-europe')
             self.assertEqual(str(resa[0].type), 'FeatureData[Taxonomy]')
             self.assertEqual(str(resa[1].type), 'FeatureData[Sequence]')
 
@@ -148,8 +150,8 @@ class TestGetGTDB(TestPluginBase):
         with patch('rescript.get_gtdb._retrieve_data_from_gtdb',
                    new=_makey_fakey_bact):
             resb = rescript.actions.get_gtdb_data(
-                db_url='world-wide-europe', version='207.0',
-                domain='Bacteria')
+                version='207.0', domain='Bacteria',
+                db_url='world-wide-europe')
             self.assertEqual(str(resb[0].type), 'FeatureData[Taxonomy]')
             self.assertEqual(str(resb[1].type), 'FeatureData[Sequence]')
 
@@ -157,8 +159,8 @@ class TestGetGTDB(TestPluginBase):
         with patch('rescript.get_gtdb._retrieve_data_from_gtdb',
                    new=_makey_fakey_both):
             resc = rescript.actions.get_gtdb_data(
-                db_url='world-wide-europe', version='214.1',
-                db_type='All')
+                version='214.1', db_type='All',
+                db_url='world-wide-europe')
             self.assertEqual(str(resc[0].type), 'FeatureData[Taxonomy]')
             self.assertEqual(str(resc[1].type), 'FeatureData[Sequence]')
 

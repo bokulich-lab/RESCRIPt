@@ -34,26 +34,26 @@ VERSION_MAP_DICT = {'232.0': {'Archaea': 'ar53', 'Bacteria': 'bac120'},
 
 
 def get_gtdb_data(
-    db_url: str = 'world-wide-europe',
     version: str = '232.0',
     domain: str = 'Both',
     db_type: str = 'SpeciesReps',
+    db_url: str = 'world-wide-europe'
         ) -> (TSVTaxonomyFormat, DNAFASTAFormat):
 
-    queries = _assemble_queries(db_url=db_url,
-                                version=version,
+    queries = _assemble_queries(version=version,
                                 db_type=db_type,
-                                domain=domain)
+                                domain=domain,
+                                db_url=db_url)
     tax_q, seqs_q = _retrieve_data_from_gtdb(queries)
 
     print('\n Saving files...\n')
     return tax_q, seqs_q
 
 
-def _assemble_queries(db_url,
-                      version='232.0',
+def _assemble_queries(version='232.0',
                       db_type='SpeciesReps',
                       domain='Both',
+                      db_url='world-wide-europe',
                       ):
     queries = []
 
