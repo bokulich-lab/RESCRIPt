@@ -51,7 +51,7 @@ from rescript.ncbi import (
 from .get_gtdb import get_gtdb_data
 from .get_unite import get_unite_data
 from .get_pr2 import get_pr2_data, _allowed_pr2_ranks, _default_pr2_ranks
-from .get_midori2 import get_midori2_data, MITO_GENE_LIST
+from .get_midori2 import get_midori2_data
 from .get_eukaryome import get_eukaryome_data, RRNA_GENE_LIST
 
 citations = Citations.load('citations.bib', package='rescript')
@@ -1047,15 +1047,8 @@ plugin.methods.register_function(
     inputs={},
     parameters={
         'version': Str % Choices(
-                    ['GenBank272_2026-06-07',
-                     'GenBank271_2026-04-07', 'GenBank270_2026-02-15',
-                     'GenBank269_2025-12-09', 'GenBank268_2025-08-14',
-                     'GenBank267_2025-06-19', 'GenBank266_2025-04-24',
-                     'GenBank265_2025-03-08', 'GenBank264_2024-12-14',
-                     'GenBank263_2024-10-13', 'GenBank262_2024-08-16',
-                     'GenBank261_2024-06-15', 'GenBank260_2024-04-15']),
-        'mito_gene': List[Str % Choices(MITO_GENE_LIST)],
-        'ref_seq_type': Str % Choices(['uniq', 'longest']),
+                    ['273', '272', '271', '270',
+                     '269', '268', '267', '266', '265']),
         'unspecified_species': Bool,
         },
     outputs=[('midori2_sequences', Collection[FeatureData[Sequence]]),
@@ -1063,12 +1056,6 @@ plugin.methods.register_function(
     input_descriptions={},
     parameter_descriptions={
         'version': 'MIDORI 2 version to download.',
-        'mito_gene': 'Download the mitochondrial gene(s) of interest. '
-                     'Specify the respective gene(s), or download all genes '
-                     'using \'all\'.',
-        'ref_seq_type': ' \'uniq\': contains all unique haplotypes associated '
-                        'with each species. \'longest\': contains the longest '
-                        'sequence for each species.',
         'unspecified_species': 'Download reference sequences that contain '
                                'species that are left unspecified. That is, '
                                'any reference sequences that lack binomial '
@@ -1080,8 +1067,7 @@ plugin.methods.register_function(
     description=(
         'Download and import a variety of mitochonrial DNA gene sequences '
         'along with their associated taxonomy from the MIDORI 2 database. '
-        'Simply provide the database version, the mitochondrial gene '
-        'of interest, the reference sequence type, and if reference '
+        'Simply provide the database version of interest, and if '
         'sequences with unspecified species information should be '
         'downloaded. ' + MIDORI2_LICENSE_NOTE),
     citations=[citations['Leray2022midori2']]

@@ -9,6 +9,7 @@
 import os
 import tempfile
 import shutil
+import zipfile
 import gzip
 from urllib.request import urlretrieve
 from pathlib import Path
@@ -16,109 +17,99 @@ import pandas as pd
 from q2_types.feature_data import (TaxonomyFormat, DNAFASTAFormat,
                                    DNAIterator)
 
-MITO_GENE_LIST = ['A6', 'A8', 'CO1', 'CO2', 'CO3', 'Cytb',
-                  'ND1', 'ND2', 'ND3', 'ND4L', 'ND4',
-                  'ND5', 'ND6', 'lrRNA', 'srRNA', 'all']
+
+ver_id_dict = {
+               '273': '22685701',
+               '272': '23112349',
+               '271': '23110935',
+               '270': '23093552',
+               '269': '23092095',
+               '268': '23090517',
+               '267': '23071879',
+               '266': '23049405',
+               '265': '23047760',
+               }
 
 
-def _assemble_midori2_urls(mito_gene,
-                           version='GenBank272_2026-06-07',
-                           ref_seq_type='uniq',
-                           unspecified_species=False,
-                           ):
-    print('Building URLs ...')
+def _assemble_midori2_url(version='273',
+                          unspecified_species=False,
+                          ):
+
+    print('Building URL ...')
+    # unspecified species check
     if unspecified_species:
-        spec = 'QIIME_sp'
-        sp = 'SP_'
+        sp = '_sp'
     else:
-        spec = 'QIIME'
         sp = ''
 
-    vernum = version.strip('GenBank').split('_')[0]
+    base_url = ('https://zenodo.org/records/{id}/'
+                'files/MIDORI2_GB{ver}_QIIME{sp}.zip')
+    base_format_dict = {'id': ver_id_dict[version],
+                        'ver': version,
+                        'sp': sp}
 
-    base_url = ('https://www.reference-midori.info/download/Databases/'
-                '{full_version}/{spec}/{ref_seq_type}/MIDORI2_'
-                '{ref_seq_type_u}_NUC_'
-                '{sp}GB{vernum}_{mito_gene}_QIIME.{file_type}.gz')
-
-    base_format_dict = {'full_version': version,
-                        'spec': spec,
-                        'ref_seq_type': ref_seq_type,
-                        'ref_seq_type_u': ref_seq_type.upper(),
-                        'sp': sp,
-                        'vernum': vernum,
-                        'mito_gene': mito_gene}
-
-    fasta_url = base_url.format(**base_format_dict, **{'file_type': 'fasta'})
-    tax_url = base_url.format(**base_format_dict, **{'file_type': 'taxon'})
-
-    return fasta_url, tax_url
+    final_url = base_url.format(**base_format_dict)
+    return final_url
 
 
-def _retrieve_data_from_midori2(fasta_url, tax_url):
+def _retrieve_data_from_midori2(url):
 
-    print('\nDownloading and processing raw files ... \n')
+    print('\nDownloading and processing MIDORI2 data ... \n')
 
     with tempfile.TemporaryDirectory() as tmpdirname:
-        for url in [fasta_url, tax_url]:
-            compressed_fn = Path(url).name
-            uncompressed_fn = Path(url).stem
-            in_path = os.path.join(tmpdirname, compressed_fn)
-            out_path = os.path.join(tmpdirname, uncompressed_fn)
+        compressed_fn = Path(url).name
+        in_path = os.path.join(tmpdirname, compressed_fn)
 
-            try:
-                print('Retrieving data from {0}'.format(url))
-                urlretrieve(url, in_path)
-            except Exception as e:
-                raise ValueError(
-                    'Unable to retrieve the following file '
-                    'from MIDORI2:\n{url}\n: {e}'.format(
-                                      url=url, e=e))
+        try:
+            print('Retrieving data from:\n\t{0}'.format(url),
+                  '\n\nGrab some coffee, this may take a while.\n\n')
+            urlretrieve(url, in_path)
+        except Exception as e:
+            raise ValueError(
+                'Unable to retrieve the following file '
+                'from MIDORI2:\n{url}\n: {e}'.format(
+                                  url=url, e=e))
 
-            print('  Unzipping {0}...\n'.format(in_path))
-            with gzip.open(in_path, 'rb') as gz_in:
-                with open(out_path, 'wb') as gz_out:
-                    shutil.copyfileobj(gz_in, gz_out)
-            # ``open`` returns a buffered writer. Parse only after its context
-            # closes so the final buffered bytes are visible to the formats.
-            if out_path.endswith('fasta'):
-                seqs = DNAFASTAFormat(out_path,
-                                      mode="r").view(DNAIterator)
-            elif out_path.endswith('taxon'):
-                tax = TaxonomyFormat(out_path,
-                                     mode="r").view(pd.DataFrame)
-    return seqs, tax
+        print('Unzipping {0}...\n'.format(in_path))
+        seqs_dict = {}
+        tax_dict = {}
+        with zipfile.ZipFile(in_path, 'r') as zipdir:
+            for f_info in zipdir.infolist():
+                if f_info.is_dir() or not f_info.filename.endswith('.gz'):
+                    continue
+                fn = f_info.filename
+                with zipdir.open(f_info.filename) as zipf:
+                    bn = os.path.basename(fn).rsplit('.', 1)[0]
+                    with gzip.open(zipf, 'rb') as gz_in:
+                        ofp = os.path.join(tmpdirname, bn)
+                        with open(ofp, 'wb') as gz_out:
+                            shutil.copyfileobj(gz_in, gz_out)
+
+                    if gz_out.name.endswith('fasta'):
+                        seqs_dict[bn] = DNAFASTAFormat(
+                                            gz_out.name,
+                                            mode="r").view(DNAIterator)
+                    elif gz_out.name.endswith('taxon'):
+                        tax_dict[bn] = TaxonomyFormat(
+                                           gz_out.name,
+                                           mode="r").view(pd.DataFrame)
+    return seqs_dict, tax_dict
 
 
-# Note: add ability to trim txids from each rank.
-# In the interim, can do this with `edit-taxonomy`
-# using the following regex:
-#     `--p-search-strings '_\d+(;)|_\d+($)'`.
 def get_midori2_data(
-    mito_gene: list,
-    version: str = 'GenBank272_2026-06-07',
-    ref_seq_type: str = 'uniq',
+    version: str = '273',
     unspecified_species: bool = False,
         ) -> (DNAIterator, pd.DataFrame):
 
     seq_res = {}
     tax_res = {}
 
-    if 'all' in mito_gene:
-        MITO_GENE_LIST.pop()  # remove 'all' from choices.
-        mito_gene = MITO_GENE_LIST
+    url = _assemble_midori2_url(
+                                version=version,
+                                unspecified_species=unspecified_species,
+                                )
 
-    for gene in mito_gene:
-        fasta_url, tax_url = _assemble_midori2_urls(
-                                  mito_gene=gene,
-                                  version=version,
-                                  ref_seq_type=ref_seq_type,
-                                  unspecified_species=unspecified_species,
-                                  )
-
-        seqs, tax = _retrieve_data_from_midori2(fasta_url, tax_url)
-        seq_res[gene + '_seqs'] = seqs
-        tax_res[gene + '_taxa'] = tax
+    seq_res, tax_res = _retrieve_data_from_midori2(url)
 
     print('\n Saving files...\n')
     return seq_res, tax_res
