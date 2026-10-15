@@ -7,10 +7,11 @@
 # ----------------------------------------------------------------------------
 
 import importlib
-# import gzip
-# import os
-# import shutil
-# import tempfile
+import gzip
+import os
+import shutil
+import tempfile
+import zipfile
 from qiime2.plugin.testing import TestPluginBase
 from qiime2.plugins import rescript
 from rescript.get_midori2 import (_assemble_midori2_url,
@@ -63,6 +64,46 @@ class TestGetMidori2(TestPluginBase):
         mock_urlretrieve.side_effect = Exception("Simulated network error")
         with self.assertRaisesRegex(Exception, expected_message):
             _retrieve_data_from_midori2("url_data")
+
+    def test_retrieve_data_from_zip_and_decompression_is_closed(self):
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            mzip_path = os.path.join(tmpdirname, 'midori2-refs.zip')
+            with zipfile.ZipFile(mzip_path, mode='w') as zipf:
+                fasta_gz = os.path.join(tmpdirname, 'midori2-seqs.fasta.gz')
+                taxon_gz = os.path.join(tmpdirname, 'midori2-taxa.taxon.gz')
+                for source, destination in [
+                        (self.midori2_seqs.path, fasta_gz),
+                        (self.midori2_tax.path, taxon_gz)]:
+                    with zipf.open(destination, 'w') as zip_stream:
+                        with gzip.GzipFile(
+                                fileobj=zip_stream, mode="wb") as gz_file:
+                            with open(source, 'rb') as original_file:
+                                shutil.copyfileobj(original_file, gz_file)
+
+            mzip_path_copy = os.path.join(tmpdirname,
+                                          'midori2-refs-copy.zip')
+
+            def copy_download(url, mpc=mzip_path_copy):
+                shutil.copyfile(mzip_path, mpc)
+
+            with patch('rescript.get_midori2.urlretrieve',
+                       side_effect=copy_download):
+                obs_seqs, obs_tax = _retrieve_data_from_midori2(
+                                        'midori2-refs.zip')
+
+        obs_seq_dict = {seq.metadata['id']: str(seq)
+                        for fid, seq_iter in obs_seqs.items()
+                        for seq in seq_iter}
+
+        exp_seq_dict = {seq.metadata['id']: str(seq)
+                        for seq in self.midori2_seqs.view(
+                            DNAIterator)}
+
+        obs_tax_list = [tax for tax in obs_tax.values()]
+
+        self.assertEqual(obs_seq_dict, exp_seq_dict)
+        self.assertTrue(obs_tax_list[0].equals(
+                        self.midori2_tax.view(pd.DataFrame)))
 
     def test_get_midori2(self):
         def _makey_fakey(fake_data):

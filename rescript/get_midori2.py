@@ -18,7 +18,7 @@ from q2_types.feature_data import (TaxonomyFormat, DNAFASTAFormat,
                                    DNAIterator)
 
 
-ver_id_dict = {
+VER_ID_DICT = {
                '273': '22685701',
                '272': '23112349',
                '271': '23110935',
@@ -44,7 +44,7 @@ def _assemble_midori2_url(version='273',
 
     base_url = ('https://zenodo.org/records/{id}/'
                 'files/MIDORI2_GB{ver}_QIIME{sp}.zip')
-    base_format_dict = {'id': ver_id_dict[version],
+    base_format_dict = {'id': VER_ID_DICT[version],
                         'ver': version,
                         'sp': sp}
 
