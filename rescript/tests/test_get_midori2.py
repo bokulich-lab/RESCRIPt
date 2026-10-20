@@ -6,7 +6,7 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-# import importlib
+import importlib
 import gzip
 import os
 import shutil
@@ -31,14 +31,14 @@ class TestGetMidori2(TestPluginBase):
 
     def setUp(self):
         super().setUp()
-        self.midori2_fasta = self.get_data_path('midori2-seqs.fasta')
-        self.midori2_seqs = DNAFASTAFormat(
-                            self.midori2_fasta,
-                            mode='r')
-        self.midori2_tsv = self.get_data_path('midori2-taxa.tsv')
-        self.midori2_tax = HeaderlessTSVTaxonomyFormat(
-                           self.midori2_tsv,
-                           mode='r')
+        self.midori2_tax = \
+            HeaderlessTSVTaxonomyFormat(importlib.resources.files(
+                'rescript') / 'tests' / 'data' / 'midori2-taxa.tsv', mode='r'
+            )
+        self.midori2_seqs = \
+            DNAFASTAFormat(importlib.resources.files(
+                'rescript') / 'tests' / 'data' / 'midori2-seqs.fasta', mode='r'
+            )
 
     # test that appropriate URLs are assembled
     def test_assemble_midori2_url_01(self):
@@ -75,8 +75,8 @@ class TestGetMidori2(TestPluginBase):
                 fasta_gz = os.path.join(tmpdirname, 'midori2-seqs.fasta.gz')
                 taxon_gz = os.path.join(tmpdirname, 'midori2-taxa.taxon.gz')
                 for source, destination in [
-                        (self.midori2_fasta, fasta_gz),
-                        (self.midori2_tsv, taxon_gz)]:
+                        (self.midori2_seqs.path, fasta_gz),
+                        (self.midori2_tax.path, taxon_gz)]:
                     with zipf.open(destination, 'w') as zip_stream:
                         with gzip.GzipFile(
                                 fileobj=zip_stream, mode="wb") as gz_file:
