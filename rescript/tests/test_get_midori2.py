@@ -6,7 +6,7 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-import importlib
+# import importlib
 import gzip
 import os
 import shutil
@@ -16,9 +16,12 @@ from qiime2.plugin.testing import TestPluginBase
 from qiime2.plugins import rescript
 from rescript.get_midori2 import (_assemble_midori2_url,
                                   _retrieve_data_from_midori2)
-from q2_types.feature_data import (TaxonomyFormat,
+from q2_types.feature_data import (TSVTaxonomyFormat,
+                                   HeaderlessTSVTaxonomyFormat,
                                    DNAFASTAFormat,
-                                   DNAIterator)
+                                   DNAIterator,
+                                   DNASequencesDirectoryFormat,
+                                   HeaderlessTSVTaxonomyDirectoryFormat)
 import pandas as pd
 from unittest.mock import patch
 
@@ -28,14 +31,14 @@ class TestGetMidori2(TestPluginBase):
 
     def setUp(self):
         super().setUp()
-        self.midori2_tax = \
-            TaxonomyFormat(importlib.resources.files(
-                'rescript') / 'tests' / 'data' / 'midori2-taxa.tsv', mode='r'
-            )
-        self.midori2_seqs = \
-            DNAFASTAFormat(importlib.resources.files(
-                'rescript') / 'tests' / 'data' / 'midori2-seqs.fasta', mode='r'
-            )
+        self.midori2_fasta = self.get_data_path('midori2-seqs.fasta')
+        self.midori2_seqs = DNAFASTAFormat(
+                            self.midori2_fasta,
+                            mode='r')
+        self.midori2_tsv = self.get_data_path('midori2-taxa.tsv')
+        self.midori2_tax = HeaderlessTSVTaxonomyFormat(
+                           self.midori2_tsv,
+                           mode='r')
 
     # test that appropriate URLs are assembled
     def test_assemble_midori2_url_01(self):
@@ -72,8 +75,8 @@ class TestGetMidori2(TestPluginBase):
                 fasta_gz = os.path.join(tmpdirname, 'midori2-seqs.fasta.gz')
                 taxon_gz = os.path.join(tmpdirname, 'midori2-taxa.taxon.gz')
                 for source, destination in [
-                        (self.midori2_seqs.path, fasta_gz),
-                        (self.midori2_tax.path, taxon_gz)]:
+                        (self.midori2_fasta, fasta_gz),
+                        (self.midori2_tsv, taxon_gz)]:
                     with zipf.open(destination, 'w') as zip_stream:
                         with gzip.GzipFile(
                                 fileobj=zip_stream, mode="wb") as gz_file:
@@ -92,8 +95,8 @@ class TestGetMidori2(TestPluginBase):
                                         'midori2-refs.zip')
 
         obs_seq_dict = {seq.metadata['id']: str(seq)
-                        for fid, seq_iter in obs_seqs.items()
-                        for seq in seq_iter}
+                        for fid, seq in obs_seqs.items()
+                        for seq in seq.file.view(DNAIterator)}
 
         exp_seq_dict = {seq.metadata['id']: str(seq)
                         for seq in self.midori2_seqs.view(
@@ -102,13 +105,18 @@ class TestGetMidori2(TestPluginBase):
         obs_tax_list = [tax for tax in obs_tax.values()]
 
         self.assertEqual(obs_seq_dict, exp_seq_dict)
-        self.assertTrue(obs_tax_list[0].equals(
-                        self.midori2_tax.view(pd.DataFrame)))
+        obst = obs_tax_list[0].file.view(
+            TSVTaxonomyFormat).view(pd.Series).sort_index()
+        expt = self.midori2_tax.view(
+            TSVTaxonomyFormat).view(pd.Series).sort_index()
+        pd.testing.assert_series_equal(obst, expt)
 
     def test_get_midori2(self):
         def _makey_fakey(fake_data):
-            return ({'seq_res': self.midori2_seqs.view(DNAIterator)},
-                    {'tax_res': self.midori2_tax.view(pd.DataFrame)})
+            return ({'seq_res': self.midori2_seqs.view(
+                DNASequencesDirectoryFormat)},
+                    {'tax_res': self.midori2_tax.view(
+                        HeaderlessTSVTaxonomyDirectoryFormat)})
 
         with patch('rescript.get_midori2._retrieve_data_from_midori2',
                    new=_makey_fakey):

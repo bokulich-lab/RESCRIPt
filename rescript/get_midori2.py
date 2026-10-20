@@ -13,9 +13,8 @@ import zipfile
 import gzip
 from urllib.request import urlretrieve
 from pathlib import Path
-import pandas as pd
-from q2_types.feature_data import (TaxonomyFormat, DNAFASTAFormat,
-                                   DNAIterator)
+from q2_types.feature_data import (DNASequencesDirectoryFormat,
+                                   HeaderlessTSVTaxonomyDirectoryFormat)
 
 
 VER_ID_DICT = {
@@ -34,7 +33,6 @@ VER_ID_DICT = {
 def _assemble_midori2_url(version='273',
                           unspecified_species=False,
                           ):
-
     print('Building URL ...')
     # unspecified species check
     if unspecified_species:
@@ -53,16 +51,12 @@ def _assemble_midori2_url(version='273',
 
 
 def _retrieve_data_from_midori2(url):
-
-    print('\nDownloading and processing MIDORI2 data ... \n')
-
     with tempfile.TemporaryDirectory() as tmpdirname:
         compressed_fn = Path(url).name
         in_path = os.path.join(tmpdirname, compressed_fn)
-
         try:
-            print('Retrieving data from:\n\t{0}'.format(url),
-                  '\n\nGrab some coffee, this may take a while.\n\n')
+            print('Retrieving data from:\n{0}'.format(url),
+                  '\n\nGrab some coffee, this may take a while.\n')
             urlretrieve(url, in_path)
         except Exception as e:
             raise ValueError(
@@ -70,39 +64,41 @@ def _retrieve_data_from_midori2(url):
                 'from MIDORI2:\n{url}\n: {e}'.format(
                                   url=url, e=e))
 
-        print('Unzipping {0}...\n'.format(in_path))
+        print('Unzipping {0} ...'.format(compressed_fn))
         seqs_dict = {}
         tax_dict = {}
+
         with zipfile.ZipFile(in_path, 'r') as zipdir:
             for f_info in zipdir.infolist():
-                if f_info.is_dir() or not f_info.filename.endswith('.gz'):
+                bn = Path(f_info.filename)
+                if f_info.is_dir() or bn.suffix != '.gz':
                     continue
-                fn = f_info.filename
+                bn = bn.with_suffix('')
+                if bn.suffix == '.fasta':
+                    res = DNASequencesDirectoryFormat()
+                    res_suffix = 'sequences'
+                    res_dict = seqs_dict
+                elif bn.suffix == '.taxon':
+                    res = HeaderlessTSVTaxonomyDirectoryFormat()
+                    res_suffix = 'taxonomy'
+                    res_dict = tax_dict
+                else:
+                    continue
                 with zipdir.open(f_info.filename) as zipf:
-                    bn = os.path.basename(fn).rsplit('.', 1)[0]
                     with gzip.open(zipf, 'rb') as gz_in:
-                        ofp = os.path.join(tmpdirname, bn)
-                        with open(ofp, 'wb') as gz_out:
-                            shutil.copyfileobj(gz_in, gz_out)
+                        with res.file.path_maker().open('wb') as out:
+                            shutil.copyfileobj(gz_in, out)
 
-                    if gz_out.name.endswith('fasta'):
-                        seqs_dict[bn] = DNAFASTAFormat(
-                                            gz_out.name,
-                                            mode="r").view(DNAIterator)
-                    elif gz_out.name.endswith('taxon'):
-                        tax_dict[bn] = TaxonomyFormat(
-                                           gz_out.name,
-                                           mode="r").view(pd.DataFrame)
+                bofn = '_'.join([bn.stem, res_suffix])
+                res_dict[bofn] = res
     return seqs_dict, tax_dict
 
 
 def get_midori2_data(
     version: str = '273',
     unspecified_species: bool = False,
-        ) -> (DNAIterator, pd.DataFrame):
-
-    seq_res = {}
-    tax_res = {}
+        ) -> (DNASequencesDirectoryFormat,
+              HeaderlessTSVTaxonomyDirectoryFormat):
 
     url = _assemble_midori2_url(
                                 version=version,
@@ -111,5 +107,5 @@ def get_midori2_data(
 
     seq_res, tax_res = _retrieve_data_from_midori2(url)
 
-    print('\n Saving files...\n')
+    print('\nSaving files...\n')
     return seq_res, tax_res
