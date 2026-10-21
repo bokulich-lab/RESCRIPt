@@ -33,7 +33,7 @@ VER_ID_DICT = {
 def _assemble_midori2_url(version='273',
                           unspecified_species=False,
                           ):
-    print('Building URL ...')
+    print('\nBuilding URL ...\n')
     # unspecified species check
     if unspecified_species:
         sp = '_sp'
