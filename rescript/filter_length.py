@@ -8,7 +8,8 @@
 
 import qiime2
 import pandas as pd
-from q2_types.feature_data import DNAFASTAFormat, DNAIterator
+from q2_types.feature_data import (
+    DNAFASTAFormat, DNAIterator, LinkedDNAFASTAFormat)
 
 from ._utilities import run_command
 
@@ -35,6 +36,27 @@ def filter_seqs_length(sequences: DNAFASTAFormat,
     if global_max is not None:
         cmd.extend(['--fastq_maxlen', str(global_max)])
     run_command(cmd)
+    return result, failures
+
+
+def filter_linked_seqs_length(
+        sequences: LinkedDNAFASTAFormat,
+        global_min: int = None,
+        global_max: int = None) -> (LinkedDNAFASTAFormat,
+                                    LinkedDNAFASTAFormat):
+    if global_min is global_max is None:
+        raise ValueError(ERROR_FILTER_OPTIONS + 'global_min, global_max.')
+
+    result = LinkedDNAFASTAFormat()
+    failures = LinkedDNAFASTAFormat()
+    with result.open() as res, failures.open() as fail:
+        for seq in sequences.view(DNAIterator):
+            seqlen = len(seq) - seq.count(' ')
+            if ((global_min is None or seqlen >= global_min) and
+                    (global_max is None or seqlen <= global_max)):
+                seq.write(res)
+            else:
+                seq.write(fail)
     return result, failures
 
 

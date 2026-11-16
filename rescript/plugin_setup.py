@@ -29,7 +29,7 @@ from .edit_taxonomy import edit_taxonomy
 from .get_data import get_silva_data
 from .cross_validate import evaluate_classifications
 from .filter_length import (filter_seqs_length_by_taxon, filter_seqs_length,
-                            filter_taxa)
+                            filter_linked_seqs_length, filter_taxa)
 from .orient import orient_seqs, orient_reads
 from .extract_seq_segments import extract_seq_segments
 from .ncbi_datasets import get_ncbi_genomes
@@ -38,7 +38,8 @@ from q2_types.per_sample_sequences import (
     PairedEndSequencesWithQuality, JoinedSequencesWithQuality)
 from q2_types.feature_data import (FeatureData, Taxonomy, Sequence,
                                    AlignedSequence, RNASequence,
-                                   AlignedRNASequence, ProteinSequence)
+                                   AlignedRNASequence, ProteinSequence,
+                                   LinkedSequence)
 from q2_types.tree import Phylogeny, Rooted
 import rescript
 from rescript.types._format import (
@@ -666,6 +667,24 @@ plugin.methods.register_function(
         'and conditional taxonomic filtering, see filter_seqs_length_by_taxon.'
     ),
     citations=[citations['rognes2016vsearch']]
+)
+
+
+plugin.methods.register_function(
+    function=filter_linked_seqs_length,
+    inputs={'sequences': FeatureData[LinkedSequence]},
+    parameters=FILTER_PARAMS,
+    outputs=[('filtered_seqs', FeatureData[LinkedSequence]),
+             ('discarded_seqs', FeatureData[LinkedSequence])],
+    input_descriptions={
+        'sequences': 'Linked sequences to be filtered by length.'},
+    parameter_descriptions=FILTER_PARAM_DESCRIPTIONS,
+    output_descriptions=FILTER_OUTPUT_DESCRIPTIONS,
+    name='Filter linked sequences by length.',
+    description=(
+        'Filter linked sequences by length. For regular sequences, see '
+        'filter_seqs_length.'
+    )
 )
 
 

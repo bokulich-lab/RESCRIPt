@@ -7,11 +7,13 @@
 # ----------------------------------------------------------------------------
 
 
+from pathlib import Path
+
 import pandas as pd
 import qiime2
 import pandas.testing as pdt
 from qiime2.plugin.testing import TestPluginBase
-from q2_types.feature_data import DNAIterator
+from q2_types.feature_data import DNAIterator, LinkedDNAFASTAFormat
 from qiime2.plugins import rescript
 
 from rescript.filter_length import _seq_length_within_range
@@ -299,6 +301,57 @@ class TestFilterGlobally(TestPluginBase):
         failed_ids = {seq.metadata['id'] for seq in failed.view(DNAIterator)}
         exp_failed_ids = set()
         self.assertEqual(failed_ids, exp_failed_ids)
+
+
+class TestFilterLinkedSeqsLength(TestPluginBase):
+    package = 'rescript.tests'
+
+    def setUp(self):
+        super().setUp()
+        self.seqs = import_data(
+            'FeatureData[LinkedSequence]',
+            self.get_data_path('linked-test.fasta'))
+
+        self.all_seqs = Path(
+            self.get_data_path('linked-test.fasta')).read_text()
+        self.filtered_seqs = Path(
+            self.get_data_path('linked-test-filtered.fasta')).read_text()
+        self.discarded_seqs = Path(
+            self.get_data_path('linked-test-discarded.fasta')).read_text()
+
+    @staticmethod
+    def _as_text(artifact):
+        with artifact.view(LinkedDNAFASTAFormat).open() as fh:
+            return fh.read()
+
+    def test_filter_linked_seqs_length_no_filters_error(self):
+        with self.assertRaisesRegex(
+                ValueError, "No filters were applied.*global_min, global_max"):
+            rescript.actions.filter_linked_seqs_length(self.seqs)
+
+    def test_filter_linked_seqs_length_by_max_length(self):
+        filtered, failed = rescript.actions.filter_linked_seqs_length(
+            self.seqs, global_max=291)
+        self.assertEqual(self._as_text(filtered), self.all_seqs)
+        self.assertEqual(self._as_text(failed), '')
+
+    def test_filter_linked_seqs_length_all_filtered_out(self):
+        filtered, failed = rescript.actions.filter_linked_seqs_length(
+            self.seqs, global_min=270, global_max=280)
+        self.assertEqual(self._as_text(filtered), '')
+        self.assertEqual(self._as_text(failed), self.all_seqs)
+
+    def test_filter_linked_seqs_length_no_failures(self):
+        filtered, failed = rescript.actions.filter_linked_seqs_length(
+            self.seqs, global_min=100, global_max=300)
+        self.assertEqual(self._as_text(filtered), self.all_seqs)
+        self.assertEqual(self._as_text(failed), '')
+
+    def test_filter_linked_seqs_length_by_min_length(self):
+        filtered, failed = rescript.actions.filter_linked_seqs_length(
+            self.seqs, global_min=291)
+        self.assertEqual(self._as_text(filtered), self.filtered_seqs)
+        self.assertEqual(self._as_text(failed), self.discarded_seqs)
 
 
 class TestFilterTaxa(TestPluginBase):
