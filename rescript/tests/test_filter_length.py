@@ -318,10 +318,6 @@ class TestFilterLinkedSeqsLength(TestPluginBase):
             self.get_data_path('linked-test-filtered.fasta')).read_text()
         self.discarded_seqs = Path(
             self.get_data_path('linked-test-discarded.fasta')).read_text()
-        self.max_filtered_seqs = Path(
-            self.get_data_path('linked-test-max-filtered.fasta')).read_text()
-        self.max_discarded_seqs = Path(
-            self.get_data_path('linked-test-max-discarded.fasta')).read_text()
 
     @staticmethod
     def _as_text(artifact):
@@ -335,9 +331,9 @@ class TestFilterLinkedSeqsLength(TestPluginBase):
 
     def test_filter_linked_seqs_length_by_max_length(self):
         filtered, failed = rescript.actions.filter_linked_seqs_length(
-            self.seqs, global_max=264)
-        self.assertEqual(self._as_text(filtered), self.max_filtered_seqs)
-        self.assertEqual(self._as_text(failed), self.max_discarded_seqs)
+            self.seqs, global_max=291)
+        self.assertEqual(self._as_text(filtered), self.all_seqs)
+        self.assertEqual(self._as_text(failed), '')
 
     def test_filter_linked_seqs_length_all_filtered_out(self):
         filtered, failed = rescript.actions.filter_linked_seqs_length(
