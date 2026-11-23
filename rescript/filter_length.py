@@ -8,8 +8,8 @@
 
 import qiime2
 import pandas as pd
-from q2_types.feature_data import (
-    DNAFASTAFormat, DNAIterator, LinkedDNAFASTAFormat)
+import skbio
+from q2_types.feature_data import DNAFASTAFormat, LinkedDNAFASTAFormat
 
 from ._utilities import run_command
 
@@ -39,25 +39,38 @@ def filter_seqs_length(sequences: DNAFASTAFormat,
     return result, failures
 
 
-def filter_linked_seqs_length(
-        sequences: LinkedDNAFASTAFormat,
-        global_min: int = None,
-        global_max: int = None) -> (LinkedDNAFASTAFormat,
+def filter_linked_seqs_length(sequences: LinkedDNAFASTAFormat,
+                              global_min: int = None,
+                              global_max: int = None
+                              ) -> (LinkedDNAFASTAFormat,
                                     LinkedDNAFASTAFormat):
+    # Validate filtering options
     if global_min is global_max is None:
         raise ValueError(ERROR_FILTER_OPTIONS + 'global_min, global_max.')
 
     result = LinkedDNAFASTAFormat()
     failures = LinkedDNAFASTAFormat()
-    with result.open() as res, failures.open() as fail:
-        for seq in sequences.view(DNAIterator):
-            seqlen = len(seq) - seq.count(' ')
+    with result.open() as out_fasta, failures.open() as out_failed:
+        for seq_id, description, bases in _read_fasta(sequences):
+            seqlen = len(bases) - bases.count(' ')
             if ((global_min is None or seqlen >= global_min) and
                     (global_max is None or seqlen <= global_max)):
-                seq.write(res)
+                destination = out_fasta
             else:
-                seq.write(fail)
+                destination = out_failed
+            _write_fasta_record(destination, seq_id, description, bases)
     return result, failures
+
+
+def _read_fasta(sequences):
+    with sequences.open() as source:
+        for seq in skbio.read(source, format='fasta', keep_spaces=True):
+            yield seq.metadata['id'], seq.metadata['description'], str(seq)
+
+
+def _write_fasta_record(fh, seq_id, description, bases):
+    header = f'{seq_id} {description}' if description else seq_id
+    fh.write(f'>{header}\n{bases}\n')
 
 
 def filter_seqs_length_by_taxon(sequences: DNAFASTAFormat,
@@ -72,13 +85,8 @@ def filter_seqs_length_by_taxon(sequences: DNAFASTAFormat,
     if min_lens is max_lens is None:
         raise ValueError(ERROR_FILTER_OPTIONS + 'min_lens, max_lens.')
 
-    # validate that all seqIDs are present in taxonomy
-    # Note we view as DNAIterator to take a first pass (should take a few
-    # seconds) as initial validation before performing length filtering.
-    seq_ids = {i.metadata['id'] for i in sequences.view(DNAIterator)}
-    _index_is_superset(seq_ids, set(taxonomy.index))
-
-    # set filter options
+    # set filter options (checked before reading the sequences, so invalid
+    # parameters fail immediately)
     mins = maxs = None
     if min_lens is not None:
         if len(labels) != len(min_lens):
@@ -94,14 +102,18 @@ def filter_seqs_length_by_taxon(sequences: DNAFASTAFormat,
         else:
             maxs = {k: v for k, v in zip(labels, max_lens)}
 
+    # validate that all seqIDs are present in taxonomy
+    seq_ids = {seq_id for seq_id, _, _ in _read_fasta(sequences)}
+    _index_is_superset(seq_ids, set(taxonomy.index))
+
     # Stream seqs, apply filter(s)
     result = DNAFASTAFormat()
     failures = DNAFASTAFormat()
     with result.open() as out_fasta, failures.open() as out_failed:
-        for seq in sequences.view(DNAIterator):
+        for seq_id, description, bases in _read_fasta(sequences):
             # taxon is required, we always use taxon-based filtering
             # grab taxon affiliation for seq
-            taxon = taxonomy[seq.metadata['id']]
+            taxon = taxonomy[seq_id]
             # search taxon for filter terms
             # NOTE: we find all matching search terms and pass them all to
             # _seq_length_within_range below; that function determines and
@@ -109,13 +121,14 @@ def filter_seqs_length_by_taxon(sequences: DNAFASTAFormat,
             taxahits = [t for t in labels if t in taxon]
             # if there are no taxahits or global filters, just write out
             if not any(taxahits) and global_min is global_max is None:
-                seq.write(out_fasta)
+                destination = out_fasta
             # if there are taxahits or global filters, always check length
-            elif _seq_length_within_range(seq, taxahits, mins, maxs,
+            elif _seq_length_within_range(bases, taxahits, mins, maxs,
                                           global_min, global_max):
-                seq.write(out_fasta)
+                destination = out_fasta
             else:
-                seq.write(out_failed)
+                destination = out_failed
+            _write_fasta_record(destination, seq_id, description, bases)
     return result, failures
 
 
